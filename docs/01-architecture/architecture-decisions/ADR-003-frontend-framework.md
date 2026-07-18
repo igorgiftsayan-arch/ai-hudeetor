@@ -19,4 +19,4 @@ App Router даёт layouts, loading/error boundaries и маршрутизац�
 
 ## Последствия
 
-PWA tooling требует compatibility-проверки в BOOT-001. Отсутствие UX-спецификации оставляет риск навигации, accessibility и длительных AI-состояний. Отдельное admin-приложение и streaming отложены.
+BOOT-000 выбрал native App Router manifest и минимальный network-first service worker без offline product data; BOOT-001 проверяет installability и cache safety. Отсутствие UX-спецификации оставляет риск навигации, accessibility и длительных AI-состояний. Отдельное admin-приложение и streaming отложены.

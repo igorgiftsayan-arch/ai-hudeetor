@@ -1,0 +1,5 @@
+{
+  "extends": "../config-typescript/nest.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src/**/*.ts"]
+}

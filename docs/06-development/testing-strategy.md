@@ -13,3 +13,11 @@
 Чужие данные недоступны; баланс не уходит ниже нуля; повтор не списывает/не начисляет дважды; техническая AI-ошибка возвращает резерв; стартовые и реферальные токены однократны; заблокированная реферальная связь не награждается; опасные AI-запросы получают безопасную реакцию; загрузки ограничены.
 
 Тесты детерминированы, не используют реальные секреты или платные внешние вызовы и очищают изолированные данные.
+
+## Tooling BOOT-001
+
+- Backend unit/HTTP: Jest и Supertest.
+- Database/queue integration: Jest с реальными PostgreSQL/Redis, добавляется вместе с первым соответствующим use case.
+- Frontend component: Vitest, React Testing Library и user-event.
+- E2E: Playwright; BOOT-001 содержит mobile Chromium scaffold smoke.
+- OpenAPI generation и Orval client generation образуют начальный contract gate.

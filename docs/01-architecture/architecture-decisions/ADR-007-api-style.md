@@ -17,4 +17,4 @@
 
 ## Последствия
 
-Streaming, GraphQL и WebSocket не входят в V1. OpenAPI client generation tool и точные operation TTL/UX выбираются в BOOT/feature-задачах.
+Streaming, GraphQL и WebSocket не входят в V1. BOOT-000 выбирает Nest `@nestjs/swagger` для OpenAPI и Orval для browser-safe native-fetch client generation в `packages/api-contracts`. Generated contracts не редактируются вручную; generation/check должен выявлять stale client. Точные operation TTL/UX выбираются feature-задачами.

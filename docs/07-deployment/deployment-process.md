@@ -10,4 +10,4 @@
 8. При ошибке остановить rollout и применить документированный rollback/restore.
 9. Записать версию, время, исполнителя, результат и инциденты.
 
-Архитектурный flow зафиксирован в [deployment-architecture.md](../01-architecture/deployment-architecture.md); конкретный CI provider и scripts выбираются в BOOT-001.
+BOOT-001 предоставляет локально воспроизводимые команды `db:migrate`, `smoke` и Compose healthchecks. Миграции выполняются отдельным one-shot service и не запускаются при старте API/worker. Архитектурный flow зафиксирован в [deployment-architecture.md](../01-architecture/deployment-architecture.md); CI provider остаётся отложенным.

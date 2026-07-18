@@ -1,0 +1,123 @@
+name: atlas-v01
+
+x-app-environment: &app-environment
+  APP_ENV: test
+  DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgresql://atlas:atlas_local_only@postgres:5432/atlas}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  REDIS_URL: ${COMPOSE_REDIS_URL:-redis://redis:6379/0}
+
+x-app-build: &app-build
+  context: .
+  dockerfile: infrastructure/docker/Dockerfile
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas_local_only}
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U atlas -d atlas']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - redis-data:/data
+
+  api:
+    build:
+      <<: *app-build
+      target: api
+    environment:
+      <<: *app-environment
+      API_CORS_ORIGIN: http://localhost:3000
+      API_HOST: 0.0.0.0
+      API_PORT: 3001
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/api/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    ports:
+      - '3001:3001'
+
+  worker:
+    build:
+      <<: *app-build
+      target: worker
+    environment:
+      <<: *app-environment
+      WORKER_HEALTH_PORT: 3002
+      WORKER_QUEUE_NAME: atlas-system
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3002/health/ready').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+
+  web:
+    build:
+      <<: *app-build
+      target: web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
+      WEB_PORT: 3000
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    ports:
+      - '3000:3000'
+
+  migrate:
+    build:
+      <<: *app-build
+      target: api
+    command: ['pnpm', 'db:migrate']
+    environment: *app-environment
+    depends_on:
+      postgres: { condition: service_healthy }
+    profiles: ['tools']
+
+volumes:
+  postgres-data:
+  redis-data:

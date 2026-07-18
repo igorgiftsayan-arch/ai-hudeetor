@@ -21,4 +21,4 @@ Soft delete применяется только для продуктового 
 
 ## Последствия
 
-ORM и migration tool выбираются в BOOT-001 по поддержке транзакций, row locks, constraints, raw SQL и reproducible migrations. Read replicas, sharding, partitioning и warehouse отложены.
+BOOT-000 выбрал Drizzle ORM/Kit + node-postgres с reviewable SQL migrations, явными транзакциями и SQL escape hatch; `drizzle-kit push` запрещён для общих/test сред. Read replicas, sharding, partitioning и warehouse отложены.

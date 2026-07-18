@@ -9,7 +9,7 @@ V1 должна быстро доставляться малым составо�
 
 ## Решение
 
-Использовать `pnpm workspace` и единый TypeScript-контур: Next.js/React для frontend, NestJS для API и worker. PostgreSQL, Redis и private S3 образуют data/infrastructure boundary. Точные версии и библиотеки фиксирует BOOT-001.
+Использовать `pnpm workspace` и единый TypeScript-контур: Next.js/React для frontend, NestJS для API и worker. PostgreSQL, Redis и private S3 образуют data/infrastructure boundary. Точные версии и библиотеки зафиксированы BOOT-000 в [engineering baseline](../engineering-baseline.md); BOOT-001 создаёт каркас без пересмотра решения.
 
 ## Альтернативы
 

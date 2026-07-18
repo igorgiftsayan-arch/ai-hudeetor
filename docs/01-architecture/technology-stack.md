@@ -15,9 +15,13 @@
 | Auth | cookie sessions, refresh rotation, CSRF, RBAC/MFA | [ADR-006](architecture-decisions/ADR-006-authentication.md) |
 | Test deployment | Docker containers на single server | [ADR-010](architecture-decisions/ADR-010-deployment.md) |
 
-## Не выбрано в ARCH-001
+## Engineering baseline V0.1
 
-Точные версии, ORM/migration tool, queue/PWA/form/query/testing libraries, task runner, CI/observability/S3/payment/analytics providers и AI-провайдер. Эти решения принадлежат BOOT-001 или отдельным задачам в пределах ADR.
+BOOT-000 зафиксировал точные runtime/framework versions, Drizzle/Drizzle Kit + node-postgres, BullMQ, project-owned PostgreSQL cookie sessions, Nest validation/OpenAPI, Zod, Orval, Jest/Supertest, Vitest/Testing Library, Playwright и pnpm workspace без task runner. Полный список, compatibility notes и ограничения: [engineering-baseline.md](engineering-baseline.md).
+
+## Отложено
+
+Redis exact major/tuning, CI и centralized observability providers, S3/payment/analytics implementations и AI-провайдер. Они выбираются в BOOT-001 или отдельных задачах в пределах ADR без молчаливого изменения baseline.
 
 ## Исключено для V1
 

@@ -1,0 +1,13 @@
+{
+  "extends": "../../packages/config-typescript/next.json",
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] },
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
+}

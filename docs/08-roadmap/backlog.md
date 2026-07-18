@@ -1,14 +1,19 @@
 # Backlog и открытые решения
 
-## Перед BOOT-001
+## Решено в BOOT-000/BOOT-001
 
-- Закрепить совместимые версии Node.js, pnpm, TypeScript, Next.js, React и NestJS.
-- Выбрать ORM/query builder и migration tool короткой проверкой транзакций, locks, constraints и raw SQL.
-- Выбрать Redis queue, PWA, form/query/schema/test/OpenAPI tooling без изменения ADR.
-- Решить, нужен ли monorepo task runner сверх pnpm.
-- Создать только технический каркас, local/test Docker и CI skeleton в границах ARCH-001.
-- Выбрать S3 implementation и observability tools для test; AI-провайдера не выбирать.
-- Зафиксировать канал password recovery до реализации соответствующего сценария.
+- Закреплены версии Node.js, pnpm, TypeScript, Next.js, React и NestJS.
+- Выбраны Drizzle/node-postgres, reviewed migrations, BullMQ, PWA, validation, OpenAPI и testing tooling.
+- Принят pnpm workspace без дополнительного task runner.
+- Создан технический каркас и local/test Compose topology без CI и бизнес-функций.
+
+## Перед первым вертикальным продуктовым срезом
+
+- Выполнить Docker Compose runtime smoke на машине с Docker: migrations, PostgreSQL/Redis readiness, API/worker/web health.
+- Выбрать точные поля регистрации/онбординга отдельной продуктовой задачей.
+- Реализовать только необходимые identity/profile boundaries вместе с первым сценарием, без пустых доменных модулей.
+- Выбрать канал password recovery до реализации recovery flow.
+- Выбрать S3 implementation до первого upload-сценария.
 
 ## Решено в DOC-002
 

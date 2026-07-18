@@ -1,0 +1,29 @@
+{
+  "name": "@atlas/worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter @atlas/backend build && nest build",
+    "dev": "nest start --watch",
+    "start": "node dist/main.js",
+    "test": "jest --runInBand --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atlas/backend": "workspace:*",
+    "@nestjs/bullmq": "11.0.4",
+    "@nestjs/common": "11.1.17",
+    "@nestjs/config": "4.0.4",
+    "@nestjs/core": "11.1.17",
+    "bullmq": "5.80.8",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.0.4"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "11.0.16",
+    "@types/jest": "30.0.0",
+    "jest": "30.4.2",
+    "ts-jest": "29.4.11"
+  }
+}

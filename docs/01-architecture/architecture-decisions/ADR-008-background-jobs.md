@@ -19,4 +19,4 @@
 
 ## Последствия
 
-Queue library, thresholds и schedules выбираются в BOOT/feature-задачах. Kafka, workflow engine и exactly-once transport не используются.
+Queue library — BullMQ с официальной NestJS integration `@nestjs/bullmq`. PostgreSQL outbox остаётся durable truth, stable BullMQ job ID выводится из outbox ID, а correctness обеспечивают PostgreSQL idempotency/constraints. Retry thresholds, concurrency и schedules выбираются feature-задачами. Kafka, workflow engine и exactly-once transport не используются.

@@ -1,0 +1,39 @@
+{
+  "name": "atlas-ai-friend",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.14.0",
+  "engines": {
+    "node": ">=24.18.0 <25",
+    "pnpm": ">=11.14.0 <12"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev": "pnpm --filter @atlas/backend build && pnpm --parallel --filter @atlas/web --filter @atlas/api --filter @atlas/worker dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm --filter @atlas/backend build && pnpm -r --if-present test",
+    "test:e2e": "playwright test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx database/migrate.ts",
+    "db:check": "tsx database/check-connection.ts",
+    "contracts:generate": "pnpm --filter @atlas/api openapi:export && orval --config orval.config.ts",
+    "contracts:check": "pnpm contracts:generate && git diff --exit-code -- packages/api-contracts/generated",
+    "smoke": "tsx scripts/smoke-test.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.61.1",
+    "@types/node": "26.1.1",
+    "drizzle-kit": "0.31.10",
+    "eslint": "10.7.0",
+    "globals": "17.7.0",
+    "orval": "8.22.0",
+    "prettier": "3.9.5",
+    "tsx": "4.23.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.64.0"
+  }
+}

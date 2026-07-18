@@ -13,6 +13,14 @@ Cookie-auth защищается CSRF token и проверкой Origin/Referer
 
 NestJS применяет default-deny guards/policies. Каждый пользовательский запрос scoped владельцем; frontend guard не является контролем доступа. Роли минимум `user` и `admin`, административные операции используют granular permissions, MFA, короткую session и re-auth для чувствительных действий. Все admin commands аудируются.
 
+## Уточнение BOOT-000
+
+Реализация принадлежит project-owned модулю `identity` в NestJS. Используются opaque access/refresh secrets в cookies; PostgreSQL хранит только hashes, session family, rotation lineage, expiry и revoke state. Redis не используется как источник session state. Refresh rotation и reuse detection выполняются транзакционно.
+
+Password hashing — Argon2id. Для cookie-auth используется session-bound signed double-submit CSRF token (`csrf-csrf` при Express adapter) совместно с Origin/Referer checks. Passport допустим только как transport helper и не владеет lifecycle сессии. Recovery token одноразовый, хешированный и короткоживущий; delivery provider остаётся отложенным.
+
+Безопасные defaults V0.1: access context 15 минут, абсолютный refresh lifetime 30 дней, recovery token 30 минут. Cookie names/domains задаются конфигурацией и не являются публичным контрактом.
+
 ## Последствия
 
-Конкретные auth/CSRF/hash/rate-limit библиотеки, cookie names и TTL выбирает BOOT-001. External identity provider не выбран. RLS может быть дополнительной защитой, но не заменяет application ownership checks.
+Rate-limit library, recovery delivery и admin MFA provider выбираются feature-задачами. External identity provider не выбран. RLS может быть дополнительной защитой, но не заменяет application ownership checks.

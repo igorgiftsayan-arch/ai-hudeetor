@@ -76,7 +76,7 @@ Full-stack web application: mobile-first PWA, REST API, асинхронный w
 - NestJS + TypeScript — общий backend-код для `apps/api` и `apps/worker`.
 - Официальные starters используются только в BOOT-001; готовый full-stack boilerplate не применяется, поскольку преждевременно выбирает auth, ORM и deployment.
 
-Точные версии, команды, task runner, ORM, queue/PWA/form/query/testing libraries выбираются и закрепляются в BOOT-001 в пределах ADR.
+BOOT-000 закрепил версии и ORM/queue/auth/PWA/validation/contract/testing tooling в [engineering baseline](engineering-baseline.md); BOOT-001 создаёт согласованный каркас и воспроизводимые команды.
 
 ## Ключевые архитектурные решения
 
@@ -99,7 +99,7 @@ Full-stack web application: mobile-first PWA, REST API, асинхронный w
 
 ### Отложено
 
-До BOOT-001 отложены версии и конкретные библиотеки, ORM/migration tool, queue library, PWA tooling, form/query/test tooling, CI provider и S3 implementation. До отдельных решений отложены AI-провайдер, production topology, streaming, vector search и Python AI-service.
+До BOOT-001 отложены Redis exact major/tuning и конкретные scaffold/configuration details. CI provider и S3 implementation выполняются отдельными задачами по мере необходимости. До отдельных решений отложены AI-провайдер, production topology, streaming, vector search и Python AI-service. Принятые tooling choices перечислены в [engineering baseline](engineering-baseline.md).
 
 ### Последовательность реализации
 
@@ -162,7 +162,7 @@ Server, session, UI и draft state разделены. Критические о
 
 ### Готовность к BOOT-001
 
-Критических архитектурных пробелов нет. BOOT-001 может создать каркас, не принимая продуктовых решений. Она обязана выбрать совместимые версии и конкретное tooling в пределах ADR, но не выбирает AI-провайдера и не реализует бизнес-функции.
+Критических архитектурных пробелов нет. BOOT-001 может создать каркас, не принимая продуктовых решений. Она обязана использовать совместимые версии и tooling из [engineering baseline](engineering-baseline.md), но не выбирает AI-провайдера и не реализует бизнес-функции.
 
 ### Известные неблокирующие риски
 

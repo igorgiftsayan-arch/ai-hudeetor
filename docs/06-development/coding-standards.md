@@ -1,6 +1,6 @@
 # Стандарты кода
 
-Конкретные линтеры и форматтеры выбираются в BOOT-001. Независимо от tooling:
+BOOT-001 выбрал ESLint 10 с TypeScript ESLint и Prettier 3; точные версии находятся в lockfile и [engineering baseline](../01-architecture/engineering-baseline.md). Независимо от tooling:
 
 - Явные границы модулей и один уровень ответственности.
 - Типизированные/валидируемые контракты на внешних границах.

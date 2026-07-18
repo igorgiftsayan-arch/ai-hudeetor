@@ -12,6 +12,7 @@
 6. [Definition of Done](docs/06-development/definition-of-done.md)
 7. [Техническая архитектура](docs/01-architecture/system-architecture.md)
 8. [Структура репозитория](docs/01-architecture/repository-structure.md)
+9. [Engineering baseline V0.1](docs/01-architecture/engineering-baseline.md)
 
 Дополнительно прочитать документы затрагиваемой области и проверить [текущий статус](docs/08-roadmap/current-status.md).
 
@@ -42,7 +43,13 @@
 - Для критических операций добавлять idempotency и ограничения PostgreSQL.
 - Соблюдать naming/structure/API/event patterns из [технической архитектуры](docs/01-architecture/system-architecture.md).
 - Любое архитектурное отклонение документировать новым/обновлённым ADR до реализации.
-- Не выбирать ORM, AI-провайдера или конкретные инфраструктурные библиотеки вне соответствующей задачи.
+- Использовать утверждённый engineering baseline; смену ORM, queue, auth, contract, testing, PWA или monorepo tooling предварительно оформлять ADR.
+- Не использовать `drizzle-kit push` для общих или тестовых сред: изменения схемы проходят через проверяемые SQL migrations.
+- Не выносить Drizzle schemas/client за `infrastructure` и не заменять явные критические транзакции удобством ORM.
+- Не использовать Redis или BullMQ как session/business truth; подтверждённое состояние хранится в PostgreSQL.
+- Не хранить auth secrets, cookies или session state в browser Web Storage и не кешировать персональные/API/admin данные service worker.
+- Generated API contracts не редактировать вручную; изменение REST DTO сопровождается OpenAPI regeneration и contract check.
+- Не логировать raw DTO, cookies, authorization headers, секреты, PII, signed URLs, изображения или полный AI-контент.
 
 Для задач, затрагивающих токены, AI или персональные данные, дополнительно обязательны [модель экономики токенов](docs/02-domain/token-economics-model.md), [обработка AI-ошибок](docs/05-security/ai-error-handling.md) и [политика данных](docs/05-security/privacy-and-data-policy.md).
 
