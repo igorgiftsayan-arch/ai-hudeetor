@@ -56,3 +56,7 @@ BOOT-001 пока не считается полностью закрытым; V
 ## BOOT-001.2 test-server access
 
 Локальный Docker/Compose отсутствует. SSH client и agent socket доступны, но hostname/alias, user, checkout path и credentials test server не настроены в проекте или среде. Без явного target сетевой доступ не проверялся и deployment не выполнялся. Требуемые входные данные и точные команды записаны в [runtime-verification.md](../07-deployment/runtime-verification.md).
+
+## BOOT-001.2 migration compatibility fix
+
+Test-server run выявил CJS transform error из-за top-level `await` в `database/migrate.ts`. Migration entrypoint переведён на async `main()` без изменения общего module strategy и без новых зависимостей. Локально подтверждено, что `tsx` проходит transform и доходит до PostgreSQL query; полный успех и повторяемость ожидают проверки командами `docker compose build migrate` и двукратным `docker compose --profile tools run --rm migrate` на test server. VERT-001 не запускался.
