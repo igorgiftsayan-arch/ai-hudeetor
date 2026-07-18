@@ -49,6 +49,8 @@ VERT-001.1 contracts and decisions
 
 ## VERT-001.3 — onboarding, persona и minimal outbox
 
+**Статус:** завершено; profile/persona onboarding, migration, REST/OpenAPI contracts и автоматические проверки реализованы. Test-server deployment относится к интеграционной приёмке VERT-001.8.
+
 **Цель:** зарегистрированный пользователь сохраняет profile setup, выбирает persona и достигает состояния `personaReady`; изменение persona создаёт durable domain event.
 
 **Область:** `profiles`, profile/preference migrations, application use cases, REST contracts, ownership, onboarding read model и `outbox_messages` storage для `profiles.ai_persona_selected.v1`. Нет consumer-ов, worker logic, AI Gateway, token effect или tracking.

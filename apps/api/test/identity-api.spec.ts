@@ -2,8 +2,11 @@ import {
   IdentityRepository,
   IdentityError,
   LoginAttemptLimiter,
+  ProfilesRepository,
+  DatabaseService,
   type CreateIdentitySessionInput,
   type IdentitySessionRecord,
+  type OnboardingStatus,
   type RegisteredIdentity,
   type RotateIdentitySessionInput,
 } from '@atlas/backend';
@@ -86,14 +89,18 @@ class InMemoryIdentityRepository extends IdentityRepository {
   }
 
   async findByAccessHash(accessTokenHash: string) {
-    return (
+    const session =
       [...this.sessions.values()].find(
-        (session) =>
-          session.accessTokenHash === accessTokenHash &&
-          !session.revokedAt &&
-          session.accessExpiresAt > new Date(),
-      ) ?? null
+        (candidate) =>
+          candidate.accessTokenHash === accessTokenHash &&
+          !candidate.revokedAt &&
+          candidate.accessExpiresAt > new Date(),
+      ) ?? null;
+    if (!session) return null;
+    const user = [...this.users.values()].find(
+      (candidate) => candidate.id === session.userId,
     );
+    return { ...session, onboardingStatus: user?.onboardingStatus };
   }
 
   async rotateSession(input: RotateIdentitySessionInput) {
@@ -139,6 +146,34 @@ class InMemoryIdentityRepository extends IdentityRepository {
     }
   }
 
+  async acceptWellnessNoticeAndAdvanceProfile(
+    _client: unknown,
+    input: { userId: string },
+  ): Promise<OnboardingStatus> {
+    const user = [...this.users.values()].find(
+      (candidate) => candidate.id === input.userId,
+    );
+    if (!user)
+      throw new IdentityError('SESSION_INVALID', 401, 'The session is invalid');
+    if (user.onboardingStatus === 'registered')
+      user.onboardingStatus = 'profileReady';
+    return user.onboardingStatus;
+  }
+
+  async advanceToPersonaReady(
+    _client: unknown,
+    userId: string,
+  ): Promise<OnboardingStatus> {
+    const user = [...this.users.values()].find(
+      (candidate) => candidate.id === userId,
+    );
+    if (!user)
+      throw new IdentityError('SESSION_INVALID', 401, 'The session is invalid');
+    if (user.onboardingStatus === 'profileReady')
+      user.onboardingStatus = 'personaReady';
+    return user.onboardingStatus;
+  }
+
   expireAccessSessions(): void {
     for (const session of this.sessions.values()) {
       session.accessExpiresAt = new Date(0);
@@ -160,6 +195,72 @@ class InMemoryIdentityRepository extends IdentityRepository {
       rotatedAt: null,
       revokedAt: null,
     };
+  }
+}
+
+class InMemoryProfilesRepository extends ProfilesRepository {
+  readonly profiles = new Map<string, { userId: string; timezone: string }>();
+  readonly preferences = new Map<
+    string,
+    {
+      userId: string;
+      personaId:
+        | 'gentleFriend'
+        | 'strictCoach'
+        | 'russianLuli'
+        | 'glamorousFriend'
+        | 'analyst';
+      strictness: 'low' | 'medium' | 'high';
+      responseLength: 'short' | 'medium' | 'long';
+    }
+  >();
+  readonly events: Array<{ userId: string; personaId: string }> = [];
+  async upsertProfile(
+    _client: unknown,
+    input: { userId: string; timezone: string },
+  ) {
+    this.profiles.set(input.userId, input);
+    return input;
+  }
+  async findProfile(userId: string) {
+    return this.profiles.get(userId) ?? null;
+  }
+  async findPreference(userId: string) {
+    return this.preferences.get(userId) ?? null;
+  }
+  async lockPreference(_client: unknown, userId: string) {
+    return this.preferences.get(userId) ?? null;
+  }
+  async upsertPreference(
+    _client: unknown,
+    input: {
+      userId: string;
+      personaId:
+        | 'gentleFriend'
+        | 'strictCoach'
+        | 'russianLuli'
+        | 'glamorousFriend'
+        | 'analyst';
+      strictness: 'low' | 'medium' | 'high';
+      responseLength: 'short' | 'medium' | 'long';
+    },
+  ) {
+    this.preferences.set(input.userId, input);
+    return input;
+  }
+  async insertPersonaSelectedEvent(
+    _client: unknown,
+    input: { userId: string; personaId: string },
+  ) {
+    this.events.push(input);
+  }
+}
+
+class InMemoryDatabaseService {
+  async transaction<TResult>(
+    operation: (client: unknown) => Promise<TResult>,
+  ): Promise<TResult> {
+    return operation({});
   }
 }
 
@@ -508,14 +609,65 @@ describe('Identity API', () => {
     expect(current.status).toBe(401);
     expect(current.body.error.code).toBe('SESSION_INVALID');
   });
+
+  it('progresses an authenticated user from registered to personaReady', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registration = await register(agent);
+
+    const profile = await agent
+      .patch('/api/v1/users/me/profile')
+      .set('Origin', origin)
+      .set('x-csrf-token', registration.body.csrfToken)
+      .send({
+        timezone: 'Asia/Irkutsk',
+        consents: [
+          {
+            consentType: 'aiWellnessNotice',
+            documentVersion: 'test-v1',
+            accepted: true,
+          },
+        ],
+      });
+
+    expect(profile.status).toBe(200);
+    expect(profile.body).toMatchObject({ timezone: 'Asia/Irkutsk' });
+
+    const preference = await agent
+      .put('/api/v1/users/me/ai-preference')
+      .set('Origin', origin)
+      .set('x-csrf-token', registration.body.csrfToken)
+      .send({ personaId: 'gentleFriend' });
+
+    expect(preference.status).toBe(200);
+    expect(preference.body).toMatchObject({
+      personaId: 'gentleFriend',
+      strictness: 'medium',
+      responseLength: 'medium',
+      onboardingStatus: 'personaReady',
+    });
+
+    const onboarding = await agent.get('/api/v1/users/me/onboarding');
+    expect(onboarding.status).toBe(200);
+    expect(onboarding.body).toMatchObject({
+      status: 'personaReady',
+      completedSteps: ['legal', 'timezone', 'persona'],
+      canComplete: false,
+      csrfToken: expect.any(String),
+    });
+  });
 });
 
 async function createApp(repository: InMemoryIdentityRepository) {
+  const profiles = new InMemoryProfilesRepository();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(IdentityRepository)
     .useValue(repository)
     .overrideProvider(LoginAttemptLimiter)
     .useValue(new InMemoryLoginAttemptLimiter())
+    .overrideProvider(ProfilesRepository)
+    .useValue(profiles)
+    .overrideProvider(DatabaseService)
+    .useValue(new InMemoryDatabaseService())
     .compile();
   const nestApp = moduleRef.createNestApplication();
   configureApplication(nestApp);

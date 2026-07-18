@@ -10,6 +10,7 @@ export interface IdentitySecurityOptions {
   refreshTtlMs: number;
   termsVersion: string;
   privacyVersion: string;
+  aiWellnessNoticeVersion: string;
   redisUrl: string;
   loginMaxAttempts: number;
   loginWindowMs: number;

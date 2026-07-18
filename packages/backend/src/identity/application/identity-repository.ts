@@ -1,8 +1,10 @@
 import { identityErrors } from '../domain/identity-error';
 import type {
   IdentitySessionRecord,
+  OnboardingStatus,
   RegisteredIdentity,
 } from '../domain/identity-types';
+import type { PoolClient } from 'pg';
 
 export interface CreateIdentitySessionInput {
   id: string;
@@ -58,7 +60,7 @@ export abstract class IdentityRepository {
   abstract findByAccessHash(
     accessTokenHash: string,
   ): Promise<
-    (IdentitySessionRecord & { onboardingStatus?: 'registered' }) | null
+    (IdentitySessionRecord & { onboardingStatus?: OnboardingStatus }) | null
   >;
 
   abstract rotateSession(
@@ -71,6 +73,16 @@ export abstract class IdentityRepository {
   ): Promise<void>;
 
   abstract revokeFamily(familyId: string): Promise<void>;
+
+  abstract acceptWellnessNoticeAndAdvanceProfile(
+    client: PoolClient,
+    input: { userId: string; documentVersion: string },
+  ): Promise<OnboardingStatus>;
+
+  abstract advanceToPersonaReady(
+    client: PoolClient,
+    userId: string,
+  ): Promise<OnboardingStatus>;
 
   protected emailAlreadyRegistered(): Error {
     return identityErrors.emailAlreadyRegistered();

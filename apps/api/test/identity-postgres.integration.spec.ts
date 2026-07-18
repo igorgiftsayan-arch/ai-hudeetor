@@ -3,10 +3,15 @@ import {
   CryptoSessionTokenService,
   DatabaseService,
   GetCurrentUserUseCase,
+  OnboardingStateService,
   PostgresIdentityRepository,
+  PostgresProfilesRepository,
   RefreshSessionUseCase,
   RegisterUserUseCase,
+  SavePersonaPreferenceUseCase,
+  SaveProfileSetupUseCase,
 } from '@atlas/backend';
+import type { OnboardingStatePort } from '@atlas/backend';
 
 const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -17,6 +22,8 @@ describeWithDatabase('Identity PostgreSQL integration', () => {
   let register: RegisterUserUseCase;
   let currentUser: GetCurrentUserUseCase;
   let refresh: RefreshSessionUseCase;
+  let saveProfile: SaveProfileSetupUseCase;
+  let savePreference: SavePersonaPreferenceUseCase;
 
   beforeAll(() => {
     database = new DatabaseService(databaseUrl!);
@@ -29,11 +36,28 @@ describeWithDatabase('Identity PostgreSQL integration', () => {
     register = new RegisterUserUseCase(repository, hasher, tokens);
     currentUser = new GetCurrentUserUseCase(repository, tokens);
     refresh = new RefreshSessionUseCase(repository, tokens);
+    const profiles = new PostgresProfilesRepository(database);
+    const onboardingState: OnboardingStatePort = new OnboardingStateService(
+      repository,
+      'test-v1',
+    );
+    saveProfile = new SaveProfileSetupUseCase(
+      database,
+      currentUser,
+      onboardingState,
+      profiles,
+    );
+    savePreference = new SavePersonaPreferenceUseCase(
+      database,
+      currentUser,
+      onboardingState,
+      profiles,
+    );
   });
 
   beforeEach(async () => {
     await database.query(
-      'truncate table user_sessions, user_consents, password_credentials, users cascade',
+      'truncate table outbox_messages, ai_preferences, user_profiles, user_sessions, user_consents, password_credentials, users cascade',
     );
   });
 
@@ -125,6 +149,47 @@ describeWithDatabase('Identity PostgreSQL integration', () => {
       refreshExpiresAt.getTime(),
     );
     expect(rotated.refreshExpiresAt.getTime()).toBe(refreshExpiresAt.getTime());
+  });
+
+  it('commits personaReady preference and its outbox event atomically', async () => {
+    const registered = await register.execute(registrationCommand());
+    await saveProfile.execute({
+      accessToken: registered.session.accessToken,
+      timezone: 'Asia/Irkutsk',
+      wellnessNoticeVersion: 'test-v1',
+    });
+
+    const preference = await savePreference.execute({
+      accessToken: registered.session.accessToken,
+      personaId: 'gentleFriend',
+    });
+    const stored = await database.query<{
+      onboarding_status: string;
+      event_type: string;
+      payload: { personaId: string; context: string };
+    }>(
+      `select u.onboarding_status, o.event_type, o.payload
+         from users u join outbox_messages o on o.aggregate_id = u.id
+        where u.id = $1`,
+      [registered.user.id],
+    );
+
+    expect(preference.onboardingStatus).toBe('personaReady');
+    expect(stored.rows[0]).toMatchObject({
+      onboarding_status: 'personaReady',
+      event_type: 'profiles.ai_persona_selected.v1',
+      payload: { personaId: 'gentleFriend', context: 'onboarding' },
+    });
+
+    await savePreference.execute({
+      accessToken: registered.session.accessToken,
+      personaId: 'gentleFriend',
+    });
+    const eventCount = await database.query<{ count: string }>(
+      'select count(*) from outbox_messages where aggregate_id = $1',
+      [registered.user.id],
+    );
+    expect(eventCount.rows[0]!.count).toBe('1');
   });
 });
 

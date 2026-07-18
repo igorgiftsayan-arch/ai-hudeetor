@@ -1,12 +1,12 @@
 # Текущий статус
 
 - Дата: 2026-07-19
-- Текущая задача: VERT-001.3 — технический дизайн принят; реализация profile/persona и minimal outbox ещё не начата.
-- Код приложения: scaffold web/API/worker и минимальный backend identity module.
-- AI, токены, вес, profile personalization, платежи и рефералы: отсутствуют.
+- Текущая задача: VERT-001.3 — onboarding/profile/persona и minimal outbox завершены.
+- Код приложения: scaffold web/API/worker, identity module и минимальный profiles module.
+- AI, токены, вес, расширенная profile personalization, платежи и рефералы: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующий обязательный шаг: отдельной задачей реализовать profile/persona onboarding до `personaReady` и минимальный transactional outbox storage согласно [design review](../01-architecture/vertical-slices/VERT-001.3-design-review.md). Реализация пока не начата.
+- Следующий обязательный шаг: отдельной задачей реализовать VERT-001.4 — onboarding completion, starter grant, token ledger, первый вес и tracking initialization. Реализация пока не начата.
 
 ## Решения ARCH-001
 
@@ -103,4 +103,11 @@ Test-server run выявил CJS transform error из-за top-level `await` в 
 - Подготовлен [технический дизайн onboarding/profile state](../01-architecture/vertical-slices/VERT-001.3-design-review.md) без кода и миграций.
 - `users.onboarding_status` остаётся единственным persisted state machine; `profiles` владеет criteria, но не получает прямой доступ к identity repository/table.
 - Принят scope: VERT-001.3 безопасно завершается `personaReady`; VERT-001.4 включает `completed`, starter grant, первый вес и tracking initialization.
-- Принят minimal transactional outbox: VERT-001.3 хранит и атомарно записывает `profiles.ai_persona_selected.v1` без consumer-ов, worker logic, AI Gateway или токенов. AI Gateway, token ledger, первый вес и frontend не запускались.
+- Принят minimal transactional outbox: VERT-001.3 хранит и атомарно записывает `profiles.ai_persona_selected.v1` без consumer-ов, worker logic, AI Gateway или токенов. AI Gateway, token ledger и первый вес не запускались.
+
+## VERT-001.3 implementation
+
+- Добавлены profile/persona REST endpoints, `profiles` module и технический web route `/onboarding`; state machine останавливается на `personaReady`.
+- Migration `0002_profiles_onboarding_outbox.sql` создаёт `user_profiles`, `ai_preferences` и private `outbox_messages` storage с индексом pending records.
+- `profiles.ai_persona_selected.v1` сохраняется в той же PostgreSQL transaction, что preference и переход к `personaReady`; consumer, worker delivery, AI Gateway и token effects отсутствуют.
+- Добавлены API, PostgreSQL integration и frontend tests; OpenAPI/client generation выполнены. Test-server deployment не входил в задачу.

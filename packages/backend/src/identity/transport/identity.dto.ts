@@ -70,8 +70,11 @@ export class RegistrationResourceDto {
   @ApiProperty({ format: 'uuid' })
   userId!: string;
 
-  @ApiProperty({ enum: ['registered'] })
-  onboardingStatus!: 'registered';
+  @ApiProperty({
+    enum: ['registered', 'profileReady', 'personaReady', 'completed'],
+  })
+  onboardingStatus!:
+    'registered' | 'profileReady' | 'personaReady' | 'completed';
 
   @ApiProperty({ format: 'date-time' })
   sessionExpiresAt!: string;
@@ -87,8 +90,11 @@ export class SessionResourceDto {
   @ApiProperty({ format: 'date-time' })
   expiresAt!: string;
 
-  @ApiProperty({ enum: ['registered'] })
-  onboardingStatus!: 'registered';
+  @ApiProperty({
+    enum: ['registered', 'profileReady', 'personaReady', 'completed'],
+  })
+  onboardingStatus!:
+    'registered' | 'profileReady' | 'personaReady' | 'completed';
 
   @ApiProperty()
   csrfToken!: string;
@@ -98,6 +104,9 @@ export class CurrentUserResourceDto {
   @ApiProperty({ format: 'uuid' })
   userId!: string;
 
-  @ApiProperty({ enum: ['registered'] })
-  onboardingStatus!: 'registered';
+  @ApiProperty({
+    enum: ['registered', 'profileReady', 'personaReady', 'completed'],
+  })
+  onboardingStatus!:
+    'registered' | 'profileReady' | 'personaReady' | 'completed';
 }

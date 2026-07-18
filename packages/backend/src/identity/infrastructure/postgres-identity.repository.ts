@@ -9,13 +9,14 @@ import type {
 import { identityErrors } from '../domain/identity-error';
 import type {
   IdentitySessionRecord,
+  OnboardingStatus,
   RegisteredIdentity,
 } from '../domain/identity-types';
 
 interface CredentialRow {
   id: string;
   email_normalized: string;
-  onboarding_status: 'registered';
+  onboarding_status: OnboardingStatus;
   registration_idempotency_key: string;
   registration_request_hash: string;
   password_hash: string;
@@ -32,7 +33,7 @@ interface SessionRow {
   refresh_expires_at: Date;
   rotated_at: Date | null;
   revoked_at: Date | null;
-  onboarding_status?: 'registered';
+  onboarding_status?: OnboardingStatus;
 }
 
 export class PostgresIdentityRepository extends IdentityRepository {
@@ -238,6 +239,52 @@ export class PostgresIdentityRepository extends IdentityRepository {
     );
   }
 
+  async acceptWellnessNoticeAndAdvanceProfile(
+    client: PoolClient,
+    input: { userId: string; documentVersion: string },
+  ): Promise<OnboardingStatus> {
+    await client.query(
+      `insert into user_consents (id, user_id, consent_type, document_version, source)
+       values (gen_random_uuid(), $1, 'aiWellnessNotice', $2, 'web')
+       on conflict (user_id, consent_type, document_version) do nothing`,
+      [input.userId, input.documentVersion],
+    );
+    const result = await client.query<{ onboarding_status: OnboardingStatus }>(
+      `update users
+          set onboarding_status = case
+            when onboarding_status = 'registered' then 'profileReady'
+            else onboarding_status
+          end,
+          updated_at = now()
+        where id = $1 and status = 'active'
+        returning onboarding_status`,
+      [input.userId],
+    );
+    const status = result.rows[0]?.onboarding_status;
+    if (!status) throw identityErrors.sessionInvalid();
+    return status;
+  }
+
+  async advanceToPersonaReady(
+    client: PoolClient,
+    userId: string,
+  ): Promise<OnboardingStatus> {
+    const result = await client.query<{ onboarding_status: OnboardingStatus }>(
+      `update users
+          set onboarding_status = case
+            when onboarding_status = 'profileReady' then 'personaReady'
+            else onboarding_status
+          end,
+          updated_at = now()
+        where id = $1 and status = 'active'
+        returning onboarding_status`,
+      [userId],
+    );
+    const status = result.rows[0]?.onboarding_status;
+    if (!status) throw identityErrors.sessionInvalid();
+    return status;
+  }
+
   private async insertSession(
     client: PoolClient,
     input: CreateIdentitySessionInput,
@@ -266,7 +313,7 @@ export class PostgresIdentityRepository extends IdentityRepository {
 }
 
 function mapSession(row: SessionRow): IdentitySessionRecord & {
-  onboardingStatus?: 'registered';
+  onboardingStatus?: OnboardingStatus;
 } {
   return {
     id: row.id,

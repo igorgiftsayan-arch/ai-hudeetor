@@ -1,4 +1,5 @@
-export type OnboardingStatus = 'registered';
+export type OnboardingStatus =
+  'registered' | 'profileReady' | 'personaReady' | 'completed';
 
 export interface ConsentAcceptance {
   consentType: 'terms' | 'privacy';

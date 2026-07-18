@@ -1,4 +1,4 @@
-import { Module, type DynamicModule } from '@nestjs/common';
+import { Global, Module, type DynamicModule } from '@nestjs/common';
 import { DatabaseService } from '../../infrastructure/database/database.service';
 import { CreateSessionUseCase } from '../application/create-session.use-case';
 import { LoginAttemptLimiter } from '../application/login-attempt-limiter';
@@ -11,6 +11,8 @@ import {
 } from '../application/identity-ports';
 import { RefreshSessionUseCase } from '../application/refresh-session.use-case';
 import { RegisterUserUseCase } from '../application/register-user.use-case';
+import { OnboardingStatePort } from '../application/onboarding-state.port';
+import { OnboardingStateService } from '../application/onboarding-state.service';
 import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
 import { CryptoSessionTokenService } from '../infrastructure/crypto-session-token.service';
 import { PostgresIdentityRepository } from '../infrastructure/postgres-identity.repository';
@@ -19,6 +21,7 @@ import { CsrfService, type IdentitySecurityOptions } from './csrf.service';
 import { IdentityController } from './identity.controller';
 import { IDENTITY_SECURITY_OPTIONS } from './identity.tokens';
 
+@Global()
 @Module({})
 export class IdentityModule {
   static forRoot(options: IdentitySecurityOptions): DynamicModule {
@@ -106,11 +109,25 @@ export class IdentityModule {
           inject: [IdentityRepository, SessionTokenService],
         },
         {
+          provide: OnboardingStatePort,
+          useFactory: (repository: IdentityRepository) =>
+            new OnboardingStateService(
+              repository,
+              options.aiWellnessNoticeVersion,
+            ),
+          inject: [IdentityRepository],
+        },
+        {
           provide: CsrfService,
           useFactory: () => new CsrfService(options),
         },
       ],
-      exports: [IdentityRepository, CsrfService],
+      exports: [
+        IdentityRepository,
+        CsrfService,
+        GetCurrentUserUseCase,
+        OnboardingStatePort,
+      ],
     };
   }
 }

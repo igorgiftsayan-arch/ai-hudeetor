@@ -39,6 +39,9 @@ export type RegistrationResourceDtoOnboardingStatus = typeof RegistrationResourc
 
 export const RegistrationResourceDtoOnboardingStatus = {
   registered: 'registered',
+  profileReady: 'profileReady',
+  personaReady: 'personaReady',
+  completed: 'completed',
 } as const;
 
 export interface RegistrationResourceDto {
@@ -60,6 +63,9 @@ export type SessionResourceDtoOnboardingStatus = typeof SessionResourceDtoOnboar
 
 export const SessionResourceDtoOnboardingStatus = {
   registered: 'registered',
+  profileReady: 'profileReady',
+  personaReady: 'personaReady',
+  completed: 'completed',
 } as const;
 
 export interface SessionResourceDto {
@@ -74,12 +80,101 @@ export type CurrentUserResourceDtoOnboardingStatus = typeof CurrentUserResourceD
 
 export const CurrentUserResourceDtoOnboardingStatus = {
   registered: 'registered',
+  profileReady: 'profileReady',
+  personaReady: 'personaReady',
+  completed: 'completed',
 } as const;
 
 export interface CurrentUserResourceDto {
   userId: string;
   onboardingStatus: CurrentUserResourceDtoOnboardingStatus;
 }
+
+export type UserProfileResourceDtoOnboardingStatus = typeof UserProfileResourceDtoOnboardingStatus[keyof typeof UserProfileResourceDtoOnboardingStatus];
+
+
+export const UserProfileResourceDtoOnboardingStatus = {
+  registered: 'registered',
+  profileReady: 'profileReady',
+  personaReady: 'personaReady',
+  completed: 'completed',
+} as const;
+
+export interface UserProfileResourceDto {
+  userId: string;
+  timezone: string;
+  onboardingStatus: UserProfileResourceDtoOnboardingStatus;
+}
+
+export type AiPreferenceResourceDtoPersonaId = typeof AiPreferenceResourceDtoPersonaId[keyof typeof AiPreferenceResourceDtoPersonaId];
+
+
+export const AiPreferenceResourceDtoPersonaId = {
+  gentleFriend: 'gentleFriend',
+  strictCoach: 'strictCoach',
+  russianLuli: 'russianLuli',
+  glamorousFriend: 'glamorousFriend',
+  analyst: 'analyst',
+} as const;
+
+export type AiPreferenceResourceDtoStrictness = typeof AiPreferenceResourceDtoStrictness[keyof typeof AiPreferenceResourceDtoStrictness];
+
+
+export const AiPreferenceResourceDtoStrictness = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type AiPreferenceResourceDtoResponseLength = typeof AiPreferenceResourceDtoResponseLength[keyof typeof AiPreferenceResourceDtoResponseLength];
+
+
+export const AiPreferenceResourceDtoResponseLength = {
+  short: 'short',
+  medium: 'medium',
+  long: 'long',
+} as const;
+
+export type AiPreferenceResourceDtoOnboardingStatus = typeof AiPreferenceResourceDtoOnboardingStatus[keyof typeof AiPreferenceResourceDtoOnboardingStatus];
+
+
+export const AiPreferenceResourceDtoOnboardingStatus = {
+  registered: 'registered',
+  profileReady: 'profileReady',
+  personaReady: 'personaReady',
+  completed: 'completed',
+} as const;
+
+export interface AiPreferenceResourceDto {
+  userId: string;
+  personaId: AiPreferenceResourceDtoPersonaId;
+  strictness: AiPreferenceResourceDtoStrictness;
+  responseLength: AiPreferenceResourceDtoResponseLength;
+  onboardingStatus: AiPreferenceResourceDtoOnboardingStatus;
+}
+
+export type OnboardingResourceDtoStatus = typeof OnboardingResourceDtoStatus[keyof typeof OnboardingResourceDtoStatus];
+
+
+export const OnboardingResourceDtoStatus = {
+  registered: 'registered',
+  profileReady: 'profileReady',
+  personaReady: 'personaReady',
+  completed: 'completed',
+} as const;
+
+export interface OnboardingResourceDto {
+  status: OnboardingResourceDtoStatus;
+  completedSteps: string[];
+  requiredSteps: string[];
+  canComplete: false;
+  aiWellnessNoticeVersion: string;
+  csrfToken: string;
+  profile?: UserProfileResourceDto;
+  aiPreference?: AiPreferenceResourceDto;
+}
+
+export interface Function { [key: string]: unknown }
 
 export type healthControllerLivenessApiV1Response200 = {
   data: void
@@ -363,4 +458,124 @@ export const identityControllerCurrentApiV1 = async ( options?: RequestInit): Pr
 
   const data: identityControllerCurrentApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as identityControllerCurrentApiV1Response
+}
+
+
+
+export type profilesControllerOnboardingApiV1Response200 = {
+  data: OnboardingResourceDto
+  status: 200
+}
+
+export type profilesControllerOnboardingApiV1ResponseSuccess = (profilesControllerOnboardingApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type profilesControllerOnboardingApiV1Response = (profilesControllerOnboardingApiV1ResponseSuccess)
+
+export const getProfilesControllerOnboardingApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/onboarding`
+}
+
+export const profilesControllerOnboardingApiV1 = async ( options?: RequestInit): Promise<profilesControllerOnboardingApiV1Response> => {
+
+  const res = await fetch(getProfilesControllerOnboardingApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: profilesControllerOnboardingApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as profilesControllerOnboardingApiV1Response
+}
+
+
+
+export type profilesControllerUpdateProfileApiV1Response200 = {
+  data: UserProfileResourceDto
+  status: 200
+}
+
+export type profilesControllerUpdateProfileApiV1ResponseSuccess = (profilesControllerUpdateProfileApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type profilesControllerUpdateProfileApiV1Response = (profilesControllerUpdateProfileApiV1ResponseSuccess)
+
+export const getProfilesControllerUpdateProfileApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/profile`
+}
+
+export const profilesControllerUpdateProfileApiV1 = async (_function: Function, options?: RequestInit): Promise<profilesControllerUpdateProfileApiV1Response> => {
+
+  const res = await fetch(getProfilesControllerUpdateProfileApiV1Url(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(_function)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: profilesControllerUpdateProfileApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as profilesControllerUpdateProfileApiV1Response
+}
+
+
+
+export type profilesControllerUpdatePreferenceApiV1Response200 = {
+  data: AiPreferenceResourceDto
+  status: 200
+}
+
+export type profilesControllerUpdatePreferenceApiV1ResponseSuccess = (profilesControllerUpdatePreferenceApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type profilesControllerUpdatePreferenceApiV1Response = (profilesControllerUpdatePreferenceApiV1ResponseSuccess)
+
+export const getProfilesControllerUpdatePreferenceApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/ai-preference`
+}
+
+export const profilesControllerUpdatePreferenceApiV1 = async (_function: Function, options?: RequestInit): Promise<profilesControllerUpdatePreferenceApiV1Response> => {
+
+  const res = await fetch(getProfilesControllerUpdatePreferenceApiV1Url(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(_function)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: profilesControllerUpdatePreferenceApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as profilesControllerUpdatePreferenceApiV1Response
 }

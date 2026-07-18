@@ -3,6 +3,8 @@ import {
   check,
   foreignKey,
   index,
+  integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -138,5 +140,54 @@ export const userSessions = pgTable(
       'ck_user_sessions_expiry',
       sql`${table.refreshExpiresAt} > ${table.accessExpiresAt}`,
     ),
+  ],
+);
+
+export const userProfiles = pgTable('user_profiles', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  timezone: text('timezone').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const aiPreferences = pgTable('ai_preferences', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  personaId: text('persona_id').notNull(),
+  strictness: text('strictness').notNull(),
+  responseLength: text('response_length').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const outboxMessages = pgTable(
+  'outbox_messages',
+  {
+    id: uuid('id').primaryKey(),
+    eventType: text('event_type').notNull(),
+    aggregateType: text('aggregate_type').notNull(),
+    aggregateId: uuid('aggregate_id').notNull(),
+    payload: jsonb('payload').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    availableAt: timestamp('available_at', { withTimezone: true }).notNull(),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    attempts: integer('attempts').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index('idx_outbox_messages_pending').on(table.availableAt, table.createdAt),
   ],
 );

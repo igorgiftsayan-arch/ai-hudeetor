@@ -30,6 +30,7 @@ export const apiConfigSchema = baseSchema
       .transform((value) => value === 'true'),
     IDENTITY_TERMS_VERSION: z.string().min(1),
     IDENTITY_PRIVACY_VERSION: z.string().min(1),
+    IDENTITY_AI_WELLNESS_NOTICE_VERSION: z.string().min(1),
     IDENTITY_LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     IDENTITY_LOGIN_WINDOW_SECONDS: z.coerce
       .number()

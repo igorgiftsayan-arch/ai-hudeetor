@@ -10,6 +10,7 @@ describe('Identity production configuration', () => {
         CSRF_SECRET: 'production-secret-at-least-32-characters',
         IDENTITY_TERMS_VERSION: 'v1',
         IDENTITY_PRIVACY_VERSION: 'v1',
+        IDENTITY_AI_WELLNESS_NOTICE_VERSION: 'v1',
         IDENTITY_SECURE_COOKIES: 'false',
       }),
     ).toThrow('Secure identity cookies are required in production');

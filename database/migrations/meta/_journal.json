@@ -15,6 +15,13 @@
       "when": 1784361601000,
       "tag": "0001_identity_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784448000000,
+      "tag": "0002_profiles_onboarding_outbox",
+      "breakpoints": true
     }
   ]
 }

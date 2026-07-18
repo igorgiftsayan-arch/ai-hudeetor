@@ -4,7 +4,11 @@ import {
   type NestModule,
 } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { IdentityModule, TechnicalInfrastructureModule } from '@atlas/backend';
+import {
+  IdentityModule,
+  ProfilesModule,
+  TechnicalInfrastructureModule,
+} from '@atlas/backend';
 import { loadApiConfig } from './config/load-config';
 import { HealthController } from './health/health.controller';
 import { RequestIdMiddleware } from './http/request-id.middleware';
@@ -32,9 +36,13 @@ const config = loadApiConfig();
       secureCookies: config.IDENTITY_SECURE_COOKIES,
       termsVersion: config.IDENTITY_TERMS_VERSION,
       privacyVersion: config.IDENTITY_PRIVACY_VERSION,
+      aiWellnessNoticeVersion: config.IDENTITY_AI_WELLNESS_NOTICE_VERSION,
       redisUrl: config.REDIS_URL,
       loginMaxAttempts: config.IDENTITY_LOGIN_MAX_ATTEMPTS,
       loginWindowMs: config.IDENTITY_LOGIN_WINDOW_SECONDS * 1_000,
+    }),
+    ProfilesModule.forRoot({
+      aiWellnessNoticeVersion: config.IDENTITY_AI_WELLNESS_NOTICE_VERSION,
     }),
   ],
   controllers: [HealthController],

@@ -6,6 +6,7 @@ const testDefaults = {
   CSRF_SECRET: 'test-only-csrf-secret-at-least-32-characters',
   IDENTITY_TERMS_VERSION: 'test-v1',
   IDENTITY_PRIVACY_VERSION: 'test-v1',
+  IDENTITY_AI_WELLNESS_NOTICE_VERSION: 'test-v1',
 };
 
 export function loadApiConfig(
