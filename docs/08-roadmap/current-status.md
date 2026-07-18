@@ -6,7 +6,7 @@
 - AI, токены, вес, profile personalization, платежи и рефералы: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующий обязательный шаг: отдельной задачей начать VERT-001.3 onboarding/persona/first weight по [final contracts](../01-architecture/vertical-slices/VERT-001-contracts.md). Реализация пока не начата.
+- Следующий обязательный шаг: подтвердить sequencing VERT-001.3/001.4 из [design review](../01-architecture/vertical-slices/VERT-001.3-design-review.md), затем отдельной задачей начать profile/persona onboarding. Реализация пока не начата.
 
 ## Решения ARCH-001
 
@@ -97,3 +97,10 @@ Test-server run выявил CJS transform error из-за top-level `await` в 
 - Migration `0001_identity_sessions.sql`, OpenAPI generated client, unit/API/PostgreSQL integration tests и [ручная приёмка](../06-development/vert-001-2-manual-acceptance.md) добавлены.
 - Новые analytics events не создавались: identity registration/login событий нет в утверждённом event registry.
 - Test-server deployment не входил в эту задачу; полный runtime acceptance запланирован в VERT-001.8.
+
+## VERT-001.3 design review
+
+- Подготовлен [технический дизайн onboarding/profile state](../01-architecture/vertical-slices/VERT-001.3-design-review.md) без кода и миграций.
+- `users.onboarding_status` остаётся единственным persisted state machine; `profiles` владеет criteria, но не получает прямой доступ к identity repository/table.
+- Найдено sequencing-противоречие: `completed` требует атомарный starter grant из VERT-001.4, поэтому profile/persona этап безопасно завершается `personaReady`; первый вес следует после VERT-001.4 либо отдельного решения.
+- До implementation нужны решения о minimal transactional outbox и порядке tracking task. AI Gateway, token ledger, первый вес и frontend не запускались.
