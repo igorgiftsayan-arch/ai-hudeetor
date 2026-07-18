@@ -10,6 +10,7 @@
 - DOC-002: модель экономики токенов, классификация AI-ошибок, политика возраста/данных и ADR критериев технического стека.
 - ARCH-001: системная, API, database, authentication, deployment и observability архитектура.
 - ADR-002—ADR-010: TypeScript stack, frontend, backend, PostgreSQL, auth, REST/async API, jobs, storage и test deployment.
+- ARCH-002: acceptance review архитектуры, разрешённые упрощения V0.1, риски и первый вертикальный срез.
 
 ### Changed
 
