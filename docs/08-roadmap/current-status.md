@@ -7,6 +7,7 @@
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
 - Следующий обязательный шаг: отдельной задачей реализовать VERT-001.4 — onboarding completion, starter grant, token ledger, первый вес и tracking initialization. Реализация пока не начата.
+- Runtime verification policy: local Codex runtime может отличаться от baseline; Docker/test server остаётся authoritative средой final verification.
 
 ## Решения ARCH-001
 

@@ -23,6 +23,10 @@ source_verification: true
 
 Прямые зависимости и инструменты BOOT-001 фиксируются точными версиями в manifest/lockfile; воспроизводимая установка использует frozen lockfile. Обновления выполняются отдельными задачами, а не неявно.
 
+### Verification authority
+
+Baseline определяет среду проекта, а не обязательную версию host runtime Codex. Если локальные Node.js/pnpm не соответствуют ему, разработка и независимые от версии проверки могут продолжаться без изменения manifest, lockfile или baseline. Authoritative final verification выполняется в Docker/test-server окружении с утверждёнными версиями: install с frozen lockfile, build, migrations, service health, integration/E2E и smoke. Несовпадение локального runtime документируется как ограничение среды, не как ошибка приложения.
+
 Источники: [Node.js release schedule](https://nodejs.org/en/about/previous-releases), [Node.js 24.18.0](https://nodejs.org/en/blog/release/v24.18.0), [pnpm installation](https://pnpm.io/installation), [pnpm 11.14.0](https://github.com/pnpm/pnpm/releases/tag/v11.14.0), [TypeScript 5.9](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-9.html), [TypeScript 6.0](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html).
 
 ### Development Frameworks and Libraries

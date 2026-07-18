@@ -50,6 +50,7 @@
 - Не хранить auth secrets, cookies или session state в browser Web Storage и не кешировать персональные/API/admin данные service worker.
 - Generated API contracts не редактировать вручную; изменение REST DTO сопровождается OpenAPI regeneration и contract check.
 - Не логировать raw DTO, cookies, authorization headers, секреты, PII, signed URLs, изображения или полный AI-контент.
+- Утверждённый runtime baseline остаётся обязательным. Несовпадение локальных версий Node.js или pnpm у Codex не является дефектом проекта и не блокирует реализацию, если проверка не требует точного runtime; такие проверки окончательно выполняются в совместимом Docker/test-server окружении.
 
 Для задач, затрагивающих токены, AI или персональные данные, дополнительно обязательны [модель экономики токенов](docs/02-domain/token-economics-model.md), [обработка AI-ошибок](docs/05-security/ai-error-handling.md) и [политика данных](docs/05-security/privacy-and-data-policy.md).
 
