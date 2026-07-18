@@ -7,8 +7,8 @@ Backlog реализует [дизайн первого вертикальног
 ```text
 VERT-001.1 contracts and decisions
 → VERT-001.2 identity and sessions
-→ VERT-001.3 onboarding, persona and weight
-→ VERT-001.4 token ledger
+→ VERT-001.3 onboarding, persona and minimal outbox
+→ VERT-001.4 completion, token ledger and first weight
 → VERT-001.5 AI operation and worker
 → VERT-001.6 feedback and analytics
 → VERT-001.7 web vertical flow
@@ -47,30 +47,31 @@ VERT-001.1 contracts and decisions
 - нейтральные auth errors, rate limit и PII-safe logging работают;
 - unit/API/integration tests проходят на PostgreSQL; generated OpenAPI client проверен; recovery и frontend auth UI не реализованы.
 
-## VERT-001.3 — onboarding, persona и первый вес
+## VERT-001.3 — onboarding, persona и minimal outbox
 
-**Цель:** зарегистрированный пользователь завершает минимальный onboarding, выбирает persona и сохраняет первый вес.
+**Цель:** зарегистрированный пользователь сохраняет profile setup, выбирает persona и достигает состояния `personaReady`; изменение persona создаёт durable domain event.
 
-**Область:** `profiles` и `tracking`, profile/preference/weight migrations, application use cases, REST contracts, ownership и события onboarding/persona/weight.
+**Область:** `profiles`, profile/preference migrations, application use cases, REST contracts, ownership, onboarding read model и `outbox_messages` storage для `profiles.ai_persona_selected.v1`. Нет consumer-ов, worker logic, AI Gateway, token effect или tracking.
 
 **Критерии готовности:**
 
 - backend авторитетно вычисляет onboarding state;
 - доступны ровно пять утверждённых persona;
-- weight validation/precision и ownership проверены;
-- first/repeated weight events различаются по правилам registry;
-- повтор команд не создаёт дублей; cross-user access скрыт.
+- state заканчивается на `personaReady`, без `completed` и стартового начисления;
+- фактическая смена persona атомарно сохраняет один outbox event, а natural retry не создаёт дубль;
+- consumer и delivery не запускаются; cross-user access скрыт.
 
-## VERT-001.4 — starter grant и token ledger
+## VERT-001.4 — completion, starter grant и первый вес
 
-**Цель:** после onboarding пользователь ровно один раз получает 100 токенов, а ledger безопасно поддерживает reserve/confirm/refund и чтение баланса.
+**Цель:** пользователь завершает onboarding, ровно один раз получает 100 токенов, сохраняет первый вес и получает инициализированный tracking state; ledger безопасно поддерживает reserve/confirm/refund и чтение баланса.
 
-**Область:** `token-economy`, wallets/transactions/action-prices migrations, locking/constraints/idempotency, onboarding coordination, balance API и tests.
+**Область:** `token-economy` и `tracking`, wallets/transactions/action-prices/weight migrations, locking/constraints/idempotency, onboarding completion coordination, balance/weight API и tests.
 
 **Критерии готовности:**
 
 - completion + starter grant + outbox атомарны;
 - повтор completion/grant не начисляет токены повторно;
+- первый вес и tracking initialization follow approved ownership, validation и idempotency rules;
 - баланс выводится из ledger и никогда не отрицателен, включая concurrent tests;
 - цены читаются из управляемых данных, не из application code;
 - reserve/confirm/refund идемпотентны; `starter_tokens_added` и balance events корректны.
@@ -140,7 +141,7 @@ VERT-001.1 contracts and decisions
 
 - VERT-001.1 блокирует все миграции и публичные контракты.
 - VERT-001.2 блокирует защищённые пользовательские сценарии.
-- VERT-001.3 и внутренняя часть VERT-001.4 могут разрабатываться после identity, но атомарная onboarding completion требует их интеграции.
+- VERT-001.3 завершается на `personaReady`; VERT-001.4 следует за ним и объединяет onboarding completion, starter grant и первый вес в утверждённом порядке.
 - VERT-001.5 зависит от ledger reserve/confirm/refund; fake provider разрешён только для tests.
 - VERT-001.6 зависит от assistant messages и outbox.
 - VERT-001.7 начинается с утверждённых generated contracts и развивается инкрементально, но full flow зависит от .2—.6.

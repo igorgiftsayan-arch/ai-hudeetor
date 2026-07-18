@@ -1,12 +1,12 @@
 # Текущий статус
 
-- Дата: 2026-07-18
-- Текущая задача: VERT-001.2 — identity и server-side sessions завершены.
+- Дата: 2026-07-19
+- Текущая задача: VERT-001.3 — технический дизайн принят; реализация profile/persona и minimal outbox ещё не начата.
 - Код приложения: scaffold web/API/worker и минимальный backend identity module.
 - AI, токены, вес, profile personalization, платежи и рефералы: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующий обязательный шаг: подтвердить sequencing VERT-001.3/001.4 из [design review](../01-architecture/vertical-slices/VERT-001.3-design-review.md), затем отдельной задачей начать profile/persona onboarding. Реализация пока не начата.
+- Следующий обязательный шаг: отдельной задачей реализовать profile/persona onboarding до `personaReady` и минимальный transactional outbox storage согласно [design review](../01-architecture/vertical-slices/VERT-001.3-design-review.md). Реализация пока не начата.
 
 ## Решения ARCH-001
 
@@ -102,5 +102,5 @@ Test-server run выявил CJS transform error из-за top-level `await` в 
 
 - Подготовлен [технический дизайн onboarding/profile state](../01-architecture/vertical-slices/VERT-001.3-design-review.md) без кода и миграций.
 - `users.onboarding_status` остаётся единственным persisted state machine; `profiles` владеет criteria, но не получает прямой доступ к identity repository/table.
-- Найдено sequencing-противоречие: `completed` требует атомарный starter grant из VERT-001.4, поэтому profile/persona этап безопасно завершается `personaReady`; первый вес следует после VERT-001.4 либо отдельного решения.
-- До implementation нужны решения о minimal transactional outbox и порядке tracking task. AI Gateway, token ledger, первый вес и frontend не запускались.
+- Принят scope: VERT-001.3 безопасно завершается `personaReady`; VERT-001.4 включает `completed`, starter grant, первый вес и tracking initialization.
+- Принят minimal transactional outbox: VERT-001.3 хранит и атомарно записывает `profiles.ai_persona_selected.v1` без consumer-ов, worker logic, AI Gateway или токенов. AI Gateway, token ledger, первый вес и frontend не запускались.

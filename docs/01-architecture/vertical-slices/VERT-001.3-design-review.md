@@ -13,7 +13,7 @@
 - пользователь может пройти profile и persona этапы до состояния `personaReady`;
 - VERT-001.3 **не** переводит пользователя в `completed` и не выдаёт стартовые 100 токенов;
 - полный переход `personaReady → completed` остаётся частью VERT-001.4, потому что контракт требует атомарность completion, starter grant и backend event;
-- первый вес не является зависимостью для profile/persona state. Его таблица и контракт спроектированы ниже, но миграция и endpoint требуют отдельного подтверждения после VERT-001.4 либо явного пересмотра порядка backlog.
+- VERT-001.4 включает завершение onboarding, стартовое начисление 100 токенов, первый ввод веса и инициализацию tracking. Первый вес не является зависимостью profile/persona state и не реализуется в VERT-001.3.
 
 Такое разделение не меняет пользовательскую цель V1: оно исключает временное состояние «onboarding completed без стартовых токенов».
 
@@ -107,9 +107,11 @@ Exact `numeric` исключает float. Ordering history: `recorded_at DESC, i
 2. insert current `aiWellnessNotice` evidence, если его ещё нет;
 3. identity application port переводит `registered → profileReady` после проверки prerequisites.
 
-`SavePersonaPreference` — отдельная transaction boundary: upsert `ai_preferences`, identity port переводит `profileReady → personaReady`, а при фактическом изменении записывается `ai_persona_selected` в transactional outbox. Повтор с одинаковым resource не создаёт второй backend event.
+`SavePersonaPreference` — отдельная transaction boundary: upsert `ai_preferences`, identity port переводит `profileReady → personaReady`, а при фактическом изменении записывается domain event `profiles.ai_persona_selected.v1` в transactional outbox. Этот internal event является durable-источником для зарегистрированного product event `ai_persona_selected`. Повтор с одинаковым resource не создаёт второй event.
 
-Для этого VERT-001.3 должен включить минимальную platform-table `outbox_messages` либо получить её из отдельной предварительной infrastructure-задачи. Redis/BullMQ не являются доказательством committed события.
+VERT-001.3 включает минимальную platform-table `outbox_messages`. В той же PostgreSQL transaction, что preference и status transition, сохраняется только запись события: `id`, `event_type`, `aggregate_type`, `aggregate_id`, минимальный `payload jsonb`, `occurred_at`, `available_at`, `published_at`, `attempts` и `created_at`. Для дальнейшей выборки ожидающих записей создаётся индекс `idx_outbox_messages_pending` по состоянию публикации и времени доступности. Payload ограничен `userId`, `personaId`, `context=onboarding` и версией события; в нём запрещены email, timezone, consent evidence, cookies и другие PII.
+
+В VERT-001.3 нет consumer, worker logic, публикации в Redis/BullMQ, AI Gateway, token effect или retry/reconciliation processing. Redis/BullMQ не являются доказательством committed события; они подключаются позднее к уже сохранённым outbox records.
 
 ## 5. API design
 
@@ -152,7 +154,7 @@ AiPreferenceRequest
 1. После registration или login `GET /users/me` показывает `registered`; UI открывает onboarding.
 2. Frontend отправляет `onboarding_started` с `entryPoint=registration|login|resumeOnboarding` ровно при первом показе в session.
 3. User читает wellness notice, явно принимает его и сохраняет timezone. Backend сохраняет profile/consent и при соблюдении prerequisites возвращает `profileReady`; frontend отправляет `onboarding_step_completed` для `legal` и `timezone` только после successful response.
-4. User выбирает persona. Backend сохраняет preference, возвращает `personaReady` и, только при фактическом изменении, создаёт backend event `ai_persona_selected`. Frontend отправляет `onboarding_step_completed` для `persona`.
+4. User выбирает persona. Backend сохраняет preference, возвращает `personaReady` и, только при фактическом изменении, атомарно создаёт outbox domain event `profiles.ai_persona_selected.v1` для последующей публикации `ai_persona_selected`. Frontend отправляет `onboarding_step_completed` для `persona`.
 5. UI показывает, что базовая настройка завершена, но не делает claim о token grant и не открывает AI action. Следующая серверная команда — VERT-001.4 completion + starter grant.
 6. При новом login незавершённый user получает authoritative state из `GET /users/me/onboarding` и продолжает с первой незавершённой ступени. Frontend не выводит state из local storage.
 
@@ -164,9 +166,9 @@ AiPreferenceRequest
 |---|---|---|---|
 | `onboarding_started` | frontend | первый показ flow в session | `entry_point` |
 | `onboarding_step_completed` | frontend | после server success | `step_id`, `step_index` |
-| `ai_persona_selected` | backend | preference реально изменилась и committed | `persona_id`, `context=onboarding` |
+| `ai_persona_selected` | backend | preference реально изменилась и committed; VERT-001.3 сохраняет его как `profiles.ai_persona_selected.v1` в outbox | `persona_id`, `context=onboarding` |
 
-Не отправляются `onboarding_completed`, `starter_tokens_added`, `first_weight_added` и `weight_added`: их business triggers не происходят в scope profile/persona. Event payload не содержит timezone, email, consent version, точный вес, cookie или session secret.
+В VERT-001.3 product event ещё не доставляется consumer-ом: сохраняется только его durable domain-event source. Не отправляются `onboarding_completed`, `starter_tokens_added`, `first_weight_added` и `weight_added`: их business triggers перенесены в VERT-001.4. Event payload не содержит timezone, email, consent version, точный вес, cookie или session secret.
 
 ## 8. Test strategy и ручная приёмка
 
@@ -204,13 +206,16 @@ AiPreferenceRequest
 |---|---|---|---|
 | VERT-001.3.1 | profile state foundation | `profiles` module, `user_profiles`, IANA validator, profile/consent use case, state port | `registered → profileReady` проходит атомарно и owner-scoped |
 | VERT-001.3.2 | persona preference | `ai_preferences`, persona use case, REST DTO/OpenAPI | только пять persona; natural retry не создаёт дубль |
-| VERT-001.3.3 | onboarding read model и analytics persistence | onboarding resource, minimal outbox record for `ai_persona_selected`, tests | resume flow authoritatively восстановим; event durable |
-| VERT-001.4 | completion и starter grant | token economy + wallet/ledger + completion command | `personaReady → completed` и `+100` атомарны |
-| Следующая tracking задача | first weight | `tracking`, `weight_entries`, idempotency, first-weight events | weight rules и ownership применены; completion sequencing подтверждена |
+| VERT-001.3.3 | onboarding read model и outbox storage | onboarding resource, `outbox_messages`, запись `profiles.ai_persona_selected.v1`, tests | resume flow authoritatively восстановим; event durable; consumers и worker отсутствуют |
+| VERT-001.4 | completion, starter grant и первый вес | token economy + wallet/ledger + completion command + `tracking`/`weight_entries` initialization | `personaReady → completed`, `+100` и первый вес реализованы в согласованном порядке |
 
 ## 10. Открытые решения перед реализацией
 
-1. **Backlog sequencing:** текущий заголовок VERT-001.3 обещает первый вес, но принятый flow требует `completed` перед весом, а `completed` зависит от VERT-001.4 token grant. Рекомендация — выполнить VERT-001.3 только до `personaReady`, затем VERT-001.4, затем отдельную tracking-задачу. Требуется подтверждение перед изменением backlog.
-2. **Outbox bootstrap:** `ai_persona_selected` по контракту backend и должен быть durable. Рекомендация — добавить минимальный `outbox_messages` в VERT-001.3; publishing worker остаётся VERT-001.6. Требуется подтвердить точное место этой platform migration.
-3. **IANA source:** зафиксировать library/runtime source для timezone validation в implementation task; fallback на free-form string запрещён.
-4. **UI/UX:** UX specification отсутствует. Архитектуру это не блокирует, но до frontend работы нужны тексты wellness notice, порядок экранов и доступные состояния ошибки/retry.
+1. **IANA source:** зафиксировать library/runtime source для timezone validation в implementation task; fallback на free-form string запрещён.
+2. **UI/UX:** UX specification отсутствует. Архитектуру это не блокирует, но до frontend работы нужны тексты wellness notice, порядок экранов и доступные состояния ошибки/retry.
+
+## 11. Принятые решения 2026-07-19
+
+- VERT-001.3 заканчивается в `personaReady`; переход в `completed` в этой задаче запрещён.
+- VERT-001.4 включает completion onboarding, одноразовое стартовое начисление 100 токенов, первый ввод веса и инициализацию tracking.
+- Минимальный transactional outbox реализуется в VERT-001.3 только как PostgreSQL storage и атомарная запись `profiles.ai_persona_selected.v1`; consumer-ы, worker logic, AI Gateway и токенная логика не входят в его scope.
