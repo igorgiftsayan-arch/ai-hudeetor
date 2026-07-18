@@ -36,7 +36,7 @@
 | `free_tokens_requested` | запрос токенов | запрос сохранён | `request_id`, `reason_code` | backend |
 | `referral_link_shared` | реферальный экран | системный share вызван | `share_channel` | frontend |
 | `referred_user_registered` | регистрация | валидная связь приглашения сохранена | `referral_id`, `inviter_id` | backend |
-| `referral_threshold_completed` | реферальный расчёт | все условия впервые выполнены | `referral_id`, `days_active`, `weight_entries`, `ai_uses` | backend |
+| `referral_threshold_completed` | реферальный расчёт | все условия впервые выполнены в 10-дневном окне | `referral_id`, `days_active`, `weight_entries`, `successful_ai_actions` | backend |
 | `referral_reward_granted` | кошелёк/реферал | обе награды подтверждены | `referral_id`, `amount_each`, `inviter_transaction_id`, `invitee_transaction_id` | backend |
 
-`persona_id`, `scenario_id`, `reason_code`, `error_class`, `entry_point`, `input_type` и `share_channel` используют закрытые словари, которые должны быть описаны вместе с реализацией. Значения пользовательского веса, тексты AI и feedback не являются параметрами событий.
+`persona_id`, `scenario_id`, `reason_code`, `error_class`, `entry_point`, `input_type` и `share_channel` используют закрытые словари, которые должны быть описаны вместе с реализацией. `ai_response_error` означает только техническую ошибку по [классификации](../05-security/ai-error-handling.md); бизнес-неуспех отражается feedback-событиями. Значения пользовательского веса, тексты AI и feedback не являются параметрами событий.
