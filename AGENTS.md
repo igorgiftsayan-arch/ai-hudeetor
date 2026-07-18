@@ -10,6 +10,8 @@
 4. [Доменная модель](docs/02-domain/domain-model.md)
 5. [Реестр событий](docs/04-analytics/event-registry.md)
 6. [Definition of Done](docs/06-development/definition-of-done.md)
+7. [Техническая архитектура](docs/01-architecture/system-architecture.md)
+8. [Структура репозитория](docs/01-architecture/repository-structure.md)
 
 Дополнительно прочитать документы затрагиваемой области и проверить [текущий статус](docs/08-roadmap/current-status.md).
 
@@ -32,6 +34,15 @@
 - Не выбирать AI-провайдера без отдельного архитектурного решения.
 - Не хранить секреты в репозитории.
 - Не обрабатывать аккаунты пользователей младше 18 лет в V1.
+- Начинать реализацию с application use case и явно определять транзакционную границу.
+- Не размещать бизнес-логику в `apps/*`; API и worker — только composition roots.
+- Не импортировать repositories, infrastructure или ORM entities чужого backend-модуля.
+- Не обходить NestJS API через Next.js Route Handlers или Server Actions.
+- Не использовать Redis, очередь или аналитику как источник бизнес-истины.
+- Для критических операций добавлять idempotency и ограничения PostgreSQL.
+- Соблюдать naming/structure/API/event patterns из [технической архитектуры](docs/01-architecture/system-architecture.md).
+- Любое архитектурное отклонение документировать новым/обновлённым ADR до реализации.
+- Не выбирать ORM, AI-провайдера или конкретные инфраструктурные библиотеки вне соответствующей задачи.
 
 Для задач, затрагивающих токены, AI или персональные данные, дополнительно обязательны [модель экономики токенов](docs/02-domain/token-economics-model.md), [обработка AI-ошибок](docs/05-security/ai-error-handling.md) и [политика данных](docs/05-security/privacy-and-data-policy.md).
 

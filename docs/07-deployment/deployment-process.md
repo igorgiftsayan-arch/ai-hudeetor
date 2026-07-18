@@ -10,4 +10,4 @@
 8. При ошибке остановить rollout и применить документированный rollback/restore.
 9. Записать версию, время, исполнителя, результат и инциденты.
 
-Конкретный CI/CD и стратегия rollout будут выбраны после ARCH-001.
+Архитектурный flow зафиксирован в [deployment-architecture.md](../01-architecture/deployment-architecture.md); конкретный CI provider и scripts выбираются в BOOT-001.
