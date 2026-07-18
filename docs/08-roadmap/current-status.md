@@ -1,12 +1,12 @@
 # Текущий статус
 
 - Дата: 2026-07-18
-- Текущая задача: BOOT-001.2 — доступ к test server проверен на уровне доступной конфигурации; target и credentials не предоставлены, Docker runtime остаётся неподтверждённым.
+- Текущая задача: BOOT-001 завершён; Docker runtime и deployment на test server подтверждены.
 - Код приложения: создан только технический scaffold web/API/worker и infrastructure adapters.
 - Бизнес-модули, auth, AI, токены, пользователи, платежи и рефералы: отсутствуют.
-- Тестовый сервер: ещё не настроен.
+- Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующий обязательный шаг: завершить [runtime verification](../07-deployment/runtime-verification.md) на машине с Docker. Только затем готовить VERT-001.
+- Следующий обязательный шаг: подготовить и отдельно утвердить scope VERT-001; реализация VERT-001 ещё не начата.
 
 ## Решения ARCH-001
 
@@ -41,7 +41,7 @@
 - Созданы Dockerfile/Compose для web/API/worker/PostgreSQL/Redis, migration service и smoke commands.
 - S3, CI, production deployment и любые продуктовые функции не создавались.
 
-Локальные tests/typecheck/build выполняются. Docker CLI отсутствует в рабочей среде Codex, поэтому Compose validated только синтаксически, а test server не развёрнут и runtime smoke пяти сервисов остаётся обязательным перед приёмкой deployment.
+Локальные tests/typecheck/build выполняются. Финальная Docker-проверка выполнена на test server; детали зафиксированы в [runtime verification](../07-deployment/runtime-verification.md).
 
 ## BOOT-001.1 runtime verification
 
@@ -51,12 +51,19 @@
 - Исправлен build defect API/worker, связанный с Nest `deleteOutDir` и incremental TypeScript emit; повторные build сохраняют entrypoints.
 - PostgreSQL, Redis, migrations, Compose readiness и `pnpm smoke` не проверены без Docker.
 
-BOOT-001 пока не считается полностью закрытым; VERT-001 не запускался.
+Эти локальные ограничения закрыты последующей проверкой на test server. VERT-001 не запускался.
 
-## BOOT-001.2 test-server access
+## BOOT-001.2 test-server runtime
 
-Локальный Docker/Compose отсутствует. SSH client и agent socket доступны, но hostname/alias, user, checkout path и credentials test server не настроены в проекте или среде. Без явного target сетевой доступ не проверялся и deployment не выполнялся. Требуемые входные данные и точные команды записаны в [runtime-verification.md](../07-deployment/runtime-verification.md).
+На test server подтверждены GitHub checkout, Docker Engine, Docker Compose, Docker Hub authentication, сборка images, PostgreSQL 17, Redis 8, Drizzle migration, API health, web HTTP `200`, worker health и deployment workflow. BOOT-001 полностью закрыт.
 
 ## BOOT-001.2 migration compatibility fix
 
-Test-server run выявил CJS transform error из-за top-level `await` в `database/migrate.ts`. Migration entrypoint переведён на async `main()` без изменения общего module strategy и без новых зависимостей. Локально подтверждено, что `tsx` проходит transform и доходит до PostgreSQL query; полный успех и повторяемость ожидают проверки командами `docker compose build migrate` и двукратным `docker compose --profile tools run --rm migrate` на test server. VERT-001 не запускался.
+Test-server run выявил CJS transform error из-за top-level `await` в `database/migrate.ts`. Migration entrypoint переведён на async `main()` без изменения общего module strategy и без новых зависимостей. Исправление проверено в migration container: Drizzle migration выполняется успешно.
+
+## Переход к VERT-001
+
+- Runtime-блокеров со стороны BOOT-001 не осталось.
+- Входная база: принятая архитектура, engineering baseline, работающий monorepo scaffold и проверенный test deployment.
+- Scope, acceptance criteria, затрагиваемые доменные модули, API, события и security requirements должны быть заданы отдельной задачей VERT-001.
+- До отдельного подтверждения продуктовая реализация не начинается.
