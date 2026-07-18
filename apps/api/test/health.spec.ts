@@ -38,7 +38,7 @@ describe('API health', () => {
     expect(response.status).toBe(404);
     expect(response.body).toEqual({
       error: {
-        code: 'not_found',
+        code: 'RESOURCE_NOT_FOUND',
         message: 'Resource not found',
         details: {},
         request_id: expect.any(String),

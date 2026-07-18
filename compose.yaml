@@ -45,6 +45,12 @@ services:
       API_CORS_ORIGIN: http://localhost:3000
       API_HOST: 0.0.0.0
       API_PORT: 3001
+      CSRF_SECRET: ${CSRF_SECRET:?CSRF_SECRET is required}
+      IDENTITY_SECURE_COOKIES: ${IDENTITY_SECURE_COOKIES:-true}
+      IDENTITY_TERMS_VERSION: ${IDENTITY_TERMS_VERSION:-test-v1}
+      IDENTITY_PRIVACY_VERSION: ${IDENTITY_PRIVACY_VERSION:-test-v1}
+      IDENTITY_LOGIN_MAX_ATTEMPTS: ${IDENTITY_LOGIN_MAX_ATTEMPTS:-5}
+      IDENTITY_LOGIN_WINDOW_SECONDS: ${IDENTITY_LOGIN_WINDOW_SECONDS:-900}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

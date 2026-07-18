@@ -1,12 +1,12 @@
 # Текущий статус
 
 - Дата: 2026-07-18
-- Текущая задача: BOOT-001 завершён; Docker runtime и deployment на test server подтверждены.
-- Код приложения: создан только технический scaffold web/API/worker и infrastructure adapters.
-- Бизнес-модули, auth, AI, токены, пользователи, платежи и рефералы: отсутствуют.
+- Текущая задача: VERT-001.2 — identity и server-side sessions завершены.
+- Код приложения: scaffold web/API/worker и минимальный backend identity module.
+- AI, токены, вес, profile personalization, платежи и рефералы: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующий обязательный шаг: подготовить и отдельно утвердить scope VERT-001; реализация VERT-001 ещё не начата.
+- Следующий обязательный шаг: отдельной задачей начать VERT-001.3 onboarding/persona/first weight по [final contracts](../01-architecture/vertical-slices/VERT-001-contracts.md). Реализация пока не начата.
 
 ## Решения ARCH-001
 
@@ -67,3 +67,33 @@ Test-server run выявил CJS transform error из-за top-level `await` в 
 - Входная база: принятая архитектура, engineering baseline, работающий monorepo scaffold и проверенный test deployment.
 - Scope, acceptance criteria, затрагиваемые доменные модули, API, события и security requirements должны быть заданы отдельной задачей VERT-001.
 - До отдельного подтверждения продуктовая реализация не начинается.
+
+## VERT-001-DESIGN
+
+- Описаны registration → onboarding → persona → weight → async AI → token ledger → response → feedback.
+- Определены границы identity, profiles, tracking, ai-companion, token-economy и analytics.
+- Подготовлены database/API proposals, AI success/refund/reconciliation flow, event mapping и testing strategy.
+- Реализация разбита на VERT-001.1—VERT-001.8 в [отдельном backlog](vert-001-backlog.md).
+- AI-провайдер не выбран; реальная AI-приёмка остаётся заблокированной до отдельного решения.
+- Код, migrations и инфраструктурные изменения в VERT-001-DESIGN не создавались.
+
+## VERT-001.1 contracts
+
+- Зафиксированы минимальные onboarding fields, consent types, states, validation и enums без лишних персональных данных.
+- Зафиксированы контракты веса, параметров тела и простой активности; body/activity не входят в ближайшую VERT-001.2 реализацию.
+- Конкретизированы properties событий существующего event registry и закрытые словари первого среза.
+- Принят append-only token ledger без balance snapshot с PostgreSQL lock и идемпотентными reserve/confirm/refund.
+- Зафиксированы AI lifecycle, persona IDs, provider-neutral/fake adapter contracts и error states без выбора provider.
+- Зафиксированы REST endpoints, DTO, ownership/idempotency и error matrix.
+- Код и migrations не создавались. Следующая разрешённая задача — VERT-001.2 после отдельного подтверждения.
+
+## VERT-001.2 identity/session
+
+- Реализованы registration, login, refresh rotation/reuse detection, current identity и logout только через утверждённые REST endpoints.
+- Password хранится как Argon2id hash; opaque access/refresh secrets хранятся в PostgreSQL только как SHA-256 hashes.
+- Registration/credentials/consents/sessions создаются одной PostgreSQL transaction; replay key не дублирует user и заменяет только связанную registration session family.
+- Cookie baseline использует HttpOnly/Secure/SameSite, CSRF double-submit с Origin/Referer validation и server-side session truth.
+- Login rate limit использует hashed IP + normalized-email scope в Redis; PostgreSQL остаётся источником session truth.
+- Migration `0001_identity_sessions.sql`, OpenAPI generated client, unit/API/PostgreSQL integration tests и [ручная приёмка](../06-development/vert-001-2-manual-acceptance.md) добавлены.
+- Новые analytics events не создавались: identity registration/login событий нет в утверждённом event registry.
+- Test-server deployment не входил в эту задачу; полный runtime acceptance запланирован в VERT-001.8.

@@ -8,11 +8,44 @@ const baseSchema = z.object({
   REQUEST_ID_HEADER: z.string().min(1).default('x-request-id'),
 });
 
-export const apiConfigSchema = baseSchema.extend({
-  API_CORS_ORIGIN: z.url().default('http://localhost:3000'),
-  API_HOST: z.string().min(1).default('0.0.0.0'),
-  API_PORT: z.coerce.number().int().positive().default(3001),
-});
+export const apiConfigSchema = baseSchema
+  .extend({
+    API_CORS_ORIGIN: z.url().default('http://localhost:3000'),
+    API_HOST: z.string().min(1).default('0.0.0.0'),
+    API_PORT: z.coerce.number().int().positive().default(3001),
+    CSRF_SECRET: z.string().min(32),
+    IDENTITY_ACCESS_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(900),
+    IDENTITY_REFRESH_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(2_592_000),
+    IDENTITY_SECURE_COOKIES: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    IDENTITY_TERMS_VERSION: z.string().min(1),
+    IDENTITY_PRIVACY_VERSION: z.string().min(1),
+    IDENTITY_LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+    IDENTITY_LOGIN_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(900),
+  })
+  .superRefine((config, context) => {
+    if (config.APP_ENV === 'production' && !config.IDENTITY_SECURE_COOKIES) {
+      context.addIssue({
+        code: 'custom',
+        path: ['IDENTITY_SECURE_COOKIES'],
+        message: 'Secure identity cookies are required in production',
+      });
+    }
+  });
 
 export const workerConfigSchema = baseSchema.extend({
   WORKER_HEALTH_PORT: z.coerce.number().int().positive().default(3002),

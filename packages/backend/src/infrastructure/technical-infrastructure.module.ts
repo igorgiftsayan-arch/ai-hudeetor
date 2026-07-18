@@ -1,4 +1,4 @@
-import { Module, type DynamicModule } from '@nestjs/common';
+import { Global, Module, type DynamicModule } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { RedisService } from './redis/redis.service';
 
@@ -7,6 +7,7 @@ export interface TechnicalInfrastructureOptions {
   redisUrl: string;
 }
 
+@Global()
 @Module({})
 export class TechnicalInfrastructureModule {
   static forRoot(options: TechnicalInfrastructureOptions): DynamicModule {

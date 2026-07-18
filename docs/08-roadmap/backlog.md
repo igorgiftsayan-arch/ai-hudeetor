@@ -9,11 +9,13 @@
 
 ## Перед первым вертикальным продуктовым срезом
 
-- Выполнить Docker Compose runtime smoke на машине с Docker: migrations, PostgreSQL/Redis readiness, API/worker/web health.
-- Выбрать точные поля регистрации/онбординга отдельной продуктовой задачей.
+- Docker Compose runtime smoke, migrations, PostgreSQL/Redis readiness и API/worker/web health подтверждены в BOOT-001.
+- [Дизайн VERT-001](../01-architecture/vertical-slices/VERT-001-design.md) и [контракты VERT-001.1](../01-architecture/vertical-slices/VERT-001-contracts.md) подготовлены; следующая отдельная задача — VERT-001.2 identity/server sessions.
 - Реализовать только необходимые identity/profile boundaries вместе с первым сценарием, без пустых доменных модулей.
 - Выбрать канал password recovery до реализации recovery flow.
 - Выбрать S3 implementation до первого upload-сценария.
+
+Декомпозиция первого продуктового среза находится в [VERT-001 backlog](vert-001-backlog.md). Его задачи не запускаются без отдельного подтверждения.
 
 ## Решено в DOC-002
 

@@ -5,6 +5,8 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { CsrfService } from '@atlas/backend';
+import cookieParser from 'cookie-parser';
 import { ErrorEnvelopeFilter } from '../http/error-envelope.filter';
 
 export function configureApplication(app: INestApplication): void {
@@ -13,6 +15,8 @@ export function configureApplication(app: INestApplication): void {
     credentials: true,
     origin: process.env.API_CORS_ORIGIN ?? 'http://localhost:3000',
   });
+  app.use(cookieParser());
+  app.use(app.get(CsrfService).protect);
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
@@ -20,6 +24,7 @@ export function configureApplication(app: INestApplication): void {
   });
   app.useGlobalPipes(
     new ValidationPipe({
+      errorHttpStatusCode: 422,
       forbidNonWhitelisted: true,
       transform: true,
       whitelist: true,

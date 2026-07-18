@@ -4,6 +4,83 @@
  * ATLAS API
  * OpenAPI spec version: 1
  */
+export type ConsentAcceptanceDtoConsentType = typeof ConsentAcceptanceDtoConsentType[keyof typeof ConsentAcceptanceDtoConsentType];
+
+
+export const ConsentAcceptanceDtoConsentType = {
+  terms: 'terms',
+  privacy: 'privacy',
+} as const;
+
+export interface ConsentAcceptanceDto {
+  consentType: ConsentAcceptanceDtoConsentType;
+  documentVersion: string;
+  accepted: true;
+}
+
+export interface RegistrationRequestDto {
+  /** @maxLength 254 */
+  email: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  password: string;
+  ageConfirmed: true;
+  /**
+     * @minItems 2
+     * @maxItems 2
+     */
+  consents: ConsentAcceptanceDto[];
+}
+
+export type RegistrationResourceDtoOnboardingStatus = typeof RegistrationResourceDtoOnboardingStatus[keyof typeof RegistrationResourceDtoOnboardingStatus];
+
+
+export const RegistrationResourceDtoOnboardingStatus = {
+  registered: 'registered',
+} as const;
+
+export interface RegistrationResourceDto {
+  userId: string;
+  onboardingStatus: RegistrationResourceDtoOnboardingStatus;
+  sessionExpiresAt: string;
+  csrfToken: string;
+}
+
+export interface CreateSessionRequestDto {
+  /** @maxLength 254 */
+  email: string;
+  /** @maxLength 128 */
+  password: string;
+}
+
+export type SessionResourceDtoOnboardingStatus = typeof SessionResourceDtoOnboardingStatus[keyof typeof SessionResourceDtoOnboardingStatus];
+
+
+export const SessionResourceDtoOnboardingStatus = {
+  registered: 'registered',
+} as const;
+
+export interface SessionResourceDto {
+  userId: string;
+  expiresAt: string;
+  onboardingStatus: SessionResourceDtoOnboardingStatus;
+  csrfToken: string;
+}
+
+export type CurrentUserResourceDtoOnboardingStatus = typeof CurrentUserResourceDtoOnboardingStatus[keyof typeof CurrentUserResourceDtoOnboardingStatus];
+
+
+export const CurrentUserResourceDtoOnboardingStatus = {
+  registered: 'registered',
+} as const;
+
+export interface CurrentUserResourceDto {
+  userId: string;
+  onboardingStatus: CurrentUserResourceDtoOnboardingStatus;
+}
+
 export type healthControllerLivenessApiV1Response200 = {
   data: void
   status: 200
@@ -86,4 +163,204 @@ export const healthControllerReadinessApiV1 = async ( options?: RequestInit): Pr
 
   const data: healthControllerReadinessApiV1Response['data'] = body ? JSON.parse(body) : undefined
   return { data, status: res.status, headers: res.headers } as healthControllerReadinessApiV1Response
+}
+
+
+
+export type identityControllerRegisterApiV1Response201 = {
+  data: RegistrationResourceDto
+  status: 201
+}
+
+export type identityControllerRegisterApiV1ResponseSuccess = (identityControllerRegisterApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerRegisterApiV1Response = (identityControllerRegisterApiV1ResponseSuccess)
+
+export const getIdentityControllerRegisterApiV1Url = () => {
+
+
+
+
+  return `/api/v1/registrations`
+}
+
+export const identityControllerRegisterApiV1 = async (registrationRequestDto: RegistrationRequestDto, options?: RequestInit): Promise<identityControllerRegisterApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerRegisterApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(registrationRequestDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerRegisterApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerRegisterApiV1Response
+}
+
+
+
+export type identityControllerLoginApiV1Response201 = {
+  data: SessionResourceDto
+  status: 201
+}
+
+export type identityControllerLoginApiV1ResponseSuccess = (identityControllerLoginApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerLoginApiV1Response = (identityControllerLoginApiV1ResponseSuccess)
+
+export const getIdentityControllerLoginApiV1Url = () => {
+
+
+
+
+  return `/api/v1/sessions`
+}
+
+export const identityControllerLoginApiV1 = async (createSessionRequestDto: CreateSessionRequestDto, options?: RequestInit): Promise<identityControllerLoginApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerLoginApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSessionRequestDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerLoginApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerLoginApiV1Response
+}
+
+
+
+export type identityControllerRefreshApiV1Response201 = {
+  data: SessionResourceDto
+  status: 201
+}
+
+export type identityControllerRefreshApiV1ResponseSuccess = (identityControllerRefreshApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerRefreshApiV1Response = (identityControllerRefreshApiV1ResponseSuccess)
+
+export const getIdentityControllerRefreshApiV1Url = () => {
+
+
+
+
+  return `/api/v1/sessions/refreshes`
+}
+
+export const identityControllerRefreshApiV1 = async ( options?: RequestInit): Promise<identityControllerRefreshApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerRefreshApiV1Url(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerRefreshApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerRefreshApiV1Response
+}
+
+
+
+export type identityControllerLogoutCurrentApiV1Response204 = {
+  data: void
+  status: 204
+}
+
+export type identityControllerLogoutCurrentApiV1ResponseSuccess = (identityControllerLogoutCurrentApiV1Response204) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerLogoutCurrentApiV1Response = (identityControllerLogoutCurrentApiV1ResponseSuccess)
+
+export const getIdentityControllerLogoutCurrentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/sessions/current`
+}
+
+export const identityControllerLogoutCurrentApiV1 = async ( options?: RequestInit): Promise<identityControllerLogoutCurrentApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerLogoutCurrentApiV1Url(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerLogoutCurrentApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as identityControllerLogoutCurrentApiV1Response
+}
+
+
+
+export type identityControllerCurrentApiV1Response200 = {
+  data: CurrentUserResourceDto
+  status: 200
+}
+
+export type identityControllerCurrentApiV1ResponseSuccess = (identityControllerCurrentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerCurrentApiV1Response = (identityControllerCurrentApiV1ResponseSuccess)
+
+export const getIdentityControllerCurrentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me`
+}
+
+export const identityControllerCurrentApiV1 = async ( options?: RequestInit): Promise<identityControllerCurrentApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerCurrentApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerCurrentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerCurrentApiV1Response
 }

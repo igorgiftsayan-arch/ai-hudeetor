@@ -19,7 +19,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx database/migrate.ts",
     "db:check": "tsx database/check-connection.ts",
-    "contracts:generate": "pnpm --filter @atlas/api openapi:export && orval --config orval.config.ts",
+    "contracts:generate": "pnpm --filter @atlas/backend build && pnpm --filter @atlas/api openapi:export && orval --config orval.config.ts",
     "contracts:check": "pnpm contracts:generate && git diff --exit-code -- packages/api-contracts/generated",
     "smoke": "tsx scripts/smoke-test.ts"
   },

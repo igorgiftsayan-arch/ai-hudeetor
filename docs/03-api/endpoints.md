@@ -14,3 +14,7 @@ ARCH-001 зафиксировал REST API `/api/v1`, но feature URL и payloa
 | Admin | цены, разрешённые ручные действия, аудит |
 
 Каждый endpoint перед реализацией обязан описать метод, путь, auth/role, request/response, ошибки, идемпотентность, права владения и события из [реестра](../04-analytics/event-registry.md).
+
+Первый конкретизированный набор endpoints, DTO и ошибок зафиксирован в [контрактах VERT-001.1](../01-architecture/vertical-slices/VERT-001-contracts.md#7-api-contract).
+
+VERT-001.2 реализует `POST /api/v1/registrations`, `POST /api/v1/sessions`, `POST /api/v1/sessions/refreshes`, `DELETE /api/v1/sessions/current` и `GET /api/v1/users/me`. Registration idempotency повторно использует account business result, но заменяет только session family соответствующей registration attempt вместо хранения обратимых session secrets. Login ограничен пятью ошибками на SHA-256 scope IP + normalized email за 15 минут через Redis; session truth остаётся в PostgreSQL.
