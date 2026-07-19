@@ -285,6 +285,20 @@ export class PostgresIdentityRepository extends IdentityRepository {
     return status;
   }
 
+  async advanceToCompleted(
+    client: PoolClient,
+    userId: string,
+  ): Promise<OnboardingStatus> {
+    const result = await client.query<{ onboarding_status: OnboardingStatus }>(
+      `update users set onboarding_status = case when onboarding_status = 'personaReady' then 'completed' else onboarding_status end,
+          updated_at = now() where id = $1 and status = 'active' returning onboarding_status`,
+      [userId],
+    );
+    const status = result.rows[0]?.onboarding_status;
+    if (!status) throw identityErrors.sessionInvalid();
+    return status;
+  }
+
   private async insertSession(
     client: PoolClient,
     input: CreateIdentitySessionInput,

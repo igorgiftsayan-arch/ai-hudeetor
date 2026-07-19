@@ -7,7 +7,9 @@ import { ConfigModule } from '@nestjs/config';
 import {
   IdentityModule,
   ProfilesModule,
+  TokenEconomyModule,
   TechnicalInfrastructureModule,
+  TrackingModule,
 } from '@atlas/backend';
 import { loadApiConfig } from './config/load-config';
 import { HealthController } from './health/health.controller';
@@ -44,6 +46,8 @@ const config = loadApiConfig();
     ProfilesModule.forRoot({
       aiWellnessNoticeVersion: config.IDENTITY_AI_WELLNESS_NOTICE_VERSION,
     }),
+    TokenEconomyModule.forRoot(),
+    TrackingModule.forRoot(),
   ],
   controllers: [HealthController],
 })

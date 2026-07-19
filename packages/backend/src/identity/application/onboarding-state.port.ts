@@ -11,4 +11,9 @@ export abstract class OnboardingStatePort {
     client: PoolClient,
     userId: string,
   ): Promise<OnboardingStatus>;
+
+  abstract advanceToCompleted(
+    client: PoolClient,
+    userId: string,
+  ): Promise<OnboardingStatus>;
 }

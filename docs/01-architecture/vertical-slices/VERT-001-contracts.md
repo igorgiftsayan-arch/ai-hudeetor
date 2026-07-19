@@ -386,7 +386,7 @@ AiPreferenceRequest
   responseLength?: ResponseLength = medium
 
 CompleteOnboardingRequest
-  expectedStarterTokens: 100
+  // empty object; server is the sole source of the starter grant amount
 
 CreateWeightEntryRequest
   weightKg: decimal(4,1)
@@ -417,7 +417,7 @@ UpsertAiFeedbackRequest
   comment?: string // 1–1000 plain-text characters
 ```
 
-`expectedStarterTokens` и `expectedPriceTokens` защищают UX от незаметного расхождения, но backend никогда не принимает их как источник цены. `CompleteOnboardingRequest` может быть пустым после contract generation, если expected starter amount возвращается onboarding resource; до реализации выбирается один вариант без изменения бизнес-правила 100.
+`expectedPriceTokens` защищает UX от незаметного расхождения, но backend никогда не принимает его как источник цены. `CompleteOnboardingRequest` — пустая команда: сумма starter grant не передаётся клиентом и возвращается в onboarding resource. Сервер является единственным источником фиксированного правила `100`.
 
 ### 7.3 Resource shapes
 
@@ -427,6 +427,7 @@ UpsertAiFeedbackRequest
 - `SessionResource`: `userId`, `expiresAt`, `onboardingStatus`.
 - `CurrentUserResource`: `userId`, `onboardingStatus`.
 - `OnboardingResource`: `status`, `completedSteps`, `requiredSteps`, current consent versions, preference summary, `starterTokensAmount=100`.
+- `OnboardingCompletionResource`: `onboardingStatus=completed`, `starterTokensGranted=100`, `tokenBalance`.
 - `UserProfileResource`: `userId`, `timezone`, `onboardingStatus`.
 - `AiPreferenceResource`: persona/strictness/responseLength.
 - Tracking resources: normalized value, source, recorded/occurred time.

@@ -1,12 +1,12 @@
 # Текущий статус
 
 - Дата: 2026-07-20
-- Текущая задача: VERT-001.3 — onboarding/profile/persona и minimal outbox завершены.
-- Код приложения: scaffold web/API/worker, identity module и минимальный profiles module.
-- AI, токены, вес, расширенная profile personalization, платежи и рефералы: отсутствуют.
+- Текущая задача: VERT-001.4 — completion, starter grant, wallet ledger и первый вес; runtime verification выполняется.
+- Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet и базовый tracking веса.
+- AI, платежи, рефералы, AI prices, reserve/confirm/refund и outbox consumers: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующий обязательный шаг: отдельной задачей реализовать VERT-001.4 — onboarding completion, starter grant, token ledger, первый вес и tracking initialization. Реализация пока не начата.
+- Следующий шаг: завершить VERT-001.4 test-server acceptance; следующая вертикаль не начата.
 - Runtime verification policy: local Codex runtime может отличаться от baseline; Docker/test server остаётся authoritative средой final verification.
 
 ## Решения ARCH-001

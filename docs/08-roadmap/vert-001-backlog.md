@@ -65,9 +65,9 @@ VERT-001.1 contracts and decisions
 
 ## VERT-001.4 — completion, starter grant и первый вес
 
-**Цель:** пользователь завершает onboarding, ровно один раз получает 100 токенов, сохраняет первый вес и получает инициализированный tracking state; ledger безопасно поддерживает reserve/confirm/refund и чтение баланса.
+**Цель:** пользователь завершает onboarding, ровно один раз получает 100 токенов, сохраняет первый вес и получает инициализированный tracking state; ledger обеспечивает стартовое начисление и чтение баланса.
 
-**Область:** `token-economy` и `tracking`, wallets/transactions/action-prices/weight migrations, locking/constraints/idempotency, onboarding completion coordination, balance/weight API и tests.
+**Область:** `token-economy` и `tracking`, wallets/append-only transactions/weight migrations, минимальная PostgreSQL HTTP-idempotency persistence, locking/constraints, onboarding completion coordination, balance/weight API, минимальные web forms и tests. `ai_action_prices`, reserve/confirm/refund, AI actions, consumers и admin UI перенесены в VERT-001.5.
 
 **Критерии готовности:**
 
@@ -75,8 +75,8 @@ VERT-001.1 contracts and decisions
 - повтор completion/grant не начисляет токены повторно;
 - первый вес и tracking initialization follow approved ownership, validation и idempotency rules;
 - баланс выводится из ledger и никогда не отрицателен, включая concurrent tests;
-- цены читаются из управляемых данных, не из application code;
-- reserve/confirm/refund идемпотентны; `starter_tokens_added` и balance events корректны.
+- HTTP idempotency согласована транзакционно с completion и weight business effect;
+- `onboarding_completed`, `starter_tokens_added`, `first_weight_added` и `weight_added` имеют durable outbox source без consumer-а.
 
 ## VERT-001.5 — asynchronous AI operation
 

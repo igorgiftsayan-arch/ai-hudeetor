@@ -37,6 +37,8 @@ export { OnboardingStateService } from './identity/application/onboarding-state.
 export { CsrfService } from './identity/transport/csrf.service';
 export { IdentityModule } from './identity/transport/identity.module';
 export { ProfilesModule } from './profiles/transport/profiles.module';
+export { TokenEconomyModule } from './token-economy/transport/token-economy.module';
+export { TrackingModule } from './tracking/transport/tracking.module';
 export { ProfilesRepository } from './profiles/application/profiles-repository';
 export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-profiles.repository';
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';

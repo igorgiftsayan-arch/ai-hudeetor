@@ -38,4 +38,11 @@ export class OnboardingStateService extends OnboardingStatePort {
   ): Promise<OnboardingStatus> {
     return this.repository.advanceToPersonaReady(client, userId);
   }
+
+  advanceToCompleted(
+    client: PoolClient,
+    userId: string,
+  ): Promise<OnboardingStatus> {
+    return this.repository.advanceToCompleted(client, userId);
+  }
 }

@@ -84,6 +84,11 @@ export abstract class IdentityRepository {
     userId: string,
   ): Promise<OnboardingStatus>;
 
+  abstract advanceToCompleted(
+    client: PoolClient,
+    userId: string,
+  ): Promise<OnboardingStatus>;
+
   protected emailAlreadyRegistered(): Error {
     return identityErrors.emailAlreadyRegistered();
   }

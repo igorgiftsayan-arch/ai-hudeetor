@@ -174,6 +174,20 @@ class InMemoryIdentityRepository extends IdentityRepository {
     return user.onboardingStatus;
   }
 
+  async advanceToCompleted(
+    _client: unknown,
+    userId: string,
+  ): Promise<OnboardingStatus> {
+    const user = [...this.users.values()].find(
+      (candidate) => candidate.id === userId,
+    );
+    if (!user)
+      throw new IdentityError('SESSION_INVALID', 401, 'The session is invalid');
+    if (user.onboardingStatus === 'personaReady')
+      user.onboardingStatus = 'completed';
+    return user.onboardingStatus;
+  }
+
   expireAccessSessions(): void {
     for (const session of this.sessions.values()) {
       session.accessExpiresAt = new Date(0);

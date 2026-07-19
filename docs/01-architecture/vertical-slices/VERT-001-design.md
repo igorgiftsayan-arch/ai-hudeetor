@@ -39,7 +39,7 @@ registration
 | `registered` | user и session созданы, onboarding не завершён | consent/timezone |
 | `profileReady` | обязательные consent и timezone сохранены | выбор persona |
 | `personaReady` | действующая AI preference сохранена | завершение onboarding |
-| `onboarded` | onboarding завершён, starter grant подтверждён | ввод веса |
+| `completed` | onboarding завершён, starter grant подтверждён | ввод веса |
 | `weightStarted` | существует первая принадлежащая пользователю weight entry | первый AI-запрос |
 | `aiPending` | AI operation `queued`, `processing` или `outcomeUnknown` | polling, безопасный retry только по контракту |
 | `aiReady` | operation `succeeded`, ответ сохранён, расход подтверждён | feedback и продолжение диалога |
@@ -172,13 +172,13 @@ Composition между модулями выполняют application use cases
 
 Ledger mutation выполняется под row lock кошелька/согласованной aggregate row и проверяет новый баланс в той же транзакции. Аналитика и Redis не участвуют в расчёте баланса. Реализация может выбрать вычисляемую сумму ledger или транзакционно поддерживаемый snapshot, но snapshot не заменяет ledger и требует отдельного проверяемого инварианта в VERT-001.4.
 
-### 3.4 Открытые параметры перед миграциями
+### 3.4 Решения VERT-001.4 перед миграциями
 
-- Допустимый диапазон и точность веса.
+- Вес: 20.0–500.0 кг включительно, не более одного знака после запятой; PostgreSQL `numeric`, не float.
 - Закрытые ID persona, strictness и response length; для первого среза UI может использовать безопасные defaults strictness/length без отдельной настройки.
 - Версии и тексты обязательных consent documents.
 - Retention/redaction полей `provider_request_ref` и error metadata.
-- Точная SQL-модель ledger balance snapshot, если он нужен для чтения.
+- Balance snapshot не используется: доступный баланс вычисляется из immutable ledger. HTTP idempotency хранит owner, operation scope, key, canonical payload hash, lifecycle и сохранённый HTTP response.
 
 ## 4. API design
 
