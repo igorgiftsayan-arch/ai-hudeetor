@@ -165,11 +165,15 @@ describeWithDatabase('Identity PostgreSQL integration', () => {
     });
     const stored = await database.query<{
       onboarding_status: string;
+      preference_persona_id: string;
       event_type: string;
       payload: { personaId: string; context: string };
     }>(
-      `select u.onboarding_status, o.event_type, o.payload
-         from users u join outbox_messages o on o.aggregate_id = u.id
+      `select u.onboarding_status, p.persona_id preference_persona_id,
+              o.event_type, o.payload
+         from users u
+         join ai_preferences p on p.user_id = u.id
+         join outbox_messages o on o.aggregate_id = u.id
         where u.id = $1`,
       [registered.user.id],
     );
@@ -177,6 +181,7 @@ describeWithDatabase('Identity PostgreSQL integration', () => {
     expect(preference.onboardingStatus).toBe('personaReady');
     expect(stored.rows[0]).toMatchObject({
       onboarding_status: 'personaReady',
+      preference_persona_id: 'gentleFriend',
       event_type: 'profiles.ai_persona_selected.v1',
       payload: { personaId: 'gentleFriend', context: 'onboarding' },
     });
