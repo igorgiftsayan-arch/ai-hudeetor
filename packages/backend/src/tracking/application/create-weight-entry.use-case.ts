@@ -14,16 +14,16 @@ export class CreateWeightEntryUseCase {
     recordedAt?: string;
   }) {
     const user = await this.currentUser.execute(input.accessToken);
-    const recordedAt = input.recordedAt
+    const requestedRecordedAt = input.recordedAt
       ? new Date(input.recordedAt)
-      : new Date();
+      : undefined;
     if (
       !Number.isFinite(input.weightKg) ||
       input.weightKg < 20 ||
       input.weightKg > 500 ||
       Math.round(input.weightKg * 10) !== input.weightKg * 10 ||
-      Number.isNaN(recordedAt.valueOf()) ||
-      recordedAt.getTime() > Date.now() + 300000
+      (requestedRecordedAt && Number.isNaN(requestedRecordedAt.valueOf())) ||
+      (requestedRecordedAt && requestedRecordedAt.getTime() > Date.now() + 300000)
     )
       throw new IdentityError(
         'VALIDATION_ERROR',
@@ -32,7 +32,7 @@ export class CreateWeightEntryUseCase {
       );
     const payload = {
       weightKg: input.weightKg,
-      recordedAt: recordedAt.toISOString(),
+      recordedAt: input.recordedAt ?? null,
     };
     return this.database.transaction(async (client) => {
       const hash = createHash('sha256')
@@ -64,6 +64,7 @@ export class CreateWeightEntryUseCase {
         );
       if (record.state === 'completed' && record.response_body)
         return record.response_body;
+      const recordedAt = requestedRecordedAt ?? new Date();
       const first =
         (
           await client.query(
