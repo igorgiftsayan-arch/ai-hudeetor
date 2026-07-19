@@ -1,6 +1,6 @@
 # Текущий статус
 
-- Дата: 2026-07-19
+- Дата: 2026-07-20
 - Текущая задача: VERT-001.3 — onboarding/profile/persona и minimal outbox завершены.
 - Код приложения: scaffold web/API/worker, identity module и минимальный profiles module.
 - AI, токены, вес, расширенная profile personalization, платежи и рефералы: отсутствуют.
@@ -111,4 +111,5 @@ Test-server run выявил CJS transform error из-за top-level `await` в 
 - Добавлены profile/persona REST endpoints, `profiles` module и технический web route `/onboarding`; state machine останавливается на `personaReady`.
 - Migration `0002_profiles_onboarding_outbox.sql` создаёт `user_profiles`, `ai_preferences` и private `outbox_messages` storage с индексом pending records.
 - `profiles.ai_persona_selected.v1` сохраняется в той же PostgreSQL transaction, что preference и переход к `personaReady`; consumer, worker delivery, AI Gateway и token effects отсутствуют.
+- Final verification на test server пройдена: clean checkout `3437087`, API health, повторяемые migrations, PostgreSQL persona/outbox integration (5/5), API regression (16/16) и manual persona scenario подтверждены. Один persona retry не создаёт второй outbox event.
 - Добавлены API, PostgreSQL integration и frontend tests; OpenAPI/client generation выполнены. Test-server deployment не входил в задачу.

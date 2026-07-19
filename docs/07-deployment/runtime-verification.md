@@ -56,6 +56,18 @@ docker compose ps
 
 Все runtime-критерии BOOT-001 закрыты. Открытых runtime-блокеров для подготовки VERT-001 нет.
 
+## VERT-001.3 — final test-server verification
+
+- Дата: 2026-07-20.
+- Checkout: clean verification checkout на commit `3437087`.
+- API: пересобран и пересоздан отдельно; health endpoint возвращает `{"service":"api","status":"ok"}`.
+- Миграции: актуальная schema применена; повторный запуск безопасен.
+- Автоматические проверки: PostgreSQL persona/outbox integration — 5/5; API regression suite — 16/16.
+- Ручной API сценарий: registration, login, current user, profile и persona selection выполнены. Для mutating requests переданы HttpOnly session cookies, CSRF token и `Origin: http://localhost:3000`.
+- Результат persona: пользователь перешёл в `personaReady`, создана одна `ai_preferences` запись с `gentleFriend`, создано одно durable событие `profiles.ai_persona_selected.v1` с payload `personaId=gentleFriend`, `context=onboarding`.
+- Идентичный повтор persona request не создал второй outbox event.
+- Scope проверен: token tables, AI actions/messages и outbox consumers не добавлялись; worker delivery не запускалась.
+
 ## Переход к VERT-001
 
 VERT-001 должен начинаться только отдельной утверждённой задачей. Его входные условия:
