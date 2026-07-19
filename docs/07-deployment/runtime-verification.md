@@ -68,6 +68,15 @@ docker compose ps
 - Идентичный повтор persona request не создал второй outbox event.
 - Scope проверен: token tables, AI actions/messages и outbox consumers не добавлялись; worker delivery не запускалась.
 
+## VERT-001.4 — final test-server verification
+
+- Дата: 2026-07-20; authoritative checkout: `c674eb8`. API container использовал актуальный image; PostgreSQL, Redis, API, worker и web были healthy.
+- Migration `0003_vert_001_4_wallet_tracking.sql` применена и повторный запуск прошёл успешно; таблицы wallet, ledger, HTTP idempotency и weight entries существуют.
+- Ручной API сценарий registration → login → profile → persona → completion → wallet → first weight прошёл с session cookies, CSRF и `Origin: http://localhost:3000`.
+- PostgreSQL подтвердил `completed`, один wallet, balance `100`, одну `starterGrant` transaction, completion/starter outbox events и одну weight entry.
+- Повторы completion и идентичного weight request вернули сохранённые `201` без дублей; weight key с изменённым payload вернул `409 IDEMPOTENCY_KEY_REUSED`.
+- AI actions, reserve/confirm/refund, action prices, payments, referrals и outbox consumers не запускались.
+
 ## Переход к VERT-001
 
 VERT-001 должен начинаться только отдельной утверждённой задачей. Его входные условия:

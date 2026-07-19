@@ -23,6 +23,7 @@
 - VERT-001.3: `profiles` module, profile/persona REST API, `user_profiles`/`ai_preferences`/`outbox_messages` migration, technical onboarding route, OpenAPI contracts и API/PostgreSQL/frontend tests.
 - VERT-001.3 verification: final test-server acceptance profile → personaReady, durable outbox event и no-duplicate retry; PostgreSQL integration (5/5) и API regression (16/16) подтверждены.
 - VERT-001.4: completion command с server-side starter grant `+100`, append-only wallet ledger, PostgreSQL HTTP idempotency records, owner-scoped weight entries и durable outbox sources для completion/weight событий.
+- VERT-001.4 verification: migration `0003` и final test-server acceptance подтверждены; completion/weight retries идемпотентны, а изменённый payload с тем же key возвращает conflict.
 
 ### Changed
 

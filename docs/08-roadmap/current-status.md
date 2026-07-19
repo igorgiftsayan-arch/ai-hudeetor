@@ -1,12 +1,19 @@
 # Текущий статус
 
 - Дата: 2026-07-20
-- Текущая задача: VERT-001.4 — completion, starter grant, wallet ledger и первый вес; runtime verification выполняется.
+- Текущая задача: VERT-001.4 — completion, starter grant, wallet ledger и первый вес завершены и verified on test server.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet и базовый tracking веса.
 - AI, платежи, рефералы, AI prices, reserve/confirm/refund и outbox consumers: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующий шаг: завершить VERT-001.4 test-server acceptance; следующая вертикаль не начата.
+- Следующая вертикаль не начата; требуется отдельная задача для VERT-001.5.
+
+## VERT-001.4 verification
+
+- Реализованы `personaReady → completed`, одноразовый `starterGrant +100`, append-only wallet ledger, owner-scoped weight entries и минимальная PostgreSQL HTTP-idempotency persistence.
+- На test server подтверждены repeatable migration, health всех сервисов и основной сценарий от registration до first weight.
+- Повторы completion/weight не дублируют effects; key reuse с изменённым payload возвращает `409 IDEMPOTENCY_KEY_REUSED`.
+- AI actions, reserve/confirm/refund, prices, payments, referrals и outbox consumers не входят в задачу.
 - Runtime verification policy: local Codex runtime может отличаться от baseline; Docker/test server остаётся authoritative средой final verification.
 
 ## Решения ARCH-001
