@@ -16,13 +16,11 @@ import { SavePersonaPreferenceUseCase } from '../application/save-persona-prefer
 import { SaveProfileSetupUseCase } from '../application/save-profile-setup.use-case';
 import { profilesErrors } from '../domain/profiles-error';
 import {
+  AiPreferenceRequestDto,
   AiPreferenceResourceDto,
   OnboardingResourceDto,
-  UserProfileResourceDto,
-} from './profiles.dto';
-import type {
-  AiPreferenceRequestDto,
   UpdateProfileRequestDto,
+  UserProfileResourceDto,
 } from './profiles.dto';
 import { PROFILES_OPTIONS, type ProfilesOptions } from './profiles.tokens';
 

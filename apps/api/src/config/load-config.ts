@@ -7,6 +7,9 @@ const testDefaults = {
   IDENTITY_TERMS_VERSION: 'test-v1',
   IDENTITY_PRIVACY_VERSION: 'test-v1',
   IDENTITY_AI_WELLNESS_NOTICE_VERSION: 'test-v1',
+  // Supertest's in-memory HTTP agent is not an HTTPS browser; production and
+  // test-server environments still keep Secure cookies enabled explicitly.
+  IDENTITY_SECURE_COOKIES: 'false',
 };
 
 export function loadApiConfig(
