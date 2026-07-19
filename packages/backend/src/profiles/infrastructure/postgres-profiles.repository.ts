@@ -79,7 +79,7 @@ export class PostgresProfilesRepository extends ProfilesRepository {
       `insert into outbox_messages
         (id, event_type, aggregate_type, aggregate_id, payload, occurred_at, available_at, attempts)
        values (gen_random_uuid(), 'profiles.ai_persona_selected.v1', 'user', $1,
-               jsonb_build_object('userId', $1, 'personaId', $2, 'context', 'onboarding', 'version', 1),
+               jsonb_build_object('userId', $1::text, 'personaId', $2, 'context', 'onboarding', 'version', 1),
                now(), now(), 0)`,
       [input.userId, input.personaId],
     );
