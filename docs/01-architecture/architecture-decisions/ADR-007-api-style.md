@@ -13,7 +13,7 @@
 
 Длительные AI/медиа-команды возвращают `202 Accepted` и operation resource с polling endpoint. Lifecycle включает `pending`, `reserved`, `processing`, `succeeded`, `technicalFailed`, `outcomeUnknown`, `refundPending`, `refunded`, `cancelled` там, где переход допустим.
 
-`outcomeUnknown` используется, когда после внешнего timeout неизвестно, был ли вызов выполнен. Слепой retry и окончательное списание запрещены; worker выполняет reconciliation, а конечная политика не оставляет резерв бессрочно.
+Для AI operation VERT-001.5 канонический lifecycle: `queued`, `processing`, `succeeded`, `technicalError`, `outcomeUnknown`. Reservation, confirmation и refund — ledger effects, а не operation statuses. `outcomeUnknown` используется, когда после внешнего timeout неизвестно, был ли вызов выполнен; слепой retry и окончательное списание запрещены до reconciliation.
 
 ## Последствия
 

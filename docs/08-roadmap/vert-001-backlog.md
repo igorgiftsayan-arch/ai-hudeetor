@@ -82,7 +82,7 @@ VERT-001.1 contracts and decisions
 
 **Цель:** первый quick AI request проходит через reservation, outbox, worker, AI Gateway и provider adapter boundary с корректной финализацией.
 
-**Область:** `ai-companion`, conversations/messages/operations/outbox migrations, API operation resource, BullMQ worker, Prompt Registry, Context Builder, Safety Layer, usage/cost metadata и fake provider для tests.
+**Область:** `ai-companion`, conversations/messages/operations/outbox migrations, API operation resource, BullMQ worker, Prompt Registry, Context Builder, Safety Layer, usage/cost metadata и явный fake adapter. Runtime использует только `AI_PROVIDER=fake` и `AI_FAKE_MODE=true`; реальный provider, SDK и key не подключаются.
 
 **Критерии готовности:**
 
@@ -92,7 +92,7 @@ VERT-001.1 contracts and decisions
 - technical error полностью возвращает резерв один раз;
 - `outcomeUnknown` ждёт reconciliation и не инициирует опасный автоматический повтор;
 - logs/events не содержат PII или полный AI content;
-- реальная пользовательская приёмка заблокирована до отдельного выбора provider adapter.
+- runtime verification явно помечена как fake-adapter technical acceptance; реальная пользовательская приёмка заблокирована до отдельного выбора provider adapter.
 
 ## VERT-001.6 — feedback и продуктовые события
 

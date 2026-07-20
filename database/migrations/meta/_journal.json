@@ -29,6 +29,13 @@
       "when": 1784483200000,
       "tag": "0003_vert_001_4_wallet_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784563200000,
+      "tag": "0004_ai_operations",
+      "breakpoints": true
     }
   ]
 }
