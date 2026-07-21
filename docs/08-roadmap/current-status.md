@@ -1,14 +1,14 @@
 # Текущий статус
 
 - Дата: 2026-07-21
-- Текущая задача: VERT-001.5 завершена на verification branch; merge в `main` ожидает отдельного подтверждения.
+- Текущая задача: VERT-001.5 завершена и объединена в `main`.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, базовый tracking веса и первый fake-runtime quick reply.
 - Реальный AI provider, платежи, рефералы, AI memory, полноценный chat UX и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
 - Следующая вертикаль не начата; требуется отдельная задача для VERT-001.5.
 
-## VERT-001.5 — завершена на verification branch
+## VERT-001.5 — завершена
 
 - Persistence: завершён — цены, conversations/messages/operations и ledger constraints проверены на PostgreSQL.
 - API transaction: завершён — idempotent operation creation, reservation и durable outbox реализованы и проверены.
@@ -16,6 +16,7 @@
 - Web boundary: завершён — `/quick-reply` показывает цену, явное предупреждение fake runtime, submit и polling состояний `queued`/`processing`/`succeeded`/`technicalError`/`outcomeUnknown`.
 - Final test-server acceptance: пройдена в изолированной topology. Подтверждены success, refund, outcomeUnknown, idempotency, duplicate outbox delivery, worker restart, safe logs/outbox payloads, migrations и targeted regression tests.
 - Реальный AI provider по-прежнему не подключён и не проверялся.
+- Следующая вертикаль не начата и требует отдельного задания.
 
 ## VERT-001.4 verification
 
