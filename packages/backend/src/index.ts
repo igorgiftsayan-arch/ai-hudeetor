@@ -49,6 +49,15 @@ export { GetQuickReplyPriceUseCase } from './ai-companion/application/get-quick-
 export { CreateAiConversationUseCase } from './ai-companion/application/create-ai-conversation.use-case';
 export { AiCompanionModule } from './ai-companion/transport/ai-companion.module';
 export { PostgresAiCompanionRepository } from './ai-companion/infrastructure/postgres-ai-companion.repository';
+export {
+  AiProviderAdapter,
+  type AiProviderRequest,
+  type AiProviderResult,
+} from './ai-companion/application/ai-provider-adapter';
+export {
+  FakeAiProviderAdapter,
+  type FakeAiMode,
+} from './ai-companion/infrastructure/fake-ai-provider.adapter';
 export { ProfilesRepository } from './profiles/application/profiles-repository';
 export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-profiles.repository';
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';

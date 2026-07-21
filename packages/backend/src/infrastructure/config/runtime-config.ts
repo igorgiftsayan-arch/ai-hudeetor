@@ -49,6 +49,8 @@ export const apiConfigSchema = baseSchema
   });
 
 export const workerConfigSchema = baseSchema.extend({
+  AI_FAKE_MODE: z.enum(['success', 'technicalError', 'outcomeUnknown']),
+  AI_PROVIDER: z.literal('fake'),
   WORKER_HEALTH_PORT: z.coerce.number().int().positive().default(3002),
   WORKER_QUEUE_NAME: z.string().min(1).default('atlas-system'),
 });

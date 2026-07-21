@@ -75,6 +75,8 @@ services:
       target: worker
     environment:
       <<: *app-environment
+      AI_PROVIDER: ${AI_PROVIDER:-fake}
+      AI_FAKE_MODE: ${AI_FAKE_MODE:-success}
       WORKER_HEALTH_PORT: 3002
       WORKER_QUEUE_NAME: atlas-system
     depends_on:

@@ -6,6 +6,9 @@ import {
   workerConfigSchema,
 } from '@atlas/backend';
 import { loadWorkerConfig } from './config/load-config';
+import { FakeAiProviderAdapter } from '@atlas/backend';
+import { AiOperationProcessor } from './ai-operation.processor';
+import { OutboxPublisherService } from './outbox-publisher.service';
 
 const configModule = ConfigModule.forRoot({
   envFilePath: ['../../.env.local', '../../.env', '.env.local', '.env'],
@@ -32,6 +35,14 @@ const redisUrl = new URL(config.REDIS_URL);
       },
     }),
     BullModule.registerQueue({ name: config.WORKER_QUEUE_NAME }),
+  ],
+  providers: [
+    {
+      provide: FakeAiProviderAdapter,
+      useFactory: () => new FakeAiProviderAdapter(config.AI_FAKE_MODE),
+    },
+    AiOperationProcessor,
+    OutboxPublisherService,
   ],
 })
 export class WorkerModule {}
