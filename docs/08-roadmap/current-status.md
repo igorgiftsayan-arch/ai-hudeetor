@@ -8,6 +8,13 @@
 - AI-провайдер: не выбран.
 - Следующая вертикаль не начата; требуется отдельная задача для VERT-001.5.
 
+## VERT-001.5 progress
+
+- Persistence: завершён — цены, conversations/messages/operations и ledger constraints проверены на PostgreSQL.
+- API transaction: завершён — idempotent operation creation, reservation и durable outbox реализованы и проверены.
+- Worker: завершён — BullMQ delivery, fake adapter lifecycle, confirmation/refund/outcomeUnknown и restart/duplicate delivery verified.
+- До полного завершения VERT-001.5 остаются minimal web quick-reply boundary и итоговые cross-layer regression/acceptance checks; реальный AI provider по-прежнему не подключён.
+
 ## VERT-001.4 verification
 
 - Реализованы `personaReady → completed`, одноразовый `starterGrant +100`, append-only wallet ledger, owner-scoped weight entries и минимальная PostgreSQL HTTP-idempotency persistence.
