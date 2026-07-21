@@ -114,13 +114,8 @@ describeWithDatabase('AI ledger PostgreSQL constraints', () => {
   });
 
   it('keeps the balance nonnegative when concurrent reservations compete', async () => {
-    const { userId, walletId, conversationId, messageId } = await fixture();
-    const firstOperationId = await createOperation(
-      userId,
-      conversationId,
-      messageId,
-      'queued',
-    );
+    const { userId, walletId, conversationId, messageId, operationId } =
+      await fixture();
     const secondOperationId = await createOperation(
       userId,
       conversationId,
@@ -130,7 +125,7 @@ describeWithDatabase('AI ledger PostgreSQL constraints', () => {
 
     const results = await Promise.allSettled([
       reserve({
-        operationId: firstOperationId,
+        operationId,
         userId,
         walletId,
         amount: -60,
