@@ -116,11 +116,16 @@ describeWithDatabase('AI ledger PostgreSQL constraints', () => {
   it('keeps the balance nonnegative when concurrent reservations compete', async () => {
     const { userId, walletId, conversationId, messageId, operationId } =
       await fixture();
+
+    await database.query(
+      "update ai_operations set status='succeeded' where id=$1",
+      [operationId],
+    );
     const secondOperationId = await createOperation(
       userId,
       conversationId,
       messageId,
-      'succeeded',
+      'queued',
     );
 
     const results = await Promise.allSettled([
