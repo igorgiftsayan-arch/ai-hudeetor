@@ -39,6 +39,16 @@ export { IdentityModule } from './identity/transport/identity.module';
 export { ProfilesModule } from './profiles/transport/profiles.module';
 export { TokenEconomyModule } from './token-economy/transport/token-economy.module';
 export { TrackingModule } from './tracking/transport/tracking.module';
+export {
+  AiCompanionRepository,
+  type QueuedAiOperation,
+  type StartQuickReplyInput,
+} from './ai-companion/application/ai-companion-repository';
+export { StartQuickReplyUseCase } from './ai-companion/application/start-quick-reply.use-case';
+export { GetQuickReplyPriceUseCase } from './ai-companion/application/get-quick-reply-price.use-case';
+export { CreateAiConversationUseCase } from './ai-companion/application/create-ai-conversation.use-case';
+export { AiCompanionModule } from './ai-companion/transport/ai-companion.module';
+export { PostgresAiCompanionRepository } from './ai-companion/infrastructure/postgres-ai-companion.repository';
 export { ProfilesRepository } from './profiles/application/profiles-repository';
 export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-profiles.repository';
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';

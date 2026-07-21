@@ -6,6 +6,7 @@ import {
 import { ConfigModule } from '@nestjs/config';
 import {
   IdentityModule,
+  AiCompanionModule,
   ProfilesModule,
   TokenEconomyModule,
   TechnicalInfrastructureModule,
@@ -43,6 +44,7 @@ const config = loadApiConfig();
       loginMaxAttempts: config.IDENTITY_LOGIN_MAX_ATTEMPTS,
       loginWindowMs: config.IDENTITY_LOGIN_WINDOW_SECONDS * 1_000,
     }),
+    AiCompanionModule.forRoot(),
     ProfilesModule.forRoot({
       aiWellnessNoticeVersion: config.IDENTITY_AI_WELLNESS_NOTICE_VERSION,
     }),

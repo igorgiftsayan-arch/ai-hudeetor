@@ -90,6 +90,50 @@ export interface CurrentUserResourceDto {
   onboardingStatus: CurrentUserResourceDtoOnboardingStatus;
 }
 
+export type AiActionPriceResourceDtoActionType = typeof AiActionPriceResourceDtoActionType[keyof typeof AiActionPriceResourceDtoActionType];
+
+
+export const AiActionPriceResourceDtoActionType = {
+  quickReply: 'quickReply',
+} as const;
+
+export interface AiActionPriceResourceDto {
+  actionType: AiActionPriceResourceDtoActionType;
+  priceTokens: number;
+  priceVersion: number;
+}
+
+export interface AiConversationResourceDto {
+  id: string;
+}
+
+export interface Function { [key: string]: unknown }
+
+export type AiOperationResourceDtoStatus = typeof AiOperationResourceDtoStatus[keyof typeof AiOperationResourceDtoStatus];
+
+
+export const AiOperationResourceDtoStatus = {
+  queued: 'queued',
+} as const;
+
+export type AiOperationResourceDtoRuntimeAdapter = typeof AiOperationResourceDtoRuntimeAdapter[keyof typeof AiOperationResourceDtoRuntimeAdapter];
+
+
+export const AiOperationResourceDtoRuntimeAdapter = {
+  fake: 'fake',
+} as const;
+
+export interface AiOperationResourceDto {
+  id: string;
+  status: AiOperationResourceDtoStatus;
+  conversationId: string;
+  inputMessageId: string;
+  reservedTokens: number;
+  priceVersion: number;
+  pollUrl: string;
+  runtimeAdapter: AiOperationResourceDtoRuntimeAdapter;
+}
+
 export type UserProfileResourceDtoOnboardingStatus = typeof UserProfileResourceDtoOnboardingStatus[keyof typeof UserProfileResourceDtoOnboardingStatus];
 
 
@@ -174,7 +218,91 @@ export interface OnboardingResourceDto {
   aiPreference?: AiPreferenceResourceDto;
 }
 
-export interface Function { [key: string]: unknown }
+export type WellnessNoticeConsentDtoConsentType = typeof WellnessNoticeConsentDtoConsentType[keyof typeof WellnessNoticeConsentDtoConsentType];
+
+
+export const WellnessNoticeConsentDtoConsentType = {
+  aiWellnessNotice: 'aiWellnessNotice',
+} as const;
+
+export interface WellnessNoticeConsentDto {
+  consentType: WellnessNoticeConsentDtoConsentType;
+  documentVersion: string;
+  accepted: true;
+}
+
+export interface UpdateProfileRequestDto {
+  /** @maxLength 64 */
+  timezone: string;
+  /** @maxItems 1 */
+  consents?: WellnessNoticeConsentDto[];
+}
+
+export type AiPreferenceRequestDtoPersonaId = typeof AiPreferenceRequestDtoPersonaId[keyof typeof AiPreferenceRequestDtoPersonaId];
+
+
+export const AiPreferenceRequestDtoPersonaId = {
+  gentleFriend: 'gentleFriend',
+  strictCoach: 'strictCoach',
+  russianLuli: 'russianLuli',
+  glamorousFriend: 'glamorousFriend',
+  analyst: 'analyst',
+} as const;
+
+export type AiPreferenceRequestDtoStrictness = typeof AiPreferenceRequestDtoStrictness[keyof typeof AiPreferenceRequestDtoStrictness];
+
+
+export const AiPreferenceRequestDtoStrictness = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type AiPreferenceRequestDtoResponseLength = typeof AiPreferenceRequestDtoResponseLength[keyof typeof AiPreferenceRequestDtoResponseLength];
+
+
+export const AiPreferenceRequestDtoResponseLength = {
+  short: 'short',
+  medium: 'medium',
+  long: 'long',
+} as const;
+
+export interface AiPreferenceRequestDto {
+  personaId: AiPreferenceRequestDtoPersonaId;
+  strictness?: AiPreferenceRequestDtoStrictness;
+  responseLength?: AiPreferenceRequestDtoResponseLength;
+}
+
+export type OnboardingCompletionResourceDtoOnboardingStatus = typeof OnboardingCompletionResourceDtoOnboardingStatus[keyof typeof OnboardingCompletionResourceDtoOnboardingStatus];
+
+
+export const OnboardingCompletionResourceDtoOnboardingStatus = {
+  completed: 'completed',
+} as const;
+
+export interface OnboardingCompletionResourceDto {
+  onboardingStatus: OnboardingCompletionResourceDtoOnboardingStatus;
+  starterTokensGranted: number;
+  tokenBalance: number;
+}
+
+/**
+ * @nullable
+ */
+export type TokenWalletResourceDtoWalletId = { [key: string]: unknown } | null;
+
+export interface TokenWalletResourceDto {
+  /** @nullable */
+  walletId: TokenWalletResourceDtoWalletId;
+  availableBalance: number;
+}
+
+export interface WeightEntryResourceDto {
+  id: string;
+  weightKg: string;
+  recordedAt: string;
+  source: string;
+}
 
 export type healthControllerLivenessApiV1Response200 = {
   data: void
@@ -462,6 +590,126 @@ export const identityControllerCurrentApiV1 = async ( options?: RequestInit): Pr
 
 
 
+export type aiCompanionControllerPriceApiV1Response200 = {
+  data: AiActionPriceResourceDto
+  status: 200
+}
+
+export type aiCompanionControllerPriceApiV1ResponseSuccess = (aiCompanionControllerPriceApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerPriceApiV1Response = (aiCompanionControllerPriceApiV1ResponseSuccess)
+
+export const getAiCompanionControllerPriceApiV1Url = () => {
+
+
+
+
+  return `/api/v1/ai-action-prices/quick-reply`
+}
+
+export const aiCompanionControllerPriceApiV1 = async ( options?: RequestInit): Promise<aiCompanionControllerPriceApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerPriceApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerPriceApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerPriceApiV1Response
+}
+
+
+
+export type aiCompanionControllerConversationApiV1Response201 = {
+  data: AiConversationResourceDto
+  status: 201
+}
+
+export type aiCompanionControllerConversationApiV1ResponseSuccess = (aiCompanionControllerConversationApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerConversationApiV1Response = (aiCompanionControllerConversationApiV1ResponseSuccess)
+
+export const getAiCompanionControllerConversationApiV1Url = () => {
+
+
+
+
+  return `/api/v1/ai-conversations`
+}
+
+export const aiCompanionControllerConversationApiV1 = async ( options?: RequestInit): Promise<aiCompanionControllerConversationApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerConversationApiV1Url(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerConversationApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerConversationApiV1Response
+}
+
+
+
+export type aiCompanionControllerOperationApiV1Response202 = {
+  data: AiOperationResourceDto
+  status: 202
+}
+
+export type aiCompanionControllerOperationApiV1ResponseSuccess = (aiCompanionControllerOperationApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerOperationApiV1Response = (aiCompanionControllerOperationApiV1ResponseSuccess)
+
+export const getAiCompanionControllerOperationApiV1Url = () => {
+
+
+
+
+  return `/api/v1/ai/operations`
+}
+
+export const aiCompanionControllerOperationApiV1 = async (_function: Function, options?: RequestInit): Promise<aiCompanionControllerOperationApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerOperationApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(_function)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerOperationApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerOperationApiV1Response
+}
+
+
+
 export type profilesControllerOnboardingApiV1Response200 = {
   data: OnboardingResourceDto
   status: 200
@@ -522,14 +770,14 @@ export const getProfilesControllerUpdateProfileApiV1Url = () => {
   return `/api/v1/users/me/profile`
 }
 
-export const profilesControllerUpdateProfileApiV1 = async (_function: Function, options?: RequestInit): Promise<profilesControllerUpdateProfileApiV1Response> => {
+export const profilesControllerUpdateProfileApiV1 = async (updateProfileRequestDto: UpdateProfileRequestDto, options?: RequestInit): Promise<profilesControllerUpdateProfileApiV1Response> => {
 
   const res = await fetch(getProfilesControllerUpdateProfileApiV1Url(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(_function)
+    body: JSON.stringify(updateProfileRequestDto)
   }
 )
 
@@ -562,14 +810,14 @@ export const getProfilesControllerUpdatePreferenceApiV1Url = () => {
   return `/api/v1/users/me/ai-preference`
 }
 
-export const profilesControllerUpdatePreferenceApiV1 = async (_function: Function, options?: RequestInit): Promise<profilesControllerUpdatePreferenceApiV1Response> => {
+export const profilesControllerUpdatePreferenceApiV1 = async (aiPreferenceRequestDto: AiPreferenceRequestDto, options?: RequestInit): Promise<profilesControllerUpdatePreferenceApiV1Response> => {
 
   const res = await fetch(getProfilesControllerUpdatePreferenceApiV1Url(),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(_function)
+    body: JSON.stringify(aiPreferenceRequestDto)
   }
 )
 
@@ -578,4 +826,164 @@ export const profilesControllerUpdatePreferenceApiV1 = async (_function: Functio
 
   const data: profilesControllerUpdatePreferenceApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as profilesControllerUpdatePreferenceApiV1Response
+}
+
+
+
+export type tokenEconomyControllerCompletionApiV1Response201 = {
+  data: OnboardingCompletionResourceDto
+  status: 201
+}
+
+export type tokenEconomyControllerCompletionApiV1ResponseSuccess = (tokenEconomyControllerCompletionApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type tokenEconomyControllerCompletionApiV1Response = (tokenEconomyControllerCompletionApiV1ResponseSuccess)
+
+export const getTokenEconomyControllerCompletionApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/onboarding-completions`
+}
+
+export const tokenEconomyControllerCompletionApiV1 = async ( options?: RequestInit): Promise<tokenEconomyControllerCompletionApiV1Response> => {
+
+  const res = await fetch(getTokenEconomyControllerCompletionApiV1Url(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: tokenEconomyControllerCompletionApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as tokenEconomyControllerCompletionApiV1Response
+}
+
+
+
+export type tokenEconomyControllerCurrentApiV1Response200 = {
+  data: TokenWalletResourceDto
+  status: 200
+}
+
+export type tokenEconomyControllerCurrentApiV1ResponseSuccess = (tokenEconomyControllerCurrentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type tokenEconomyControllerCurrentApiV1Response = (tokenEconomyControllerCurrentApiV1ResponseSuccess)
+
+export const getTokenEconomyControllerCurrentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/token-wallets/current`
+}
+
+export const tokenEconomyControllerCurrentApiV1 = async ( options?: RequestInit): Promise<tokenEconomyControllerCurrentApiV1Response> => {
+
+  const res = await fetch(getTokenEconomyControllerCurrentApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: tokenEconomyControllerCurrentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as tokenEconomyControllerCurrentApiV1Response
+}
+
+
+
+export type trackingControllerCreateEntryApiV1Response201 = {
+  data: WeightEntryResourceDto
+  status: 201
+}
+
+export type trackingControllerCreateEntryApiV1ResponseSuccess = (trackingControllerCreateEntryApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type trackingControllerCreateEntryApiV1Response = (trackingControllerCreateEntryApiV1ResponseSuccess)
+
+export const getTrackingControllerCreateEntryApiV1Url = () => {
+
+
+
+
+  return `/api/v1/weight-entries`
+}
+
+export const trackingControllerCreateEntryApiV1 = async ( options?: RequestInit): Promise<trackingControllerCreateEntryApiV1Response> => {
+
+  const res = await fetch(getTrackingControllerCreateEntryApiV1Url(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: trackingControllerCreateEntryApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as trackingControllerCreateEntryApiV1Response
+}
+
+
+
+export type trackingControllerEntriesApiV1Response200 = {
+  data: void
+  status: 200
+}
+
+export type trackingControllerEntriesApiV1ResponseSuccess = (trackingControllerEntriesApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type trackingControllerEntriesApiV1Response = (trackingControllerEntriesApiV1ResponseSuccess)
+
+export const getTrackingControllerEntriesApiV1Url = () => {
+
+
+
+
+  return `/api/v1/weight-entries`
+}
+
+export const trackingControllerEntriesApiV1 = async ( options?: RequestInit): Promise<trackingControllerEntriesApiV1Response> => {
+
+  const res = await fetch(getTrackingControllerEntriesApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: trackingControllerEntriesApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as trackingControllerEntriesApiV1Response
 }
