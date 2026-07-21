@@ -1,7 +1,7 @@
 # Текущий статус
 
 - Дата: 2026-07-20
-- Текущая задача: VERT-001.4 — completion, starter grant, wallet ledger и первый вес завершены и verified on test server.
+- Текущая задача: VERT-001.5 — worker fake-runtime verification завершена на verification branch; merge в main ожидает отдельного подтверждения.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet и базовый tracking веса.
 - AI, платежи, рефералы, AI prices, reserve/confirm/refund и outbox consumers: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.

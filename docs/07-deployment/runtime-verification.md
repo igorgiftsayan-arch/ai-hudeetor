@@ -1,5 +1,14 @@
 # BOOT-001 — runtime verification
 
+## VERT-001.5 worker fake-runtime verification
+
+- Isolated test-server Docker topology: PostgreSQL 17, Redis 8, BullMQ and `AI_PROVIDER=fake`.
+- Success: one durable outbox event produced one assistant message and one `aiConfirmation`.
+- Technical error: exactly one `aiRefund`, no confirmation and restored balance.
+- Outcome unknown: reservation retained, no automatic refund or confirmation.
+- Duplicate outbox delivery and a worker restart did not create a second terminal effect.
+- This is fake-adapter technical acceptance only; no real AI provider was connected or verified.
+
 ## Итог
 
 - Дата финальной проверки: 2026-07-18.

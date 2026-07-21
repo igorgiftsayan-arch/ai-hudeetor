@@ -6,6 +6,8 @@
 
 ### Added
 
+- VERT-001.5 worker verification: fake-adapter success, technical error, outcomeUnknown, duplicate delivery and restart behavior verified on an isolated test-server topology.
+
 - DOC-001: документационная основа, правила работы, требования V1, домен, API, аналитика, безопасность, разработка, развёртывание и roadmap.
 - DOC-002: модель экономики токенов, классификация AI-ошибок, политика возраста/данных и ADR критериев технического стека.
 - ARCH-001: системная, API, database, authentication, deployment и observability архитектура.
