@@ -114,6 +114,10 @@ export type AiOperationResourceDtoStatus = typeof AiOperationResourceDtoStatus[k
 
 export const AiOperationResourceDtoStatus = {
   queued: 'queued',
+  processing: 'processing',
+  succeeded: 'succeeded',
+  technicalError: 'technicalError',
+  outcomeUnknown: 'outcomeUnknown',
 } as const;
 
 export type AiOperationResourceDtoRuntimeAdapter = typeof AiOperationResourceDtoRuntimeAdapter[keyof typeof AiOperationResourceDtoRuntimeAdapter];
@@ -132,6 +136,9 @@ export interface AiOperationResourceDto {
   priceVersion: number;
   pollUrl: string;
   runtimeAdapter: AiOperationResourceDtoRuntimeAdapter;
+  outputMessageId?: string;
+  responseText?: string;
+  errorCode?: string;
 }
 
 export type UserProfileResourceDtoOnboardingStatus = typeof UserProfileResourceDtoOnboardingStatus[keyof typeof UserProfileResourceDtoOnboardingStatus];
@@ -706,6 +713,46 @@ export const aiCompanionControllerOperationApiV1 = async (_function: Function, o
 
   const data: aiCompanionControllerOperationApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as aiCompanionControllerOperationApiV1Response
+}
+
+
+
+export type aiCompanionControllerGetOperationByIdApiV1Response200 = {
+  data: AiOperationResourceDto
+  status: 200
+}
+
+export type aiCompanionControllerGetOperationByIdApiV1ResponseSuccess = (aiCompanionControllerGetOperationByIdApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerGetOperationByIdApiV1Response = (aiCompanionControllerGetOperationByIdApiV1ResponseSuccess)
+
+export const getAiCompanionControllerGetOperationByIdApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/ai/operations/${id}`
+}
+
+export const aiCompanionControllerGetOperationByIdApiV1 = async (id: string, options?: RequestInit): Promise<aiCompanionControllerGetOperationByIdApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerGetOperationByIdApiV1Url(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerGetOperationByIdApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerGetOperationByIdApiV1Response
 }
 
 

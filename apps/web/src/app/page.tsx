@@ -6,6 +6,7 @@ export default function HomePage() {
         <h1 id="status-title">ATLAS V0.1</h1>
         <p>Project scaffold is running</p>
         <a href="/onboarding">Open technical onboarding</a>
+        <a href="/quick-reply">Open quick reply</a>
       </section>
     </main>
   );

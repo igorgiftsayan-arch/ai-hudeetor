@@ -23,11 +23,15 @@ export class AiConversationResourceDto {
 
 export class AiOperationResourceDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({ enum: ['queued'] }) status!: 'queued';
+  @ApiProperty({ enum: ['queued', 'processing', 'succeeded', 'technicalError', 'outcomeUnknown'] })
+  status!: 'queued' | 'processing' | 'succeeded' | 'technicalError' | 'outcomeUnknown';
   @ApiProperty({ format: 'uuid' }) conversationId!: string;
   @ApiProperty({ format: 'uuid' }) inputMessageId!: string;
   @ApiProperty() reservedTokens!: number;
   @ApiProperty() priceVersion!: number;
   @ApiProperty() pollUrl!: string;
   @ApiProperty({ enum: ['fake'] }) runtimeAdapter!: 'fake';
+  @ApiProperty({ format: 'uuid', required: false }) outputMessageId?: string;
+  @ApiProperty({ required: false }) responseText?: string;
+  @ApiProperty({ required: false }) errorCode?: string;
 }

@@ -61,3 +61,40 @@ button {
   gap: 0.6rem;
   align-items: flex-start;
 }
+
+.quick-reply-card {
+  width: min(100%, 34rem);
+}
+
+.quick-reply-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+textarea {
+  min-height: 7rem;
+  resize: vertical;
+  padding: 0.75rem;
+  font: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.runtime-notice {
+  padding: 0.75rem;
+  border-left: 3px solid #b46a2a;
+  background: #fff4df;
+  color: #573411;
+}
+
+.price {
+  font-weight: 700;
+}
+
+.form-error {
+  color: #8a1b1b;
+}

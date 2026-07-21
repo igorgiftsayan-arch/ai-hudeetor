@@ -6,6 +6,7 @@ import {
   AiCompanionRepository,
   type AiActionPrice,
   type AiConversation,
+  type AiOperation,
   type QueuedAiOperation,
   type StartQuickReplyInput,
 } from '../application/ai-companion-repository';
@@ -241,6 +242,50 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
       operation,
     );
     return operation;
+  }
+
+  async getOperation(userId: string, operationId: string): Promise<AiOperation> {
+    const result = await this.database.query<{
+      id: string;
+      status: AiOperation['status'];
+      conversation_id: string;
+      input_message_id: string;
+      output_message_id: string | null;
+      response_text: string | null;
+      reserved_tokens: number;
+      price_version: number;
+      runtime_adapter: 'fake';
+      error_class: string | null;
+    }>(
+      `select operation.id, operation.status, operation.conversation_id,
+              operation.input_message_id, operation.output_message_id,
+              message.content as response_text, operation.reserved_tokens,
+              operation.price_version, operation.runtime_adapter, operation.error_class
+         from ai_operations operation
+         left join ai_messages message on message.id=operation.output_message_id
+        where operation.id=$1 and operation.user_id=$2`,
+      [operationId, userId],
+    );
+    const row = result.rows[0];
+    if (!row)
+      throw new AiCompanionError(
+        'RESOURCE_NOT_FOUND',
+        404,
+        'AI operation not found',
+      );
+    return {
+      id: row.id,
+      status: row.status,
+      conversationId: row.conversation_id,
+      inputMessageId: row.input_message_id,
+      ...(row.output_message_id ? { outputMessageId: row.output_message_id } : {}),
+      ...(row.response_text ? { responseText: row.response_text } : {}),
+      reservedTokens: row.reserved_tokens,
+      priceVersion: row.price_version,
+      pollUrl: `/api/v1/ai/operations/${row.id}`,
+      runtimeAdapter: row.runtime_adapter,
+      ...(row.error_class ? { errorCode: row.error_class } : {}),
+    };
   }
 
   private async lockIdempotency<TResult>(

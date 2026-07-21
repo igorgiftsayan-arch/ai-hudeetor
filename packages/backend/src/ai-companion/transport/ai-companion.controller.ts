@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Req,
 } from '@nestjs/common';
@@ -21,13 +22,14 @@ import type { Request } from 'express';
 import { IdentityError } from '../../identity/domain/identity-error';
 import { CreateAiConversationUseCase } from '../application/create-ai-conversation.use-case';
 import { GetQuickReplyPriceUseCase } from '../application/get-quick-reply-price.use-case';
+import { GetAiOperationUseCase } from '../application/get-ai-operation.use-case';
 import { StartQuickReplyUseCase } from '../application/start-quick-reply.use-case';
 import {
   AiActionPriceResourceDto,
   AiConversationResourceDto,
   AiOperationResourceDto,
+  StartQuickReplyRequestDto,
 } from './ai-companion.dto';
-import type { StartQuickReplyRequestDto } from './ai-companion.dto';
 
 @ApiTags('ai-companion')
 @ApiCookieAuth()
@@ -40,6 +42,8 @@ export class AiCompanionController {
     private readonly createConversation: CreateAiConversationUseCase,
     @Inject(StartQuickReplyUseCase)
     private readonly startQuickReply: StartQuickReplyUseCase,
+    @Inject(GetAiOperationUseCase)
+    private readonly getOperation: GetAiOperationUseCase,
   ) {}
 
   @Get('ai-action-prices/quick-reply')
@@ -74,6 +78,18 @@ export class AiCompanionController {
       accessToken: this.accessToken(request),
       idempotencyKey: requiredIdempotencyKey(idempotencyKey),
       ...body,
+    });
+  }
+
+  @Get('ai/operations/:id')
+  @ApiOkResponse({ type: AiOperationResourceDto })
+  getOperationById(
+    @Param('id') operationId: string,
+    @Req() request: Request,
+  ): Promise<AiOperationResourceDto> {
+    return this.getOperation.execute({
+      accessToken: this.accessToken(request),
+      operationId,
     });
   }
 

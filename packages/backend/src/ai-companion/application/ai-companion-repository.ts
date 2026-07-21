@@ -20,6 +20,25 @@ export type QueuedAiOperation = {
   runtimeAdapter: 'fake';
 };
 
+export type AiOperation = {
+  id: string;
+  status:
+    | 'queued'
+    | 'processing'
+    | 'succeeded'
+    | 'technicalError'
+    | 'outcomeUnknown';
+  conversationId: string;
+  inputMessageId: string;
+  outputMessageId?: string;
+  responseText?: string;
+  reservedTokens: number;
+  priceVersion: number;
+  pollUrl: string;
+  runtimeAdapter: 'fake';
+  errorCode?: string;
+};
+
 export type AiActionPrice = {
   actionType: 'quickReply';
   priceTokens: number;
@@ -42,4 +61,9 @@ export abstract class AiCompanionRepository {
     client: PoolClient,
     input: StartQuickReplyInput,
   ): Promise<QueuedAiOperation>;
+
+  abstract getOperation(
+    userId: string,
+    operationId: string,
+  ): Promise<AiOperation>;
 }

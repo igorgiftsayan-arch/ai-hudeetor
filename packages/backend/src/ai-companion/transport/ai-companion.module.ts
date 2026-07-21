@@ -3,6 +3,7 @@ import { DatabaseService } from '../../infrastructure/database/database.service'
 import { GetCurrentUserUseCase } from '../../identity/application/get-current-user.use-case';
 import { CreateAiConversationUseCase } from '../application/create-ai-conversation.use-case';
 import { GetQuickReplyPriceUseCase } from '../application/get-quick-reply-price.use-case';
+import { GetAiOperationUseCase } from '../application/get-ai-operation.use-case';
 import { AiCompanionRepository } from '../application/ai-companion-repository';
 import { StartQuickReplyUseCase } from '../application/start-quick-reply.use-case';
 import { PostgresAiCompanionRepository } from '../infrastructure/postgres-ai-companion.repository';
@@ -27,6 +28,14 @@ export class AiCompanionModule {
             currentUser: GetCurrentUserUseCase,
             repository: AiCompanionRepository,
           ) => new GetQuickReplyPriceUseCase(currentUser, repository),
+          inject: [GetCurrentUserUseCase, AiCompanionRepository],
+        },
+        {
+          provide: GetAiOperationUseCase,
+          useFactory: (
+            currentUser: GetCurrentUserUseCase,
+            repository: AiCompanionRepository,
+          ) => new GetAiOperationUseCase(currentUser, repository),
           inject: [GetCurrentUserUseCase, AiCompanionRepository],
         },
         {

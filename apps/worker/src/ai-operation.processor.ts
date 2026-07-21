@@ -60,8 +60,9 @@ export class AiOperationProcessor extends WorkerHost {
       );
       const r = reservation.rows[0]!;
       if (result.kind === 'success') {
-        await client.query(
-          `insert into ai_messages (id,conversation_id,role,content,prompt_version) values (gen_random_uuid(),$1,'assistant',$2,'quick-reply-v1')`,
+        const assistantMessage = await client.query<{ id: string }>(
+          `insert into ai_messages (id,conversation_id,role,content,prompt_version)
+           values (gen_random_uuid(),$1,'assistant',$2,'quick-reply-v1') returning id`,
           [row.conversation_id, result.text],
         );
         await client.query(
@@ -69,8 +70,8 @@ export class AiOperationProcessor extends WorkerHost {
           [r.wallet_id, row.user_id, operationId, r.id],
         );
         await client.query(
-          `update ai_operations set status='succeeded',updated_at=now() where id=$1`,
-          [operationId],
+          `update ai_operations set status='succeeded',output_message_id=$2,updated_at=now() where id=$1`,
+          [operationId, assistantMessage.rows[0]!.id],
         );
       } else if (result.kind === 'technicalError') {
         await client.query(
