@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
+  ApiBody,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiHeader,
@@ -67,6 +68,7 @@ export class AiCompanionController {
 
   @Post('ai/operations')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiBody({ type: StartQuickReplyRequestDto })
   @ApiHeader({ name: 'Idempotency-Key', required: true })
   @ApiAcceptedResponse({ type: AiOperationResourceDto })
   operation(

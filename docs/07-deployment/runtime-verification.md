@@ -1,5 +1,16 @@
 # BOOT-001 — runtime verification
 
+## VERT-001.5 — final fake-runtime verification
+
+- Date: 2026-07-21. Isolated test-server topology used a clean checkout of verification commit `7a794a0`, PostgreSQL 17, Redis 8, BullMQ and explicit `AI_PROVIDER=fake`.
+- Build and schema: web/API/worker/migrate images built successfully; six Drizzle migrations were present in `drizzle.__drizzle_migrations`; the migration command completed safely twice.
+- Main HTTP path: registration → profile → persona → onboarding completion → quick reply passed with HttpOnly session cookies, CSRF and permitted Origin. The operation moved `queued → processing → succeeded`; polling returned the fake response; an identical idempotency retry returned the saved `202` response.
+- Financial paths: success made one reservation and one confirmation; `technicalError` made exactly one refund and restored balance `100`; `outcomeUnknown` retained the reservation (balance `99`), made no terminal financial effect and blocked a new AI operation.
+- Delivery resilience: worker restart completed a queued operation once; republishing the same outbox event did not duplicate the assistant message or terminal ledger effect.
+- Regression and privacy: PostgreSQL AI tests passed 13/13; worker unit tests passed 2/2. Durable outbox payloads contained no prompt or response fields, and test content markers were absent from API and worker logs.
+- UI: the `/quick-reply` page served HTTP `200`; component coverage confirms the fake-runtime notice, managed price, submit flow and polling presentation.
+- This is a fake-adapter technical acceptance only. No real AI provider, provider SDK, provider key or real-model quality verification was used.
+
 ## VERT-001.5 worker fake-runtime verification
 
 - Isolated test-server Docker topology: PostgreSQL 17, Redis 8, BullMQ and `AI_PROVIDER=fake`.

@@ -107,7 +107,24 @@ export interface AiConversationResourceDto {
   id: string;
 }
 
-export interface Function { [key: string]: unknown }
+export type StartQuickReplyRequestDtoScenarioId = typeof StartQuickReplyRequestDtoScenarioId[keyof typeof StartQuickReplyRequestDtoScenarioId];
+
+
+export const StartQuickReplyRequestDtoScenarioId = {
+  quickReply: 'quickReply',
+} as const;
+
+export interface StartQuickReplyRequestDto {
+  conversationId: string;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  content: string;
+  scenarioId: StartQuickReplyRequestDtoScenarioId;
+  expectedPriceTokens: number;
+  priceVersion: number;
+}
 
 export type AiOperationResourceDtoStatus = typeof AiOperationResourceDtoStatus[keyof typeof AiOperationResourceDtoStatus];
 
@@ -697,14 +714,14 @@ export const getAiCompanionControllerOperationApiV1Url = () => {
   return `/api/v1/ai/operations`
 }
 
-export const aiCompanionControllerOperationApiV1 = async (_function: Function, options?: RequestInit): Promise<aiCompanionControllerOperationApiV1Response> => {
+export const aiCompanionControllerOperationApiV1 = async (startQuickReplyRequestDto: StartQuickReplyRequestDto, options?: RequestInit): Promise<aiCompanionControllerOperationApiV1Response> => {
 
   const res = await fetch(getAiCompanionControllerOperationApiV1Url(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(_function)
+    body: JSON.stringify(startQuickReplyRequestDto)
   }
 )
 
