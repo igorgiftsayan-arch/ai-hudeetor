@@ -1,5 +1,16 @@
 # BOOT-001 — runtime verification
 
+## UI-001 — isolated daily-weight UI verification
+
+- Date: 2026-07-22. Branch `ui/ui-001-daily-weight` was copied into `/opt/projects/ai-hudeetor-ui-001-verify` and started as Compose project `atlas-ui001`; stable `atlas-v01` containers and volumes were not changed.
+- Runtime: images built with Node.js 24.18.0 and pnpm 11.14.0; frozen install and workspace production build completed. Next.js output contains `/today` alongside the existing `/quick-reply`.
+- Topology: separate PostgreSQL/Redis volumes, API `3101`, web `3100`, healthy API/worker/web/PostgreSQL/Redis; migrations applied successfully to the isolated database.
+- Automated checks in the baseline image: web component tests 10/10, workspace typecheck and frontend lint passed. Final host regression after adding the explicit disabled/loading assertion passed 11/11; full repository lint passed after documenting the intentional Nest request-DTO value import, and changed files pass Prettier check.
+- Browser acceptance: Chromium mobile E2E 1/1 passed registration → profile → persona → completion → `/today` → weight `98,4` → `Записано` → reload persistence → `/quick-reply`.
+- Safe retry is covered by component tests: an unchanged weight payload reuses one `Idempotency-Key` after a network failure. Backend idempotency and ownership implementation were not changed.
+- Access from the owner's computer while the SSH tunnel is active: `http://localhost:3100/today`; API remains isolated at `http://localhost:3001/api/v1` through the same tunnel.
+- A fresh browser without an existing completed cookie session intentionally shows `Сессия закончилась`; UI-001 does not add or weaken authentication, and the current `main` has no login UI.
+
 ## VERT-001.5 — final fake-runtime verification
 
 - Date: 2026-07-21. Isolated test-server topology used a clean checkout of verification commit `7a794a0`, PostgreSQL 17, Redis 8, BullMQ and explicit `AI_PROVIDER=fake`.

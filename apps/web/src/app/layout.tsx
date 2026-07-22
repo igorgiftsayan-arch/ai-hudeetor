@@ -4,13 +4,13 @@ import { ServiceWorkerRegistration } from './service-worker-registration';
 import './styles.css';
 
 export const metadata: Metadata = {
-  description: 'ATLAS AI Friend project scaffold',
+  description: 'Спокойный дневник веса и AI-поддержка',
   manifest: '/manifest.webmanifest',
-  title: 'ATLAS V0.1',
+  title: 'Сегодня — дневник веса',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#17221b',
+  themeColor: '#f3efe5',
   width: 'device-width',
 };
 

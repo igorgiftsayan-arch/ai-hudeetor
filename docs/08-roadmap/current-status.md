@@ -1,12 +1,24 @@
 # Текущий статус
 
-- Дата: 2026-07-21
-- Текущая задача: VERT-001.5 завершена и объединена в `main`.
-- Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, базовый tracking веса и первый fake-runtime quick reply.
+- Дата: 2026-07-22
+- Текущая задача: UI-001 реализована и проверена в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
+- Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса, `/today` и первый fake-runtime quick reply.
 - Реальный AI provider, платежи, рефералы, AI memory, полноценный chat UX и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующая вертикаль не начата; требуется отдельная задача для VERT-001.5.
+- UI-001 использует существующий backend/API без migrations, новых endpoints или analytics events.
+
+## UI-001 — ежедневная фиксация веса
+
+- Добавлен mobile-first `/today` с сегодняшней датой, последним весом, нейтральной динамикой и последними 10 записями.
+- Вес сохраняется через существующий `POST /api/v1/weight-entries`; подтверждённый ответ обновляет экран без optimistic update.
+- Неизменённый payload повторяет стабильный `Idempotency-Key` после сетевой ошибки, поэтому server-side idempotency не создаёт дубль.
+- Реализованы loading, empty, saved, validation, network retry, session expired и disabled/loading states.
+- Минимальная навигация связывает `Сегодня` и существующий `/quick-reply`; completed user перенаправляется с технического onboarding на `/today`.
+- Backend, ledger, database schema, generated contracts и event registry не менялись.
+- Ручной сценарий: [UI-001 manual acceptance](../06-development/ui-001-manual-acceptance.md).
+- Изолированная test-server topology `atlas-ui001` прошла build, migrations, health, baseline-image tests/typecheck/lint и Chromium mobile E2E; стабильная `atlas-v01` не изменялась.
+- Локальный tunnel-адрес для самостоятельного просмотра: `http://localhost:3100/today` (нужна существующая completed cookie session; login UI в текущем scope отсутствует).
 
 ## VERT-001.5 — завершена
 

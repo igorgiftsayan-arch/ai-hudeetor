@@ -6,6 +6,10 @@
 
 ### Added
 
+- UI-001: mobile-first `/today` с последним весом, нейтральной динамикой, быстрым вводом, историей до 10 записей и минимальной навигацией `Сегодня`/`AI`.
+- UI-001: явные loading/empty/saved/validation/network retry/session expired states и безопасный повтор weight POST с тем же `Idempotency-Key`.
+- UI-001: web component tests для latest/history/create/validation/loading/error/retry/session/navigation и ручной acceptance-сценарий.
+- UI-001 verification: isolated Node 24.18/pnpm 11.14 Compose topology, migrations, service health, final web tests 11/11, workspace typecheck/frontend lint and Chromium mobile real-API E2E 1/1 passed without changing stable `atlas-v01`.
 - VERT-001.5: minimal `/quick-reply` web boundary, owner-scoped operation polling, fake-runtime notice and safe display of the completed assistant response.
 - VERT-001.5 final verification: isolated test-server fake-adapter acceptance confirmed success, technical refund, outcomeUnknown blocking, HTTP idempotency, duplicate outbox delivery, worker restart, PostgreSQL/worker regression and safe log/outbox payload boundaries.
 
@@ -32,6 +36,8 @@
 
 ### Changed
 
+- Completed onboarding теперь направляет пользователя на продуктовый `/today`; прямой доступ к `/quick-reply` сохранён.
+- Product web metadata и базовый визуальный слой обновлены с технического scaffold на спокойный mobile-first дневник без новой UI-библиотеки.
 - Закрыты правила реферального окна и активного пользователя.
 - «Донат» уточнён до покупки пакетов через действие «Пополнить токены».
 - PRD, scope, аналитика, правила исполнителя и roadmap синхронизированы с решениями DOC-002.

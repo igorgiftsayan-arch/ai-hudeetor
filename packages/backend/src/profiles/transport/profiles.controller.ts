@@ -15,6 +15,8 @@ import { GetOnboardingUseCase } from '../application/get-onboarding.use-case';
 import { SavePersonaPreferenceUseCase } from '../application/save-persona-preference.use-case';
 import { SaveProfileSetupUseCase } from '../application/save-profile-setup.use-case';
 import { profilesErrors } from '../domain/profiles-error';
+// Request DTO values are required by Nest's emitted design:paramtypes metadata.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   AiPreferenceRequestDto,
   AiPreferenceResourceDto,
