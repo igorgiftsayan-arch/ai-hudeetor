@@ -1,4 +1,4 @@
-const CACHE_NAME = 'atlas-shell-v1';
+const CACHE_NAME = 'atlas-shell-v2';
 const SAFE_SHELL = ['/', '/offline', '/icon.svg', '/maskable-icon.svg'];
 
 self.addEventListener('install', (event) => {
