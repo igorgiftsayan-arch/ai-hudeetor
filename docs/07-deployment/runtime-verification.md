@@ -108,6 +108,18 @@ docker compose ps
 - Повторы completion и идентичного weight request вернули сохранённые `201` без дублей; weight key с изменённым payload вернул `409 IDEMPOTENCY_KEY_REUSED`.
 - AI actions, reserve/confirm/refund, action prices, payments, referrals и outbox consumers не запускались.
 
+## UI-001 — isolated daily-weight test stand
+
+- Дата: 2026-07-23. Checkout ветки `ui/ui-001-daily-weight`: `4e906d8`; `main` не изменялся.
+- Изоляция: отдельный Compose project `atlas-ui-001`, собственные PostgreSQL/Redis volumes и network. Стабильный `atlas-v01` оставался healthy во время всей проверки.
+- Публикация: наружу доступен только nginx gateway на `3102`; API, worker, PostgreSQL и Redis используют внутренние Docker ports.
+- Migration image проверен до запуска; содержит SQL migrations до `0005`. Миграции применены дважды, metadata содержит 6 записей.
+- Все сервисы `atlas-ui-001` — PostgreSQL, Redis, API, worker, web и gateway — healthy. Публичный `/login` возвращает HTTP `200`.
+- Ручная browser acceptance: completed тестовый пользователь вошёл через `/login`, был перенаправлен на `/today`, увидел последнюю запись и историю, сохранил вес `98,4`, затем открыл `/quick-reply` через тот же gateway.
+- Mobile viewport `393×852`: `/today` корректно показывает текущий вес, историю, форму и нижнюю навигацию.
+- Retry: при временно остановленном только изолированном API UI показал понятную ошибку и кнопку повторения; после восстановления API одна повторная команда сохранила ровно одну новую weight entry. В PostgreSQL итог: `completed`, один wallet, balance `100`, один `starterGrant`, три weight entries.
+- Безопасность: в обычных логах API/worker/web/gateway не найдены тестовый email, пароль или значение веса. Credentials не документированы и не коммитились.
+
 ## Переход к VERT-001
 
 VERT-001 должен начинаться только отдельной утверждённой задачей. Его входные условия:

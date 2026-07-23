@@ -20,7 +20,7 @@
 - Истёкшая session на `/today` направляет на `/login`; auth cookies остаются HttpOnly и не сохраняются в browser storage.
 - Для внешнего тестового доступа подготовлен isolated Compose project `atlas-ui-001`: browser API идёт через same-origin gateway, наружу публикуется только port, заданный `UI001_PUBLIC_PORT`.
 - Ручной сценарий: [UI-001 manual acceptance](../06-development/ui-001-manual-acceptance.md).
-- Изолированная test-server topology `atlas-ui-001` подготовлена для runtime verification; до её завершения стабильная `atlas-v01` остаётся единственной подтверждённой средой.
+- Isolated test-server topology `atlas-ui-001` проверена на commit `4e906d8`: migrations repeatable, все шесть сервисов healthy, наружу опубликован только gateway. Login → today → weight retry → quick reply и mobile viewport прошли; `atlas-v01` остался healthy и неизменным.
 
 ## VERT-001.5 — завершена
 

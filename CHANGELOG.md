@@ -11,7 +11,7 @@
 - UI-001: web component tests для latest/history/create/validation/loading/error/retry/session/navigation и ручной acceptance-сценарий.
 - UI-001: минимальный `/login` через существующий session API, completed redirect на `/today` и возврат на `/login` после истечения сессии.
 - UI-001: same-origin `/api/v1` и изолированная Compose-конфигурация `atlas-ui-001`, публикующая только web gateway на настраиваемом `UI001_PUBLIC_PORT`.
-- UI-001: isolated runtime verification is prepared for a separate `atlas-ui-001` topology; it is not yet recorded as completed.
+- UI-001 verification: отдельный Compose project `atlas-ui-001` на test server прошёл migrations, health, browser/mobile acceptance login → today → idempotent retry → quick reply; стабильный `atlas-v01` не затрагивался.
 - VERT-001.5: minimal `/quick-reply` web boundary, owner-scoped operation polling, fake-runtime notice and safe display of the completed assistant response.
 - VERT-001.5 final verification: isolated test-server fake-adapter acceptance confirmed success, technical refund, outcomeUnknown blocking, HTTP idempotency, duplicate outbox delivery, worker restart, PostgreSQL/worker regression and safe log/outbox payload boundaries.
 
