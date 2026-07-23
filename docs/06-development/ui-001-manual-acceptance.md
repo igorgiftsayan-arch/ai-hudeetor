@@ -35,7 +35,7 @@
 - API documentation/contracts: N/A — используются существующие endpoints без изменения DTO.
 - Analytics events: N/A — новые frontend events не создаются; `weight_added` уже возникает на backend.
 - Ownership: применимо и остаётся server-side в существующем weight API.
-- Test server: применимо; отдельный Compose project `atlas-ui-001` публикует только gateway/web port, заданный `UI001_PUBLIC_PORT` (по умолчанию `3100`).
+- Test server: применимо; отдельный Compose project `atlas-ui-001` публикует только gateway/web port, заданный `UI001_PUBLIC_PORT` (по умолчанию `3102`).
 
 ## Результат 2026-07-22
 
