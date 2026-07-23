@@ -174,7 +174,41 @@ describe('today weight screen', () => {
     expect(await screen.findByText('Записано')).toBeInTheDocument();
   });
 
-  it('validates one decimal place before sending', async () => {
+  it('submits a two-decimal weight through the existing API', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/weight-entries` && !init?.method)
+          return json({ items: [], nextCursor: null });
+        if (url === `${api}/weight-entries` && init?.method === 'POST') {
+          expect(init.body).toBe(JSON.stringify({ weightKg: 98.45 }));
+          return json(
+            entry('weight-1', '98.45', '2026-07-22T04:00:00.000Z'),
+            201,
+          );
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      },
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<TodayPage />);
+    await screen.findByText(
+      'Здесь появятся ваши изменения. Начните с сегодняшнего веса.',
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'Вес сегодня' }),
+      '98,45',
+    );
+    await user.click(screen.getByRole('button', { name: 'Сохранить вес' }));
+
+    expect(await screen.findByText('Записано')).toBeInTheDocument();
+    expect(screen.getByTestId('weight-summary')).toHaveTextContent('98,45 кг');
+  });
+
+  it('rejects more than two fractional digits before sending', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -191,12 +225,12 @@ describe('today weight screen', () => {
     );
     await user.type(
       screen.getByRole('textbox', { name: 'Вес сегодня' }),
-      '98,45',
+      '98,456',
     );
     await user.click(screen.getByRole('button', { name: 'Сохранить вес' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Используйте не больше одного знака после запятой.',
+      'Используйте не больше двух знаков после запятой.',
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

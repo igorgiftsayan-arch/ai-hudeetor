@@ -1,7 +1,7 @@
 # Текущий статус
 
 - Дата: 2026-07-22
-- Текущая задача: UI-001 реализована и проверена в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
+- Текущая задача: UI-002 — поддержка веса с точностью до двух знаков в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса, `/today` и первый fake-runtime quick reply.
 - Реальный AI provider, платежи, рефералы, AI memory, полноценный chat UX и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
@@ -21,6 +21,12 @@
 - Для внешнего тестового доступа подготовлен isolated Compose project `atlas-ui-001`: browser API идёт через same-origin gateway, наружу публикуется только port, заданный `UI001_PUBLIC_PORT`.
 - Ручной сценарий: [UI-001 manual acceptance](../06-development/ui-001-manual-acceptance.md).
 - Isolated test-server topology `atlas-ui-001` проверена на commit `4e906d8`: migrations repeatable, все шесть сервисов healthy, наружу опубликован только gateway. Login → today → weight retry → quick reply и mobile viewport прошли; `atlas-v01` остался healthy и неизменным.
+
+## UI-002 — точность веса
+
+- Реализуется поддержка значений с нулём, одним или двумя знаками после запятой во frontend, API и PostgreSQL numeric persistence.
+- Требуется migration `numeric(4,1) → numeric(5,2)` без изменения существующих строк; идемпотентность weight command сохраняет исходный request hash.
+- До завершения runtime acceptance `atlas-ui-001` остаётся на проверенной UI-001 версии.
 
 ## VERT-001.5 — завершена
 

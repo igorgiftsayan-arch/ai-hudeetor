@@ -64,7 +64,7 @@ personaReady ── VERT-001.4 atomic completion + grant ──> completed
 
 ### 3.3 `WeightEntry` — только подготовленный контракт
 
-Будущий `WeightEntry` принадлежит user и имеет `weightKg numeric(4,1)`, `recordedAt`, `source=manual`, timestamps и immutable ID. Правила диапазона `20.0–500.0`, точности в один знак, future limit 5 минут и owner-scoped access остаются из [контракта](VERT-001-contracts.md#31-weightentry). Запись веса не является полем profile и не влияет на onboarding status.
+`WeightEntry` принадлежит user и имеет `weightKg numeric(5,2)`, `recordedAt`, `source=manual`, timestamps и immutable ID. Правила диапазона `20.0–500.0`, точности до двух знаков, future limit 5 минут и owner-scoped access остаются из [контракта](VERT-001-contracts.md#31-weightentry). Запись веса не является полем profile и не влияет на onboarding status.
 
 ## 4. Database design proposal
 
@@ -95,7 +95,7 @@ documentVersion = configured current version
 
 | Таблица | Поля | Ограничения и индексы |
 |---|---|---|
-| `weight_entries` | `id uuid PK`, `user_id uuid FK`, `weight_kg numeric(4,1)`, `recorded_at timestamptz`, `source text`, `created_at` | check диапазона и scale; check `source='manual'`; `idx_weight_entries_user_id_recorded_at`; unique idempotency record scoped user/operation, не unique weight value |
+| `weight_entries` | `id uuid PK`, `user_id uuid FK`, `weight_kg numeric(5,2)`, `recorded_at timestamptz`, `source text`, `created_at` | check диапазона и scale; check `source='manual'`; `idx_weight_entries_user_id_recorded_at`; unique idempotency record scoped user/operation, не unique weight value |
 
 Exact `numeric` исключает float. Ordering history: `recorded_at DESC, id DESC`. Внешний ID другой user возвращает `404 RESOURCE_NOT_FOUND`; repository queries всегда начинают с `user_id`.
 

@@ -180,7 +180,7 @@ export default function TodayPage() {
               <span>кг</span>
             </div>
             <p id="weight-input-hint" className="input-hint">
-              Можно указать один знак после запятой
+              Можно указать до двух знаков после запятой
             </p>
             <button
               className="primary-action"

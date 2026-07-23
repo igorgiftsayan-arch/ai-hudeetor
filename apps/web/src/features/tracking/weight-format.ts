@@ -6,10 +6,10 @@ export type WeightValidation =
 export function validateWeight(input: string): WeightValidation {
   const normalized = input.trim().replace(',', '.');
   if (!normalized) return { ok: false, message: 'Введите сегодняшний вес.' };
-  if (!/^\d+(?:\.\d)?$/.test(normalized)) {
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
     return {
       ok: false,
-      message: 'Используйте не больше одного знака после запятой.',
+      message: 'Используйте не больше двух знаков после запятой.',
     };
   }
 
@@ -18,13 +18,13 @@ export function validateWeight(input: string): WeightValidation {
     return { ok: false, message: 'Введите вес от 20 до 500 кг.' };
   }
 
-  return { ok: true, value, payload: value.toFixed(1) };
+  return { ok: true, value, payload: value.toFixed(2) };
 }
 
 export function formatWeight(weightKg: string | number): string {
   return `${new Intl.NumberFormat('ru-RU', {
     minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    maximumFractionDigits: 2,
   }).format(Number(weightKg))} кг`;
 }
 
@@ -34,12 +34,12 @@ export function formatDelta(
   withContext = false,
 ): string {
   const delta =
-    Math.round((Number(current.weightKg) - Number(previous.weightKg)) * 10) /
-    10;
+    Math.round((Number(current.weightKg) - Number(previous.weightKg)) * 100) /
+    100;
   const sign = delta < 0 ? '−' : delta > 0 ? '+' : '';
   const amount = new Intl.NumberFormat('ru-RU', {
     minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    maximumFractionDigits: 2,
   }).format(Math.abs(delta));
   return `${sign}${amount} кг${withContext ? ' с прошлой записи' : ''}`;
 }

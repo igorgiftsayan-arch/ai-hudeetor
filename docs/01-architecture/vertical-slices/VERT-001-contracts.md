@@ -101,7 +101,7 @@ Persona IDs стабильны в API и данных; отображаемые 
 
 | Поле | Тип | Обязательность | Правила |
 |---|---|---|---|
-| `weightKg` | decimal | да | 20.0–500.0 kg inclusive; максимум 1 знак после запятой; JSON number, в БД exact numeric, не float |
+| `weightKg` | decimal | да | 20.0–500.0 kg inclusive; максимум 2 знака после запятой; JSON number, в БД exact numeric, не float |
 | `recordedAt` | timestamp | нет | default server now; допускается историческое значение, но не более 5 минут в будущем |
 | `source` | enum | server/default | VERT-001 принимает только `manual` |
 
@@ -389,7 +389,7 @@ CompleteOnboardingRequest
   // empty object; server is the sole source of the starter grant amount
 
 CreateWeightEntryRequest
-  weightKg: decimal(4,1)
+  weightKg: decimal(5,2)
   recordedAt?: IsoUtcTimestamp
 
 CreateBodyMeasurementRequest

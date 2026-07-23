@@ -21,15 +21,17 @@ export class CreateWeightEntryUseCase {
       !Number.isFinite(input.weightKg) ||
       input.weightKg < 20 ||
       input.weightKg > 500 ||
-      Math.round(input.weightKg * 10) !== input.weightKg * 10 ||
+      Math.round(input.weightKg * 100) !== input.weightKg * 100 ||
       (requestedRecordedAt && Number.isNaN(requestedRecordedAt.valueOf())) ||
-      (requestedRecordedAt && requestedRecordedAt.getTime() > Date.now() + 300000)
+      (requestedRecordedAt &&
+        requestedRecordedAt.getTime() > Date.now() + 300000)
     )
       throw new IdentityError(
         'VALIDATION_ERROR',
         422,
         'The weight entry is invalid',
       );
+    const normalizedWeight = input.weightKg.toFixed(2);
     const payload = {
       weightKg: input.weightKg,
       recordedAt: input.recordedAt ?? null,
@@ -75,11 +77,11 @@ export class CreateWeightEntryUseCase {
       const id = randomUUID();
       await client.query(
         `insert into weight_entries (id,user_id,weight_kg,recorded_at) values ($1,$2,$3,$4)`,
-        [id, user.userId, input.weightKg, recordedAt],
+        [id, user.userId, normalizedWeight, recordedAt],
       );
       const response = {
         id,
-        weightKg: input.weightKg.toFixed(1),
+        weightKg: normalizedWeight,
         recordedAt: recordedAt.toISOString(),
         source: 'manual' as const,
       };

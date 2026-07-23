@@ -1,0 +1,1151 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_liveness_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "API liveness",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "HealthController_readiness_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "API dependency readiness",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/registrations": {
+      "post": {
+        "operationId": "IdentityController_register_api/v1",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "operationId": "IdentityController_login_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/sessions/refreshes": {
+      "post": {
+        "operationId": "IdentityController_refresh_api/v1",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/sessions/current": {
+      "delete": {
+        "operationId": "IdentityController_logoutCurrent_api/v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "operationId": "IdentityController_current_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/ai-action-prices/quick-reply": {
+      "get": {
+        "operationId": "AiCompanionController_price_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiActionPriceResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/ai-conversations": {
+      "post": {
+        "operationId": "AiCompanionController_conversation_api/v1",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConversationResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/ai/operations": {
+      "post": {
+        "operationId": "AiCompanionController_operation_api/v1",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartQuickReplyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiOperationResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/ai/operations/{id}": {
+      "get": {
+        "operationId": "AiCompanionController_getOperationById_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiOperationResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/users/me/onboarding": {
+      "get": {
+        "operationId": "ProfilesController_onboarding_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/v1/users/me/profile": {
+      "patch": {
+        "operationId": "ProfilesController_updateProfile_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/v1/users/me/ai-preference": {
+      "put": {
+        "operationId": "ProfilesController_updatePreference_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiPreferenceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPreferenceResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/v1/users/me/onboarding-completions": {
+      "post": {
+        "operationId": "TokenEconomyController_completion_api/v1",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingCompletionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "token-economy"
+        ]
+      }
+    },
+    "/api/v1/token-wallets/current": {
+      "get": {
+        "operationId": "TokenEconomyController_current_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenWalletResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "token-economy"
+        ]
+      }
+    },
+    "/api/v1/weight-entries": {
+      "post": {
+        "operationId": "TrackingController_createEntry_api/v1",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWeightEntryRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeightEntryResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "tracking"
+        ]
+      },
+      "get": {
+        "operationId": "TrackingController_entries_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "tracking"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "ATLAS API",
+    "description": "",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "ConsentAcceptanceDto": {
+        "type": "object",
+        "properties": {
+          "consentType": {
+            "type": "string",
+            "enum": [
+              "terms",
+              "privacy"
+            ]
+          },
+          "documentVersion": {
+            "type": "string",
+            "example": "v1"
+          },
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "consentType",
+          "documentVersion",
+          "accepted"
+        ]
+      },
+      "RegistrationRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "person@example.com",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128,
+            "writeOnly": true
+          },
+          "ageConfirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "consents": {
+            "minItems": 2,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsentAcceptanceDto"
+            }
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "ageConfirmed",
+          "consents"
+        ]
+      },
+      "RegistrationResourceDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "onboardingStatus": {
+            "type": "string",
+            "enum": [
+              "registered",
+              "profileReady",
+              "personaReady",
+              "completed"
+            ]
+          },
+          "sessionExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "csrfToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "onboardingStatus",
+          "sessionExpiresAt",
+          "csrfToken"
+        ]
+      },
+      "CreateSessionRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "person@example.com",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "SessionResourceDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "onboardingStatus": {
+            "type": "string",
+            "enum": [
+              "registered",
+              "profileReady",
+              "personaReady",
+              "completed"
+            ]
+          },
+          "csrfToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "expiresAt",
+          "onboardingStatus",
+          "csrfToken"
+        ]
+      },
+      "CurrentUserResourceDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "onboardingStatus": {
+            "type": "string",
+            "enum": [
+              "registered",
+              "profileReady",
+              "personaReady",
+              "completed"
+            ]
+          }
+        },
+        "required": [
+          "userId",
+          "onboardingStatus"
+        ]
+      },
+      "AiActionPriceResourceDto": {
+        "type": "object",
+        "properties": {
+          "actionType": {
+            "type": "string",
+            "enum": [
+              "quickReply"
+            ]
+          },
+          "priceTokens": {
+            "type": "number",
+            "example": 1
+          },
+          "priceVersion": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "actionType",
+          "priceTokens",
+          "priceVersion"
+        ]
+      },
+      "AiConversationResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "StartQuickReplyRequestDto": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "scenarioId": {
+            "type": "string",
+            "enum": [
+              "quickReply"
+            ]
+          },
+          "expectedPriceTokens": {
+            "type": "number",
+            "example": 1
+          },
+          "priceVersion": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "conversationId",
+          "content",
+          "scenarioId",
+          "expectedPriceTokens",
+          "priceVersion"
+        ]
+      },
+      "AiOperationResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "succeeded",
+              "technicalError",
+              "outcomeUnknown"
+            ]
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inputMessageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservedTokens": {
+            "type": "number"
+          },
+          "priceVersion": {
+            "type": "number"
+          },
+          "pollUrl": {
+            "type": "string"
+          },
+          "runtimeAdapter": {
+            "type": "string",
+            "enum": [
+              "fake"
+            ]
+          },
+          "outputMessageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responseText": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "conversationId",
+          "inputMessageId",
+          "reservedTokens",
+          "priceVersion",
+          "pollUrl",
+          "runtimeAdapter"
+        ]
+      },
+      "UserProfileResourceDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "onboardingStatus": {
+            "type": "string",
+            "enum": [
+              "registered",
+              "profileReady",
+              "personaReady",
+              "completed"
+            ]
+          }
+        },
+        "required": [
+          "userId",
+          "timezone",
+          "onboardingStatus"
+        ]
+      },
+      "AiPreferenceResourceDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "personaId": {
+            "type": "string",
+            "enum": [
+              "gentleFriend",
+              "strictCoach",
+              "russianLuli",
+              "glamorousFriend",
+              "analyst"
+            ]
+          },
+          "strictness": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "responseLength": {
+            "type": "string",
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ]
+          },
+          "onboardingStatus": {
+            "type": "string",
+            "enum": [
+              "registered",
+              "profileReady",
+              "personaReady",
+              "completed"
+            ]
+          }
+        },
+        "required": [
+          "userId",
+          "personaId",
+          "strictness",
+          "responseLength",
+          "onboardingStatus"
+        ]
+      },
+      "OnboardingResourceDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "registered",
+              "profileReady",
+              "personaReady",
+              "completed"
+            ]
+          },
+          "completedSteps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requiredSteps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "canComplete": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "aiWellnessNoticeVersion": {
+            "type": "string"
+          },
+          "csrfToken": {
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfileResourceDto"
+          },
+          "aiPreference": {
+            "$ref": "#/components/schemas/AiPreferenceResourceDto"
+          }
+        },
+        "required": [
+          "status",
+          "completedSteps",
+          "requiredSteps",
+          "canComplete",
+          "aiWellnessNoticeVersion",
+          "csrfToken"
+        ]
+      },
+      "WellnessNoticeConsentDto": {
+        "type": "object",
+        "properties": {
+          "consentType": {
+            "type": "string",
+            "enum": [
+              "aiWellnessNotice"
+            ]
+          },
+          "documentVersion": {
+            "type": "string",
+            "example": "test-v1"
+          },
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "consentType",
+          "documentVersion",
+          "accepted"
+        ]
+      },
+      "UpdateProfileRequestDto": {
+        "type": "object",
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "example": "Asia/Irkutsk",
+            "maxLength": 64
+          },
+          "consents": {
+            "maxItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WellnessNoticeConsentDto"
+            }
+          }
+        },
+        "required": [
+          "timezone"
+        ]
+      },
+      "AiPreferenceRequestDto": {
+        "type": "object",
+        "properties": {
+          "personaId": {
+            "type": "string",
+            "enum": [
+              "gentleFriend",
+              "strictCoach",
+              "russianLuli",
+              "glamorousFriend",
+              "analyst"
+            ]
+          },
+          "strictness": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "responseLength": {
+            "type": "string",
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ]
+          }
+        },
+        "required": [
+          "personaId"
+        ]
+      },
+      "OnboardingCompletionResourceDto": {
+        "type": "object",
+        "properties": {
+          "onboardingStatus": {
+            "type": "string",
+            "enum": [
+              "completed"
+            ]
+          },
+          "starterTokensGranted": {
+            "type": "number",
+            "example": 100
+          },
+          "tokenBalance": {
+            "type": "number",
+            "example": 100
+          }
+        },
+        "required": [
+          "onboardingStatus",
+          "starterTokensGranted",
+          "tokenBalance"
+        ]
+      },
+      "TokenWalletResourceDto": {
+        "type": "object",
+        "properties": {
+          "walletId": {
+            "type": "object",
+            "nullable": true
+          },
+          "availableBalance": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "walletId",
+          "availableBalance"
+        ]
+      },
+      "CreateWeightEntryRequestDto": {
+        "type": "object",
+        "properties": {
+          "weightKg": {
+            "type": "number",
+            "example": 75.55,
+            "minimum": 20,
+            "maximum": 500,
+            "multipleOf": 0.01
+          },
+          "recordedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "weightKg"
+        ]
+      },
+      "WeightEntryResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "weightKg": {
+            "type": "string"
+          },
+          "recordedAt": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "weightKg",
+          "recordedAt",
+          "source"
+        ]
+      }
+    }
+  }
+}

@@ -321,6 +321,15 @@ export interface TokenWalletResourceDto {
   availableBalance: number;
 }
 
+export interface CreateWeightEntryRequestDto {
+  /**
+     * @minimum 20
+     * @maximum 500
+     */
+  weightKg: number;
+  recordedAt?: string;
+}
+
 export interface WeightEntryResourceDto {
   id: string;
   weightKg: string;
@@ -994,14 +1003,14 @@ export const getTrackingControllerCreateEntryApiV1Url = () => {
   return `/api/v1/weight-entries`
 }
 
-export const trackingControllerCreateEntryApiV1 = async ( options?: RequestInit): Promise<trackingControllerCreateEntryApiV1Response> => {
+export const trackingControllerCreateEntryApiV1 = async (createWeightEntryRequestDto: CreateWeightEntryRequestDto, options?: RequestInit): Promise<trackingControllerCreateEntryApiV1Response> => {
 
   const res = await fetch(getTrackingControllerCreateEntryApiV1Url(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createWeightEntryRequestDto)
   }
 )
 
