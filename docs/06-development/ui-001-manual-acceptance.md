@@ -32,8 +32,8 @@
 ## Definition of Done applicability
 
 - Код и web tests: применимо.
-- Миграции: N/A — схема и backend не меняются.
-- API documentation/contracts: N/A — используются существующие endpoints без изменения DTO.
+- Миграции: применимо для UI-002 — migration `0006_ui_002_weight_precision.sql` переводит numeric precision без потери существующих строк.
+- API documentation/contracts: применимо для UI-002 — DTO и OpenAPI contract допускают до двух знаков после запятой.
 - Analytics events: N/A — новые frontend events не создаются; `weight_added` уже возникает на backend.
 - Ownership: применимо и остаётся server-side в существующем weight API.
 - Test server: применимо; отдельный Compose project `atlas-ui-001` публикует только gateway/web port, заданный `UI001_PUBLIC_PORT` (по умолчанию `3102`).
@@ -43,3 +43,9 @@
 - Основной browser-сценарий выполнен Chromium mobile против реального API: completion, empty state, save `98,4`, `Записано`, reload persistence и переход в AI.
 - Component tests подтверждают latest/history, validation, loading/error/retry, session expired, disabled state и стабильный ключ сетевого повтора.
 - Визуально проверен mobile viewport: главное действие, summary и история читаемы; AI остаётся вторичным действием.
+
+## Результат UI-002 2026-07-23
+
+- В isolated `atlas-ui-001` migration `0006` применена дважды; `weight_kg` имеет `numeric(5,2)`, а существующие записи сохранены.
+- Browser/mobile acceptance подтвердил сохранение и отображение `98`, `98,4` и `98,45`.
+- `98,456` получает понятную client-side ошибку и API возвращает `422 VALIDATION_ERROR`; identical retry с тем же `Idempotency-Key` не создаёт вторую entry.
