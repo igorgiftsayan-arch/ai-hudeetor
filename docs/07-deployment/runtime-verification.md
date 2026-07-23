@@ -122,12 +122,13 @@ docker compose ps
 
 ## UI-002 — isolated two-decimal weight verification
 
-- Дата: 2026-07-23. Проверен checkout ветки `ui/ui-001-daily-weight` на implementation commit `b35214f`; `main` и stable Compose project `atlas-v01` не изменялись.
+- Дата: 2026-07-23. Первоначальная проверка на `d09b02a` признана недействительной: web container не был пересоздан из актуального image, а PWA shell сохранял cache version `atlas-shell-v1`. Исправление PWA cache и фактическое развёртывание проверены на commit `4339439`; `main` и stable Compose project `atlas-v01` не изменялись.
 - Изолированный project `atlas-ui-001`: API и web обновлены, PostgreSQL migration `0006_ui_002_weight_precision.sql` применена дважды. В `drizzle.__drizzle_migrations` — 7 записей; `weight_entries.weight_kg` имеет тип `numeric(5,2)`.
 - Существующие записи сохранены. В browser acceptance последовательно сохранены `98`, `98,4` и `98,45`; последний вес и история отображают точность без округления.
 - `98,456` остановлен frontend validation с понятной ошибкой; прямой API request с `98.456` возвращает `422 VALIDATION_ERROR`.
 - Идентичный API retry с тем же `Idempotency-Key` вернул ту же weight entry; второй business effect не создан. PostgreSQL остаётся источником истины.
-- Browser login → `/today`, mobile viewport `393×852` и переход на `/quick-reply` прошли. Наружу по-прежнему опубликован только gateway UI-стенда; stable `atlas-v01` не затрагивался.
+- Web image пересобран из `4339439`, а web/gateway пересозданы. Работающий web container и `atlas-ui-001-web:latest` используют один digest `sha256:0a281f6063b0103e4294e8297478baec28ed9cd663658e588b7d20da54990997`; `sw.js` отдаёт `atlas-shell-v2`.
+- В чистом browser profile login → `/today` и ввод `98.45` прошли: значение отображается как `98,45 кг`. Наружу по-прежнему опубликован только gateway UI-стенда; stable `atlas-v01` не затрагивался.
 
 ## Переход к VERT-001
 

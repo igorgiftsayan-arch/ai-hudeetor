@@ -13,6 +13,7 @@
 - UI-001: same-origin `/api/v1` и изолированная Compose-конфигурация `atlas-ui-001`, публикующая только web gateway на настраиваемом `UI001_PUBLIC_PORT`.
 - UI-001 verification: отдельный Compose project `atlas-ui-001` на test server прошёл migrations, health, browser/mobile acceptance login → today → idempotent retry → quick reply; стабильный `atlas-v01` не затрагивался.
 - UI-002: weight entry поддерживает до двух знаков после запятой во frontend, backend validation, API contract и PostgreSQL `numeric(5,2)`; isolated test-server verification подтверждает repeatable migration, browser/mobile flow, API validation и idempotent retry без дубля.
+- UI-002: PWA shell cache version обновлена до `atlas-shell-v2`; isolated web/gateway пересобраны и пересозданы, а чистый browser profile подтвердил получение нового frontend build.
 - VERT-001.5: minimal `/quick-reply` web boundary, owner-scoped operation polling, fake-runtime notice and safe display of the completed assistant response.
 - VERT-001.5 final verification: isolated test-server fake-adapter acceptance confirmed success, technical refund, outcomeUnknown blocking, HTTP idempotency, duplicate outbox delivery, worker restart, PostgreSQL/worker regression and safe log/outbox payload boundaries.
 

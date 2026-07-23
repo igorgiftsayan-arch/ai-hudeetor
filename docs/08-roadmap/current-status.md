@@ -26,7 +26,8 @@
 
 - Реализована поддержка значений с нулём, одним или двумя знаками после запятой во frontend, API и PostgreSQL numeric persistence.
 - Migration `0006_ui_002_weight_precision.sql` переводит `weight_entries.weight_kg` с `numeric(4,1)` на `numeric(5,2)` без потери существующих строк; idempotency weight command сохраняет исходный request hash.
-- Isolated test stand `atlas-ui-001` обновлён и проверен: migrations repeatable, `98` / `98,4` / `98,45` сохраняются, `98,456` отклоняется в UI и API, identical retry не создаёт дубль. Stable `atlas-v01` остался healthy и неизменным.
+- Первичная runtime verification была отменена: web container не был пересоздан из актуального image, а PWA использовал неизменённый shell cache `v1`. Исправление `4339439` меняет cache на `atlas-shell-v2`; web/gateway изолированного стенда пересобраны и пересозданы из этого commit.
+- В чистом browser profile `98.45` сохраняется и показывается как `98,45 кг`; migrations repeatable, `98` / `98,4` / `98,45` сохраняются, `98,456` отклоняется в UI и API, identical retry не создаёт дубль. Stable `atlas-v01` остался healthy и неизменным.
 
 ## VERT-001.5 — завершена
 
