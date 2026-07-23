@@ -16,9 +16,11 @@
 - Реализованы loading, empty, saved, validation, network retry, session expired и disabled/loading states.
 - Минимальная навигация связывает `Сегодня` и существующий `/quick-reply`; completed user перенаправляется с технического onboarding на `/today`.
 - Backend, ledger, database schema, generated contracts и event registry не менялись.
+- Добавлен минимальный `/login` через существующий `POST /sessions`; фактический onboarding state читается после входа и completed user направляется на `/today`.
+- Истёкшая session на `/today` направляет на `/login`; auth cookies остаются HttpOnly и не сохраняются в browser storage.
+- Для внешнего тестового доступа подготовлен isolated Compose project `atlas-ui-001`: browser API идёт через same-origin gateway, наружу публикуется только port `3100`.
 - Ручной сценарий: [UI-001 manual acceptance](../06-development/ui-001-manual-acceptance.md).
-- Изолированная test-server topology `atlas-ui001` прошла build, migrations, health, baseline-image tests/typecheck/lint и Chromium mobile E2E; стабильная `atlas-v01` не изменялась.
-- Локальный tunnel-адрес для самостоятельного просмотра: `http://localhost:3100/today` (нужна существующая completed cookie session; login UI в текущем scope отсутствует).
+- Изолированная test-server topology `atlas-ui-001` подготовлена для runtime verification; до её завершения стабильная `atlas-v01` остаётся единственной подтверждённой средой.
 
 ## VERT-001.5 — завершена
 

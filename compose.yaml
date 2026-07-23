@@ -98,6 +98,8 @@ services:
     build:
       <<: *app-build
       target: web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
       WEB_PORT: 3000

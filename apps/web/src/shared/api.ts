@@ -11,12 +11,12 @@ export class ApiError extends Error {
   }
 }
 
-export const apiBase =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api/v1';
+export const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1';
 
 export async function apiRequest<TResult>(
   path: string,
   init?: RequestInit,
+  options?: { unauthorizedKind?: 'session' | 'request' },
 ): Promise<TResult> {
   let response: Response;
   try {
@@ -39,7 +39,14 @@ export async function apiRequest<TResult>(
   const error = (body as { error?: { code?: string; message?: string } })
     ?.error;
   if (response.status === 401) {
-    throw new ApiError('session', 'Сессия закончилась', error?.code);
+    const kind = options?.unauthorizedKind ?? 'session';
+    throw new ApiError(
+      kind,
+      kind === 'session'
+        ? 'Сессия закончилась'
+        : (error?.message ?? 'Не удалось войти. Проверьте данные.'),
+      error?.code,
+    );
   }
 
   throw new ApiError(

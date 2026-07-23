@@ -3,15 +3,17 @@ import { expect, test } from '@playwright/test';
 const apiBase = process.env.E2E_API_URL ?? 'http://localhost:3001/api/v1';
 const webOrigin = process.env.E2E_WEB_ORIGIN ?? 'http://localhost:3100';
 
-test('completed user records weight on today and opens quick reply', async ({
-  context,
+test.use({ serviceWorkers: 'block' });
+
+test('completed user logs in, safely retries weight and opens quick reply', async ({
+  request,
   page,
 }) => {
   const email = `ui001-${Date.now()}@example.com`;
   const password = 'UI001-test-password-42';
   const headers = { Origin: webOrigin };
 
-  const registration = await context.request.post(`${apiBase}/registrations`, {
+  const registration = await request.post(`${apiBase}/registrations`, {
     headers: {
       ...headers,
       'Idempotency-Key': `ui001-registration-${Date.now()}`,
@@ -33,7 +35,7 @@ test('completed user records weight on today and opens quick reply', async ({
     'X-CSRF-Token': registrationBody.csrfToken,
   };
 
-  const profile = await context.request.patch(`${apiBase}/users/me/profile`, {
+  const profile = await request.patch(`${apiBase}/users/me/profile`, {
     headers: mutationHeaders,
     data: {
       timezone: 'Asia/Irkutsk',
@@ -48,20 +50,17 @@ test('completed user records weight on today and opens quick reply', async ({
   });
   expect(profile.status()).toBe(200);
 
-  const persona = await context.request.put(
-    `${apiBase}/users/me/ai-preference`,
-    {
-      headers: mutationHeaders,
-      data: {
-        personaId: 'gentleFriend',
-        strictness: 'low',
-        responseLength: 'short',
-      },
+  const persona = await request.put(`${apiBase}/users/me/ai-preference`, {
+    headers: mutationHeaders,
+    data: {
+      personaId: 'gentleFriend',
+      strictness: 'low',
+      responseLength: 'short',
     },
-  );
+  });
   expect(persona.status()).toBe(200);
 
-  const completion = await context.request.post(
+  const completion = await request.post(
     `${apiBase}/users/me/onboarding-completions`,
     {
       headers: {
@@ -72,20 +71,53 @@ test('completed user records weight on today and opens quick reply', async ({
   );
   expect(completion.status()).toBe(201);
 
-  await page.goto('/today');
+  for (const [index, weightKg] of [99, 98.8].entries()) {
+    const seedWeight = await request.post(`${apiBase}/weight-entries`, {
+      headers: {
+        ...mutationHeaders,
+        'Idempotency-Key': `ui001-seed-weight-${Date.now()}-${index}`,
+      },
+      data: { weightKg },
+    });
+    expect(seedWeight.status()).toBe(201);
+  }
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Пароль').fill(password);
+  await page.getByRole('button', { name: 'Войти' }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  await expect(page.getByTestId('weight-summary')).toContainText('98,8 кг');
   await expect(
-    page.getByText(
-      'Здесь появятся ваши изменения. Начните с сегодняшнего веса.',
-    ),
-  ).toBeVisible();
+    page.getByLabel('Недавняя история веса').getByRole('listitem'),
+  ).toHaveCount(2);
+
+  let responseWasLost = false;
+  await page.route('**/api/v1/weight-entries', async (route) => {
+    if (route.request().method() === 'POST' && !responseWasLost) {
+      responseWasLost = true;
+      const response = await route.fetch();
+      expect(response.status()).toBe(201);
+      await route.abort('failed');
+      return;
+    }
+    await route.continue();
+  });
 
   await page.getByRole('textbox', { name: 'Вес сегодня' }).fill('98,4');
   await page.getByRole('button', { name: 'Сохранить вес' }).click();
+  await page.getByRole('button', { name: 'Повторить сохранение' }).click();
   await expect(page.getByText('Записано')).toBeVisible();
   await expect(page.getByTestId('weight-summary')).toContainText('98,4 кг');
+  await expect(
+    page.getByLabel('Недавняя история веса').getByRole('listitem'),
+  ).toHaveCount(3);
 
   await page.reload();
   await expect(page.getByTestId('weight-summary')).toContainText('98,4 кг');
+  await expect(
+    page.getByLabel('Недавняя история веса').getByRole('listitem'),
+  ).toHaveCount(3);
   await page.getByRole('link', { name: 'Поговорить с AI' }).click();
   await expect(page).toHaveURL(/\/quick-reply$/);
 });

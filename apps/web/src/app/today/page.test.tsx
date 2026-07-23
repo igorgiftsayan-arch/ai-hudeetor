@@ -1,11 +1,17 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TodayPage from './page';
 
-const api = 'http://localhost:3001/api/v1';
+const api = '/api/v1';
+const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: replaceMock }),
+}));
 
 describe('today weight screen', () => {
   beforeEach(() => {
+    replaceMock.mockReset();
     vi.setSystemTime(new Date('2026-07-22T04:00:00.000Z'));
   });
 
@@ -226,7 +232,7 @@ describe('today weight screen', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows a dedicated session expired state', async () => {
+  it('redirects an expired session to login', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
@@ -246,12 +252,7 @@ describe('today weight screen', () => {
 
     render(<TodayPage />);
 
-    expect(
-      await screen.findByRole('heading', { name: 'Сессия закончилась' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Войдите снова, чтобы увидеть и сохранить свои записи.'),
-    ).toBeInTheDocument();
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/login'));
   });
 });
 

@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import QuickReplyPage from './page';
 
-const api = 'http://localhost:3001/api/v1';
+const api = '/api/v1';
 
 describe('quick reply screen', () => {
   beforeEach(() => {

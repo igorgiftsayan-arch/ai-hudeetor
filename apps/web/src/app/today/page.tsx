@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '../mobile-navigation';
 import {
   createWeightEntry,
@@ -18,10 +19,11 @@ import {
 } from '../../features/tracking/weight-format';
 import { ApiError, newIdempotencyKey } from '../../shared/api';
 
-type ViewState = 'loading' | 'ready' | 'error' | 'session' | 'onboarding';
+type ViewState = 'loading' | 'ready' | 'error' | 'onboarding';
 type PendingSubmission = { idempotencyKey: string; payload: string };
 
 export default function TodayPage() {
+  const { replace } = useRouter();
   const [viewState, setViewState] = useState<ViewState>('loading');
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [csrfToken, setCsrfToken] = useState('');
@@ -43,14 +45,14 @@ export default function TodayPage() {
       setViewState('ready');
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') {
-        setViewState('session');
+        replace('/login');
       } else if (cause instanceof ApiError && cause.kind === 'onboarding') {
         setViewState('onboarding');
       } else {
         setViewState('error');
       }
     }
-  }, []);
+  }, [replace]);
 
   useEffect(() => {
     void load();
@@ -98,7 +100,7 @@ export default function TodayPage() {
       setSaved(true);
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') {
-        setViewState('session');
+        replace('/login');
       } else {
         setSaveError(
           cause instanceof Error
@@ -281,20 +283,6 @@ function TodayBoundary({
               onClick={() => void onRetry()}
             >
               Попробовать снова
-            </button>
-          </div>
-        )}
-        {state === 'session' && (
-          <div className="boundary-message" role="alert">
-            <p className="section-label">Нужен повторный вход</p>
-            <h1>Сессия закончилась</h1>
-            <p>Войдите снова, чтобы увидеть и сохранить свои записи.</p>
-            <button
-              type="button"
-              className="primary-action"
-              onClick={() => void onRetry()}
-            >
-              Проверить сессию
             </button>
           </div>
         )}

@@ -16,8 +16,7 @@ type Operation = {
   errorCode?: string;
 };
 
-const apiBase =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api/v1';
+const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1';
 
 export default function QuickReplyPage() {
   const [csrfToken, setCsrfToken] = useState<string>();

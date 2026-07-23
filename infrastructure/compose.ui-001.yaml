@@ -1,0 +1,31 @@
+name: atlas-ui-001
+
+services:
+  api:
+    environment:
+      API_CORS_ORIGIN: ${UI001_PUBLIC_ORIGIN:?UI001_PUBLIC_ORIGIN is required}
+      IDENTITY_SECURE_COOKIES: 'false'
+    ports: !override []
+
+  web:
+    build:
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api/v1
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: /api/v1
+    ports: !override []
+
+  gateway:
+    image: nginx:1.27-alpine
+    depends_on:
+      api: { condition: service_healthy }
+      web: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1/login']
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    ports:
+      - '3100:80'
+    volumes:
+      - ./infrastructure/nginx.ui-001.conf:/etc/nginx/conf.d/default.conf:ro
