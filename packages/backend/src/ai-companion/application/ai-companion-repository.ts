@@ -23,11 +23,7 @@ export type QueuedAiOperation = {
 export type AiOperation = {
   id: string;
   status:
-    | 'queued'
-    | 'processing'
-    | 'succeeded'
-    | 'technicalError'
-    | 'outcomeUnknown';
+    'queued' | 'processing' | 'succeeded' | 'technicalError' | 'outcomeUnknown';
   conversationId: string;
   inputMessageId: string;
   outputMessageId?: string;
@@ -49,6 +45,17 @@ export type AiConversation = {
   id: string;
 };
 
+export type AiConversationMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+};
+
+export type AiConversationDetail = AiConversation & {
+  messages: AiConversationMessage[];
+};
+
 export abstract class AiCompanionRepository {
   abstract getQuickReplyPrice(userId: string): Promise<AiActionPrice>;
 
@@ -56,6 +63,15 @@ export abstract class AiCompanionRepository {
     client: PoolClient,
     input: { userId: string; idempotencyKey: string },
   ): Promise<AiConversation>;
+
+  abstract getConversation(
+    userId: string,
+    conversationId: string,
+  ): Promise<AiConversationDetail>;
+
+  abstract getCurrentConversation(
+    userId: string,
+  ): Promise<AiConversationDetail>;
 
   abstract startQuickReply(
     client: PoolClient,

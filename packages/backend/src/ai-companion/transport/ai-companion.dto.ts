@@ -21,10 +21,32 @@ export class AiConversationResourceDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
 }
 
+export class AiConversationMessageResourceDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ enum: ['user', 'assistant'] })
+  role!: 'user' | 'assistant';
+  @ApiProperty() content!: string;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+}
+
+export class AiConversationDetailResourceDto extends AiConversationResourceDto {
+  @ApiProperty({ type: () => [AiConversationMessageResourceDto] })
+  messages!: AiConversationMessageResourceDto[];
+}
+
 export class AiOperationResourceDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({ enum: ['queued', 'processing', 'succeeded', 'technicalError', 'outcomeUnknown'] })
-  status!: 'queued' | 'processing' | 'succeeded' | 'technicalError' | 'outcomeUnknown';
+  @ApiProperty({
+    enum: [
+      'queued',
+      'processing',
+      'succeeded',
+      'technicalError',
+      'outcomeUnknown',
+    ],
+  })
+  status!:
+    'queued' | 'processing' | 'succeeded' | 'technicalError' | 'outcomeUnknown';
   @ApiProperty({ format: 'uuid' }) conversationId!: string;
   @ApiProperty({ format: 'uuid' }) inputMessageId!: string;
   @ApiProperty() reservedTokens!: number;

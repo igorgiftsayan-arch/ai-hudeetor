@@ -52,8 +52,63 @@ describe('today weight screen', () => {
     expect(within(history).getAllByRole('listitem')).toHaveLength(3);
     expect(within(history).getByText('+0,2 кг')).toBeInTheDocument();
     expect(
+      screen.getByRole('img', { name: 'График изменения веса' }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole('link', { name: 'Поговорить с AI' }),
     ).toHaveAttribute('href', '/quick-reply');
+  });
+
+  it('renders a stable chart for a single entry', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/weight-entries`)
+          return json({
+            items: [entry('weight-1', '98.45', '2026-07-22T01:00:00.000Z')],
+            nextCursor: null,
+          });
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<TodayPage />);
+
+    const chart = await screen.findByRole('img', {
+      name: 'График изменения веса',
+    });
+    expect(within(chart).getAllByTestId('weight-chart-point')).toHaveLength(1);
+    expect(chart.innerHTML).not.toContain('NaN');
+  });
+
+  it('keeps several entries from the same day visible on the chart', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/weight-entries`)
+          return json({
+            items: [
+              entry('weight-3', '98.2', '2026-07-22T15:00:00.000Z'),
+              entry('weight-2', '98.5', '2026-07-22T09:00:00.000Z'),
+              entry('weight-1', '98.8', '2026-07-22T02:00:00.000Z'),
+            ],
+            nextCursor: null,
+          });
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<TodayPage />);
+
+    const chart = await screen.findByRole('img', {
+      name: 'График изменения веса',
+    });
+    expect(within(chart).getAllByTestId('weight-chart-point')).toHaveLength(3);
+    expect(chart.innerHTML).not.toContain('NaN');
   });
 
   it('creates a weight entry through the existing API', async () => {

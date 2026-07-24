@@ -6,6 +6,7 @@ import {
   AiCompanionRepository,
   type AiActionPrice,
   type AiConversation,
+  type AiConversationDetail,
   type AiOperation,
   type QueuedAiOperation,
   type StartQuickReplyInput,
@@ -244,7 +245,48 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
     return operation;
   }
 
-  async getOperation(userId: string, operationId: string): Promise<AiOperation> {
+  async getConversation(
+    userId: string,
+    conversationId: string,
+  ): Promise<AiConversationDetail> {
+    const conversation = await this.database.query<{ id: string }>(
+      'select id from ai_conversations where id=$1 and user_id=$2',
+      [conversationId, userId],
+    );
+    if (!conversation.rows[0])
+      throw new AiCompanionError(
+        'RESOURCE_NOT_FOUND',
+        404,
+        'Conversation not found',
+      );
+    return this.loadConversationMessages(conversationId);
+  }
+
+  async getCurrentConversation(userId: string): Promise<AiConversationDetail> {
+    const conversation = await this.database.query<{ id: string }>(
+      `select conversation.id
+         from ai_conversations conversation
+        where conversation.user_id=$1
+        order by exists (
+          select 1 from ai_messages message
+           where message.conversation_id=conversation.id
+        ) desc, conversation.created_at desc, conversation.id desc
+        limit 1`,
+      [userId],
+    );
+    if (!conversation.rows[0])
+      throw new AiCompanionError(
+        'RESOURCE_NOT_FOUND',
+        404,
+        'Conversation not found',
+      );
+    return this.loadConversationMessages(conversation.rows[0].id);
+  }
+
+  async getOperation(
+    userId: string,
+    operationId: string,
+  ): Promise<AiOperation> {
     const result = await this.database.query<{
       id: string;
       status: AiOperation['status'];
@@ -278,13 +320,41 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
       status: row.status,
       conversationId: row.conversation_id,
       inputMessageId: row.input_message_id,
-      ...(row.output_message_id ? { outputMessageId: row.output_message_id } : {}),
+      ...(row.output_message_id
+        ? { outputMessageId: row.output_message_id }
+        : {}),
       ...(row.response_text ? { responseText: row.response_text } : {}),
       reservedTokens: row.reserved_tokens,
       priceVersion: row.price_version,
       pollUrl: `/api/v1/ai/operations/${row.id}`,
       runtimeAdapter: row.runtime_adapter,
       ...(row.error_class ? { errorCode: row.error_class } : {}),
+    };
+  }
+
+  private async loadConversationMessages(
+    conversationId: string,
+  ): Promise<AiConversationDetail> {
+    const messages = await this.database.query<{
+      id: string;
+      role: 'user' | 'assistant';
+      content: string;
+      created_at: Date;
+    }>(
+      `select id,role,content,created_at
+         from ai_messages
+        where conversation_id=$1
+        order by created_at,id`,
+      [conversationId],
+    );
+    return {
+      id: conversationId,
+      messages: messages.rows.map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        createdAt: message.created_at.toISOString(),
+      })),
     };
   }
 

@@ -9,6 +9,7 @@ import {
   loadTodayData,
 } from '../../features/tracking/tracking-api';
 import type { WeightEntry } from '../../features/tracking/tracking-api';
+import { WeightChart } from '../../features/tracking/weight-chart';
 import {
   formatDelta,
   formatEntryDate,
@@ -228,21 +229,24 @@ export default function TodayPage() {
               Здесь появятся ваши изменения. Начните с сегодняшнего веса.
             </p>
           ) : (
-            <ol className="weight-history" aria-label="Недавняя история веса">
-              {entries.map((entry, index) => (
-                <li key={entry.id}>
-                  <time dateTime={entry.recordedAt}>
-                    {formatEntryDate(entry.recordedAt, timezone)}
-                  </time>
-                  <strong>{formatWeight(entry.weightKg)}</strong>
-                  <span className="history-delta">
-                    {entries[index + 1]
-                      ? formatDelta(entry, entries[index + 1]!)
-                      : 'первая запись'}
-                  </span>
-                </li>
-              ))}
-            </ol>
+            <>
+              <WeightChart entries={entries} timezone={timezone} />
+              <ol className="weight-history" aria-label="Недавняя история веса">
+                {entries.map((entry, index) => (
+                  <li key={entry.id}>
+                    <time dateTime={entry.recordedAt}>
+                      {formatEntryDate(entry.recordedAt, timezone)}
+                    </time>
+                    <strong>{formatWeight(entry.weightKg)}</strong>
+                    <span className="history-delta">
+                      {entries[index + 1]
+                        ? formatDelta(entry, entries[index + 1]!)
+                        : 'первая запись'}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </>
           )}
         </section>
 

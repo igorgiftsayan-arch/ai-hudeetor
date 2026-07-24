@@ -357,7 +357,8 @@ AiErrorClass = providerUnavailable | timeout | invalidProviderResponse | safetyR
 | `GET /activity-entries` | user | cursor/type query | `200 ActivityEntryPage` | read; later task |
 | `GET /ai-action-prices/quick-reply` | user | none | `200 AiActionPriceResource` | read |
 | `POST /ai-conversations` | user + CSRF | empty | `201 AiConversationResource` | required |
-| `GET /ai-conversations/{id}` | owner | none | `200 AiConversationResource` | read |
+| `GET /ai-conversations/current` | user | none | `200 AiConversationDetailResource` | read |
+| `GET /ai-conversations/{id}` | owner | none | `200 AiConversationDetailResource` | read |
 | `POST /ai/operations` | user + CSRF | `StartAiOperationRequest` | `202 AiOperationResource` | required |
 | `GET /ai/operations/{id}` | owner | none | `200 AiOperationResource` | read |
 | `GET /token-wallets/current` | user | optional history cursor | `200 TokenWalletResource` | read |

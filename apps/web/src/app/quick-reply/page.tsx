@@ -2,38 +2,55 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '../mobile-navigation';
+import {
+  chatSubmission,
+  loadChatOperation,
+  loadChatPrice,
+  loadConversation,
+  loadOrCreateConversation,
+  readChatError,
+  startChatReply,
+} from '../../features/ai-companion/chat-api';
+import type {
+  ChatMessage,
+  ChatOperation,
+  ChatPrice,
+} from '../../features/ai-companion/chat-api';
+import { ApiError, apiRequest } from '../../shared/api';
 
-type Price = { priceTokens: number; priceVersion: number };
-type OperationStatus =
-  'queued' | 'processing' | 'succeeded' | 'technicalError' | 'outcomeUnknown';
-type Operation = {
-  id: string;
-  status: OperationStatus;
-  conversationId: string;
-  reservedTokens: number;
-  responseText?: string;
-  errorCode?: string;
+type PendingSubmission = {
+  payload: string;
+  idempotencyKey: string;
 };
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1';
-
 export default function QuickReplyPage() {
-  const [csrfToken, setCsrfToken] = useState<string>();
-  const [price, setPrice] = useState<Price>();
-  const [message, setMessage] = useState('');
-  const [operation, setOperation] = useState<Operation>();
-  const [error, setError] = useState<string>();
+  const { replace } = useRouter();
+  const [csrfToken, setCsrfToken] = useState('');
+  const [price, setPrice] = useState<ChatPrice>();
+  const [conversationId, setConversationId] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [draft, setDraft] = useState('');
+  const [operation, setOperation] = useState<ChatOperation>();
   const [loading, setLoading] = useState(true);
-  const idempotencyKey = useRef(newKey());
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string>();
+  const pendingSubmission = useRef<PendingSubmission | undefined>(undefined);
+  const pollInFlight = useRef(false);
+  const conversationRefreshVersion = useRef(0);
+  const feedEnd = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void loadInitialState();
   }, []);
 
   useEffect(() => {
-    if (!operation || !['queued', 'processing'].includes(operation.status))
-      return;
+    feedEnd.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [messages, operation?.status, error]);
+
+  useEffect(() => {
+    if (!operation || !isActiveOperation(operation.status)) return;
     const timer = window.setInterval(
       () => void pollOperation(operation.id),
       1_000,
@@ -45,180 +62,217 @@ export default function QuickReplyPage() {
     setLoading(true);
     setError(undefined);
     try {
-      const onboarding = await request<{ status: string; csrfToken: string }>(
-        '/users/me/onboarding',
-      );
+      const onboarding = await apiRequest<{
+        status: string;
+        csrfToken: string;
+      }>('/users/me/onboarding');
       if (onboarding.status !== 'completed') {
-        setError('Завершите настройку профиля перед первым AI-запросом.');
+        replace('/onboarding');
         return;
       }
+      const [currentPrice, conversation] = await Promise.all([
+        loadChatPrice(),
+        loadOrCreateConversation(onboarding.csrfToken),
+      ]);
       setCsrfToken(onboarding.csrfToken);
-      const currentPrice = await request<Price>(
-        '/ai-action-prices/quick-reply',
-      );
       setPrice(currentPrice);
+      setConversationId(conversation.id);
+      setMessages(conversation.messages);
     } catch (cause) {
-      setError(readError(cause));
+      if (cause instanceof ApiError && cause.kind === 'session') {
+        replace('/login');
+      } else {
+        setError('Не удалось открыть чат. Попробуйте обновить страницу.');
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!price || !csrfToken || !message.trim()) return;
+  async function refreshConversation(id = conversationId) {
+    if (!id) return;
+    const version = conversationRefreshVersion.current + 1;
+    conversationRefreshVersion.current = version;
+    const conversation = await loadConversation(id);
+    if (conversationRefreshVersion.current === version)
+      setMessages(conversation.messages);
+  }
+
+  async function submit(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    const content = draft.trim();
+    if (!content || !price || !conversationId || !csrfToken) return;
+
+    const next = chatSubmission({ conversationId, content, price });
+    if (pendingSubmission.current?.payload !== next.payload) {
+      pendingSubmission.current = next;
+    }
+
+    setSending(true);
     setError(undefined);
     try {
-      const conversation = await request<{ id: string }>('/ai-conversations', {
-        method: 'POST',
-        headers: mutationHeaders(csrfToken, newKey()),
+      const started = await startChatReply({
+        csrfToken,
+        idempotencyKey: pendingSubmission.current.idempotencyKey,
+        conversationId,
+        content,
+        price,
       });
-      const started = await request<Operation>('/ai/operations', {
-        method: 'POST',
-        headers: mutationHeaders(csrfToken, idempotencyKey.current),
-        body: JSON.stringify({
-          conversationId: conversation.id,
-          content: message.trim(),
-          scenarioId: 'quickReply',
-          expectedPriceTokens: price.priceTokens,
-          priceVersion: price.priceVersion,
-        }),
-      });
+      pendingSubmission.current = undefined;
+      setDraft('');
       setOperation(started);
-      setMessage('');
+      await refreshConversation(conversationId);
     } catch (cause) {
-      setError(readError(cause));
+      if (cause instanceof ApiError && cause.kind === 'session') {
+        replace('/login');
+      } else {
+        if (isDefinitiveSubmissionFailure(cause))
+          pendingSubmission.current = undefined;
+        setError(readChatError(cause));
+      }
+    } finally {
+      setSending(false);
     }
   }
 
   async function pollOperation(operationId: string) {
+    if (pollInFlight.current) return;
+    pollInFlight.current = true;
     try {
-      const next = await request<Operation>(`/ai/operations/${operationId}`);
-      setOperation(next);
+      const next = await loadChatOperation(operationId);
+      if (next.status === 'succeeded') {
+        await refreshConversation(next.conversationId);
+        setOperation(next);
+        setError(undefined);
+      } else if (next.status === 'technicalError') {
+        setOperation(next);
+        setError('Ответ не получен. Зарезервированный токен возвращён.');
+      } else if (next.status === 'outcomeUnknown') {
+        setOperation(next);
+        setError('Статус ответа уточняется. Новое сообщение пока недоступно.');
+      } else {
+        setOperation(next);
+      }
     } catch (cause) {
-      setError(readError(cause));
+      if (cause instanceof ApiError && cause.kind === 'session') {
+        replace('/login');
+      } else {
+        setError('Связь прервалась. Повторяем загрузку ответа…');
+      }
+    } finally {
+      pollInFlight.current = false;
     }
   }
 
+  const waiting = operation && isActiveOperation(operation.status);
   const submitDisabled =
-    loading ||
-    !price ||
-    !csrfToken ||
-    !message.trim() ||
-    Boolean(
-      operation &&
-      ['queued', 'processing', 'outcomeUnknown'].includes(operation.status),
-    );
+    loading || sending || !price || !draft.trim() || Boolean(waiting);
+
   return (
-    <main className="app-shell quick-reply-shell">
-      <div className="app-page">
+    <main className="app-shell chat-shell">
+      <div className="chat-page">
+        <header className="chat-header">
+          <div>
+            <p className="section-label">Поддержка рядом</p>
+            <h1>AI-друг</h1>
+          </div>
+          <span className="fake-runtime-badge">тестовый AI</span>
+        </header>
+
         <section
-          aria-labelledby="quick-reply-title"
-          className="quick-reply-card product-panel"
+          className="chat-feed"
+          role="log"
+          aria-label="Переписка с AI"
+          aria-live="polite"
         >
-          <p className="eyebrow">AI-друг</p>
-          <h1 id="quick-reply-title">Быстрый ответ</h1>
-          <p className="runtime-notice">
-            Тестовый AI-адаптер. Ответ не создан реальной моделью.
-          </p>
-          {price && (
-            <p className="price">
-              Цена: {price.priceTokens} {tokenWord(price.priceTokens)}
+          {loading && <p className="chat-system-message">Открываем чат…</p>}
+          {!loading && messages.length === 0 && !error && (
+            <div className="chat-empty">
+              <span aria-hidden="true">☼</span>
+              <p>Можно написать о том, что сейчас непросто.</p>
+            </div>
+          )}
+          {messages.map((message) => (
+            <p
+              key={message.id}
+              className={`chat-message chat-message-${message.role}`}
+            >
+              {message.content}
+            </p>
+          ))}
+          {waiting && (
+            <p className="chat-message chat-message-assistant chat-message-pending">
+              <span aria-hidden="true" />
+              <span aria-hidden="true" />
+              <span aria-hidden="true" />
+              <span>AI готовит ответ…</span>
             </p>
           )}
-          <form onSubmit={submit} className="quick-reply-form">
-            <label htmlFor="quick-reply-message">Сообщение</label>
-            <textarea
-              id="quick-reply-message"
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              maxLength={4000}
-              required
-            />
-            <button type="submit" disabled={submitDisabled}>
-              {price
-                ? `Отправить за ${price.priceTokens} ${tokenWord(price.priceTokens)}`
-                : 'Загружаем цену'}
-            </button>
-          </form>
-          {loading && <p aria-live="polite">Загружаем данные…</p>}
-          {operation && <OperationState operation={operation} />}
           {error && (
-            <p role="alert" className="form-error">
-              {error}
-            </p>
+            <div className="chat-error" role="alert">
+              <p>{error}</p>
+              {pendingSubmission.current && (
+                <button
+                  type="button"
+                  onClick={() => void submit()}
+                  disabled={sending}
+                >
+                  Повторить отправку
+                </button>
+              )}
+            </div>
           )}
+          <div ref={feedEnd} />
         </section>
+
+        <form className="chat-composer" onSubmit={submit}>
+          <label htmlFor="chat-message" className="sr-only">
+            Сообщение
+          </label>
+          <textarea
+            id="chat-message"
+            value={draft}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setError(undefined);
+            }}
+            placeholder="Напишите сообщение"
+            maxLength={4000}
+            rows={2}
+            disabled={
+              sending || Boolean(waiting) || Boolean(pendingSubmission.current)
+            }
+          />
+          <div className="chat-send-row">
+            <span>
+              {price
+                ? `${price.priceTokens} ${tokenWord(price.priceTokens)}`
+                : '—'}
+            </span>
+            <button type="submit" disabled={submitDisabled}>
+              {sending ? 'Отправляем…' : 'Отправить'}
+            </button>
+          </div>
+        </form>
       </div>
       <MobileNavigation active="ai" />
     </main>
   );
 }
 
-function OperationState({ operation }: { operation: Operation }) {
-  if (operation.status === 'queued')
-    return <p aria-live="polite">Запрос поставлен в очередь</p>;
-  if (operation.status === 'processing')
-    return <p aria-live="polite">Запрос обрабатывается</p>;
-  if (operation.status === 'succeeded')
-    return (
-      <div aria-live="polite">
-        <h2>Ответ готов</h2>
-        <p>{operation.responseText ?? 'Тестовый ответ получен.'}</p>
-      </div>
-    );
-  if (operation.status === 'technicalError')
-    return (
-      <p role="alert">
-        Техническая ошибка. Зарезервированные токены возвращены.
-      </p>
-    );
-  return (
-    <p role="alert">
-      Статус ответа пока не подтверждён. Новый AI-запрос временно недоступен.
-    </p>
-  );
-}
-
-async function request<TResult>(
-  path: string,
-  init?: RequestInit,
-): Promise<TResult> {
-  const response = await fetch(`${apiBase}${path}`, {
-    credentials: 'include',
-    ...init,
-  });
-  const body = (await response.json().catch(() => undefined)) as
-    TResult | { error?: { message?: string } } | undefined;
-  if (!response.ok)
-    throw new Error(
-      (body as { error?: { message?: string } })?.error?.message ??
-        'Не удалось выполнить запрос. Повторите попытку.',
-    );
-  return body as TResult;
-}
-
-function mutationHeaders(
-  csrfToken: string,
-  idempotencyKey: string,
-): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-    'X-CSRF-Token': csrfToken,
-    'Idempotency-Key': idempotencyKey,
-  };
-}
-
-function newKey(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-}
-
 function tokenWord(count: number): string {
   return count === 1 ? 'токен' : 'токенов';
 }
 
-function readError(cause: unknown): string {
-  return cause instanceof Error
-    ? cause.message
-    : 'Не удалось выполнить запрос. Повторите попытку.';
+function isActiveOperation(status: ChatOperation['status']): boolean {
+  return ['queued', 'processing', 'outcomeUnknown'].includes(status);
+}
+
+function isDefinitiveSubmissionFailure(cause: unknown): boolean {
+  return (
+    cause instanceof ApiError &&
+    cause.kind === 'request' &&
+    cause.status !== undefined &&
+    cause.status < 500
+  );
 }

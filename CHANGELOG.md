@@ -14,6 +14,9 @@
 - UI-001 verification: отдельный Compose project `atlas-ui-001` на test server прошёл migrations, health, browser/mobile acceptance login → today → idempotent retry → quick reply; стабильный `atlas-v01` не затрагивался.
 - UI-002: weight entry поддерживает до двух знаков после запятой во frontend, backend validation, API contract и PostgreSQL `numeric(5,2)`; isolated test-server verification подтверждает repeatable migration, browser/mobile flow, API validation и idempotent retry без дубля.
 - UI-002: PWA shell cache version обновлена до `atlas-shell-v2`; isolated web/gateway пересобраны и пересозданы, а чистый browser profile подтвердил получение нового frontend build.
+- UI-003: `/quick-reply` стал mobile-first чатом с persisted conversation messages, визуально разделёнными репликами, ожиданием fake AI, inline error/retry и компактной стоимостью.
+- UI-003: добавлены owner-scoped reads текущей и выбранной AI conversation с сообщениями; OpenAPI client сгенерирован штатно.
+- UI-004: над недавним списком веса добавлен адаптивный SVG-график, устойчивый к одной записи и нескольким записям за день.
 - VERT-001.5: minimal `/quick-reply` web boundary, owner-scoped operation polling, fake-runtime notice and safe display of the completed assistant response.
 - VERT-001.5 final verification: isolated test-server fake-adapter acceptance confirmed success, technical refund, outcomeUnknown blocking, HTTP idempotency, duplicate outbox delivery, worker restart, PostgreSQL/worker regression and safe log/outbox payload boundaries.
 
@@ -40,6 +43,8 @@
 
 ### Changed
 
+- BUG-UI-001: AI operation `Idempotency-Key` теперь привязан к payload; новый текст получает новый key, а сетевой retry того же текста повторяет прежний key без двойного списания.
+- BUG-UI-001: raw server message больше не выводится пользователю; idempotency, balance и operation errors отображаются внутри чата понятным текстом.
 - Completed onboarding теперь направляет пользователя на продуктовый `/today`; прямой доступ к `/quick-reply` сохранён.
 - Product web metadata и базовый визуальный слой обновлены с технического scaffold на спокойный mobile-first дневник без новой UI-библиотеки.
 - Закрыты правила реферального окна и активного пользователя.

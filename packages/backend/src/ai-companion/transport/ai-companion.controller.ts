@@ -24,9 +24,11 @@ import { IdentityError } from '../../identity/domain/identity-error';
 import { CreateAiConversationUseCase } from '../application/create-ai-conversation.use-case';
 import { GetQuickReplyPriceUseCase } from '../application/get-quick-reply-price.use-case';
 import { GetAiOperationUseCase } from '../application/get-ai-operation.use-case';
+import { GetAiConversationUseCase } from '../application/get-ai-conversation.use-case';
 import { StartQuickReplyUseCase } from '../application/start-quick-reply.use-case';
 import {
   AiActionPriceResourceDto,
+  AiConversationDetailResourceDto,
   AiConversationResourceDto,
   AiOperationResourceDto,
   StartQuickReplyRequestDto,
@@ -45,12 +47,36 @@ export class AiCompanionController {
     private readonly startQuickReply: StartQuickReplyUseCase,
     @Inject(GetAiOperationUseCase)
     private readonly getOperation: GetAiOperationUseCase,
+    @Inject(GetAiConversationUseCase)
+    private readonly getConversation: GetAiConversationUseCase,
   ) {}
 
   @Get('ai-action-prices/quick-reply')
   @ApiOkResponse({ type: AiActionPriceResourceDto })
   price(@Req() request: Request): Promise<AiActionPriceResourceDto> {
     return this.getPrice.execute(this.accessToken(request));
+  }
+
+  @Get('ai-conversations/current')
+  @ApiOkResponse({ type: AiConversationDetailResourceDto })
+  currentConversation(
+    @Req() request: Request,
+  ): Promise<AiConversationDetailResourceDto> {
+    return this.getConversation.execute({
+      accessToken: this.accessToken(request),
+    });
+  }
+
+  @Get('ai-conversations/:id')
+  @ApiOkResponse({ type: AiConversationDetailResourceDto })
+  conversationById(
+    @Param('id') conversationId: string,
+    @Req() request: Request,
+  ): Promise<AiConversationDetailResourceDto> {
+    return this.getConversation.execute({
+      accessToken: this.accessToken(request),
+      conversationId,
+    });
   }
 
   @Post('ai-conversations')

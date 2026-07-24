@@ -5,6 +5,7 @@ export class ApiError extends Error {
     readonly kind: ApiErrorKind,
     message: string,
     readonly code?: string,
+    readonly status?: number,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -46,6 +47,7 @@ export async function apiRequest<TResult>(
         ? 'Сессия закончилась'
         : (error?.message ?? 'Не удалось войти. Проверьте данные.'),
       error?.code,
+      response.status,
     );
   }
 
@@ -53,6 +55,7 @@ export async function apiRequest<TResult>(
     'request',
     error?.message ?? 'Не удалось выполнить запрос. Попробуйте снова.',
     error?.code,
+    response.status,
   );
 }
 

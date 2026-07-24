@@ -1,12 +1,12 @@
 # Текущий статус
 
-- Дата: 2026-07-23
-- Текущая задача: UI-002 завершена и ожидает ручной приёмки в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
-- Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса, `/today` и первый fake-runtime quick reply.
-- Реальный AI provider, платежи, рефералы, AI memory, полноценный chat UX и feedback: отсутствуют.
+- Дата: 2026-07-24
+- Текущая задача: BUG-UI-001, UI-003 и UI-004 реализованы в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
+- Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса с графиком и persisted fake-runtime AI chat.
+- Реальный AI provider, платежи, рефералы, AI memory и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- UI-001 использует существующий backend/API без migrations, новых endpoints или analytics events.
+- BUG-UI-001/UI-003 добавляют только owner-scoped чтение уже существующих conversation/messages; migrations, AI provider и analytics events не меняются.
 
 ## UI-001 — ежедневная фиксация веса
 
@@ -28,6 +28,15 @@
 - Migration `0006_ui_002_weight_precision.sql` переводит `weight_entries.weight_kg` с `numeric(4,1)` на `numeric(5,2)` без потери существующих строк; idempotency weight command сохраняет исходный request hash.
 - Первичная runtime verification была отменена: web container не был пересоздан из актуального image, а PWA использовал неизменённый shell cache `v1`. Исправление `4339439` меняет cache на `atlas-shell-v2`; web/gateway изолированного стенда пересобраны и пересозданы из этого commit.
 - В чистом browser profile `98.45` сохраняется и показывается как `98,45 кг`; migrations repeatable, `98` / `98,4` / `98,45` сохраняются, `98,456` отклоняется в UI и API, identical retry не создаёт дубль. Stable `atlas-v01` остался healthy и неизменным.
+
+## BUG-UI-001 / UI-003 / UI-004
+
+- Причина `Unexpected server error` установлена: старый `/quick-reply` повторно использовал один `Idempotency-Key` для разных payload. API корректно возвращал `409 IDEMPOTENCY_KEY_REUSED`, а форма не давала пользователю восстановиться.
+- Ключ AI operation теперь живёт вместе с каноническим payload: новая отправка получает новый ключ, а потерянный сетевой ответ безопасно повторяется с прежним ключом.
+- `/quick-reply` переделан в mobile-first чат с persisted PostgreSQL messages, разделёнными user/assistant сообщениями, ожиданием fake AI, inline error/retry и компактной ценой.
+- Реализованы owner-scoped `GET /ai-conversations/current` и ранее спроектированный `GET /ai-conversations/{id}`; пустые conversation не скрывают последнюю беседу с сообщениями.
+- На `/today` добавлен лёгкий SVG-график над сохранённым списком. Одна запись и несколько записей в один день отображаются без изменения модели данных и без UI-библиотеки.
+- Automated verification: lint и production build проходят; web 31/31, API unit 27/27, worker 2/2 и PostgreSQL AI integration 3/3. Root `pnpm typecheck` по-прежнему выявляет baseline `TS6307` в существующей API/project-reference конфигурации, при этом production build выполняет TypeScript-проверку успешно.
 
 ## VERT-001.5 — завершена
 

@@ -103,6 +103,26 @@ export interface AiActionPriceResourceDto {
   priceVersion: number;
 }
 
+export type AiConversationMessageResourceDtoRole = typeof AiConversationMessageResourceDtoRole[keyof typeof AiConversationMessageResourceDtoRole];
+
+
+export const AiConversationMessageResourceDtoRole = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+export interface AiConversationMessageResourceDto {
+  id: string;
+  role: AiConversationMessageResourceDtoRole;
+  content: string;
+  createdAt: string;
+}
+
+export interface AiConversationDetailResourceDto {
+  id: string;
+  messages: AiConversationMessageResourceDto[];
+}
+
 export interface AiConversationResourceDto {
   id: string;
 }
@@ -659,6 +679,86 @@ export const aiCompanionControllerPriceApiV1 = async ( options?: RequestInit): P
 
   const data: aiCompanionControllerPriceApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as aiCompanionControllerPriceApiV1Response
+}
+
+
+
+export type aiCompanionControllerCurrentConversationApiV1Response200 = {
+  data: AiConversationDetailResourceDto
+  status: 200
+}
+
+export type aiCompanionControllerCurrentConversationApiV1ResponseSuccess = (aiCompanionControllerCurrentConversationApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerCurrentConversationApiV1Response = (aiCompanionControllerCurrentConversationApiV1ResponseSuccess)
+
+export const getAiCompanionControllerCurrentConversationApiV1Url = () => {
+
+
+
+
+  return `/api/v1/ai-conversations/current`
+}
+
+export const aiCompanionControllerCurrentConversationApiV1 = async ( options?: RequestInit): Promise<aiCompanionControllerCurrentConversationApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerCurrentConversationApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerCurrentConversationApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerCurrentConversationApiV1Response
+}
+
+
+
+export type aiCompanionControllerConversationByIdApiV1Response200 = {
+  data: AiConversationDetailResourceDto
+  status: 200
+}
+
+export type aiCompanionControllerConversationByIdApiV1ResponseSuccess = (aiCompanionControllerConversationByIdApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerConversationByIdApiV1Response = (aiCompanionControllerConversationByIdApiV1ResponseSuccess)
+
+export const getAiCompanionControllerConversationByIdApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/ai-conversations/${id}`
+}
+
+export const aiCompanionControllerConversationByIdApiV1 = async (id: string, options?: RequestInit): Promise<aiCompanionControllerConversationByIdApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerConversationByIdApiV1Url(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerConversationByIdApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerConversationByIdApiV1Response
 }
 
 

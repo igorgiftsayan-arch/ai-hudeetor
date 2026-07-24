@@ -97,6 +97,51 @@ describeWithDatabase('AI operation PostgreSQL transaction', () => {
     });
   });
 
+  it('loads persisted conversation messages in order for the owner', async () => {
+    const fixture = await completedUserFixture();
+    await database.query(
+      `insert into ai_messages (id,conversation_id,role,content,created_at)
+       values ($1,$2,'user','Первое сообщение','2026-07-24T01:00:00.000Z'),
+              ($3,$2,'assistant','Ответ AI','2026-07-24T01:00:01.000Z')`,
+      [randomUUID(), fixture.conversationId, randomUUID()],
+    );
+    const candidate = repository as unknown as {
+      getConversation?: (
+        userId: string,
+        conversationId: string,
+      ) => Promise<{
+        id: string;
+        messages: Array<{ role: string; content: string }>;
+      }>;
+    };
+
+    expect(candidate.getConversation).toBeInstanceOf(Function);
+    await expect(
+      candidate.getConversation!(fixture.userId, fixture.conversationId),
+    ).resolves.toMatchObject({
+      id: fixture.conversationId,
+      messages: [
+        { role: 'user', content: 'Первое сообщение' },
+        { role: 'assistant', content: 'Ответ AI' },
+      ],
+    });
+    await expect(
+      candidate.getConversation!(randomUUID(), fixture.conversationId),
+    ).rejects.toMatchObject({ code: 'RESOURCE_NOT_FOUND', status: 404 });
+
+    await database.query(
+      `insert into ai_conversations (id,user_id,created_at)
+       values ($1,$2,'2026-07-24T02:00:00.000Z')`,
+      [randomUUID(), fixture.userId],
+    );
+    const currentCandidate = repository as unknown as {
+      getCurrentConversation?: (userId: string) => Promise<{ id: string }>;
+    };
+    await expect(
+      currentCandidate.getCurrentConversation!(fixture.userId),
+    ).resolves.toMatchObject({ id: fixture.conversationId });
+  });
+
   async function completedUserFixture() {
     const userId = randomUUID();
     const walletId = randomUUID();
