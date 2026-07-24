@@ -43,6 +43,13 @@
       "when": 1784566800000,
       "tag": "0005_ai_ledger_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784653200000,
+      "tag": "0007_back_001_daily_weight",
+      "breakpoints": true
     }
   ]
 }

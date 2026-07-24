@@ -6,6 +6,8 @@
 
 ### Added
 
+- BACK-UI-001: daily weight upsert by user-local date, non-destructive legacy-row strategy, `created|updated` response contract, PostgreSQL daily uniqueness constraint and focused test-server verification.
+
 - VERT-001.5: minimal `/quick-reply` web boundary, owner-scoped operation polling, fake-runtime notice and safe display of the completed assistant response.
 - VERT-001.5 final verification: isolated test-server fake-adapter acceptance confirmed success, technical refund, outcomeUnknown blocking, HTTP idempotency, duplicate outbox delivery, worker restart, PostgreSQL/worker regression and safe log/outbox payload boundaries.
 

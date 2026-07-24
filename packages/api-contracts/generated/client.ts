@@ -321,11 +321,25 @@ export interface TokenWalletResourceDto {
   availableBalance: number;
 }
 
-export interface WeightEntryResourceDto {
+export interface CreateWeightEntryRequestDto {
+  weightKg: number;
+  recordedAt?: string;
+}
+
+export type CreateWeightEntryResponseDtoResult = typeof CreateWeightEntryResponseDtoResult[keyof typeof CreateWeightEntryResponseDtoResult];
+
+
+export const CreateWeightEntryResponseDtoResult = {
+  created: 'created',
+  updated: 'updated',
+} as const;
+
+export interface CreateWeightEntryResponseDto {
   id: string;
   weightKg: string;
   recordedAt: string;
   source: string;
+  result: CreateWeightEntryResponseDtoResult;
 }
 
 export type healthControllerLivenessApiV1Response200 = {
@@ -975,7 +989,7 @@ export const tokenEconomyControllerCurrentApiV1 = async ( options?: RequestInit)
 
 
 export type trackingControllerCreateEntryApiV1Response201 = {
-  data: WeightEntryResourceDto
+  data: CreateWeightEntryResponseDto
   status: 201
 }
 
@@ -994,14 +1008,14 @@ export const getTrackingControllerCreateEntryApiV1Url = () => {
   return `/api/v1/weight-entries`
 }
 
-export const trackingControllerCreateEntryApiV1 = async ( options?: RequestInit): Promise<trackingControllerCreateEntryApiV1Response> => {
+export const trackingControllerCreateEntryApiV1 = async (createWeightEntryRequestDto: CreateWeightEntryRequestDto, options?: RequestInit): Promise<trackingControllerCreateEntryApiV1Response> => {
 
   const res = await fetch(getTrackingControllerCreateEntryApiV1Url(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createWeightEntryRequestDto)
   }
 )
 

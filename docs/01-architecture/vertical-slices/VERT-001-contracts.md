@@ -105,7 +105,7 @@ Persona IDs стабильны в API и данных; отображаемые 
 | `recordedAt` | timestamp | нет | default server now; допускается историческое значение, но не более 5 минут в будущем |
 | `source` | enum | server/default | VERT-001 принимает только `manual` |
 
-Одна и та же величина в разное время является допустимой отдельной записью. Required `Idempotency-Key` защищает сетевой retry. Первая committed запись создаёт одновременно `first_weight_added` и `weight_added` с `is_first=true`; последующие — только `weight_added` с `is_first=false`.
+Для одного пользователя существует ровно одна актуальная запись на его локальную календарную дату. Local date вычисляется в момент сохранения по IANA timezone из `user_profiles`, а не по UTC сервера. Повторное сохранение за ту же дату атомарно обновляет эту запись и возвращает `result=updated`; первое — создаёт `result=created`. Required `Idempotency-Key` защищает сетевой retry. Исторические дубли не удаляются: migration помечает актуальной последнюю строку по `updated_at DESC`, затем `created_at DESC`, затем `id DESC`; history и данные графика возвращают только актуальные дневные значения. Первая committed запись создаёт одновременно `first_weight_added` и `weight_added` с `is_first=true`; последующие — только `weight_added` с `is_first=false`.
 
 ### 3.2 BodyMeasurement
 
@@ -349,7 +349,7 @@ AiErrorClass = providerUnavailable | timeout | invalidProviderResponse | safetyR
 | `PATCH /users/me/profile` | user + CSRF | `UpdateProfileRequest` | `200 UserProfileResource` | recommended |
 | `PUT /users/me/ai-preference` | user + CSRF | `AiPreferenceRequest` | `200 AiPreferenceResource` | natural |
 | `POST /users/me/onboarding-completions` | user + CSRF | `CompleteOnboardingRequest` | `201 OnboardingCompletionResource` | required |
-| `POST /weight-entries` | user + CSRF | `CreateWeightEntryRequest` | `201 WeightEntryResource` | required |
+| `POST /weight-entries` | user + CSRF | `CreateWeightEntryRequest` | `201 CreateWeightEntryResponse` (`result=created\|updated`) | required |
 | `GET /weight-entries` | user | cursor query | `200 WeightEntryPage` | read |
 | `POST /body-measurements` | user + CSRF | `CreateBodyMeasurementRequest` | `201 BodyMeasurementResource` | required; later tracking task |
 | `GET /body-measurements` | user | cursor/type query | `200 BodyMeasurementPage` | read; later task |
@@ -391,6 +391,13 @@ CompleteOnboardingRequest
 CreateWeightEntryRequest
   weightKg: decimal(4,1)
   recordedAt?: IsoUtcTimestamp
+
+CreateWeightEntryResponse
+  id: OpaqueId
+  weightKg: decimal string
+  recordedAt: IsoUtcTimestamp
+  source: manual
+  result: created | updated
 
 CreateBodyMeasurementRequest
   measurementType: BodyMeasurementType

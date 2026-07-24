@@ -197,8 +197,8 @@ Ledger mutation выполняется под row lock кошелька/согл
 | `PATCH /users/me/profile` | timezone и разрешённые onboarding fields | `200` profile | recommended |
 | `PUT /users/me/ai-preference` | выбор persona | `200` preference | natural resource idempotency |
 | `POST /users/me/onboarding-completions` | завершение + starter grant | `201` completion/wallet summary | required |
-| `POST /weight-entries` | добавить вес | `201` weight entry | required |
-| `GET /weight-entries?limit=&cursor=` | принадлежащая пользователю история | `200` cursor page | read |
+| `POST /weight-entries` | создать или обновить актуальный вес за локальную дату пользователя | `201` weight entry + `result=created\|updated` | required |
+| `GET /weight-entries?limit=&cursor=` | принадлежащая пользователю история актуальных дневных значений | `200` cursor page | read |
 | `GET /ai-action-prices/quick-reply` | текущая цена до подтверждения | `200` price/version | read |
 | `POST /ai-conversations` | создать разговор | `201` conversation | required |
 | `POST /ai/operations` | сохранить user message, reserve, запустить reply | `202` operation resource | required |

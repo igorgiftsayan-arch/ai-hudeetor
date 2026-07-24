@@ -8,6 +8,7 @@ import {
   Req,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiOkResponse,
@@ -17,7 +18,10 @@ import type { Request } from 'express';
 import { IdentityError } from '../../identity/domain/identity-error';
 import { CreateWeightEntryUseCase } from '../application/create-weight-entry.use-case';
 import { ListWeightEntriesUseCase } from '../application/list-weight-entries.use-case';
-import { WeightEntryResourceDto } from './tracking.dto';
+import {
+  CreateWeightEntryRequestDto,
+  CreateWeightEntryResponseDto,
+} from './tracking.dto';
 @ApiTags('tracking')
 @ApiCookieAuth()
 @Controller('weight-entries')
@@ -28,8 +32,11 @@ export class TrackingController {
     @Inject(ListWeightEntriesUseCase)
     private readonly list: ListWeightEntriesUseCase,
   ) {}
-  @Post() @ApiCreatedResponse({ type: WeightEntryResourceDto }) createEntry(
-    @Body() body: { weightKg: number; recordedAt?: string },
+  @Post()
+  @ApiBody({ type: CreateWeightEntryRequestDto })
+  @ApiCreatedResponse({ type: CreateWeightEntryResponseDto })
+  createEntry(
+    @Body() body: CreateWeightEntryRequestDto,
     @Req() req: Request,
     @Headers('idempotency-key') key?: string,
   ) {

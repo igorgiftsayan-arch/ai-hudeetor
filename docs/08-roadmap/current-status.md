@@ -1,12 +1,20 @@
 # Текущий статус
 
-- Дата: 2026-07-21
-- Текущая задача: VERT-001.5 завершена и объединена в `main`.
+- Дата: 2026-07-25
+- Текущая задача: BACK-UI-001 реализована и проверена в изолированной backend-ветке `back/back-001-weight-daily-upsert`; ожидает ручную приёмку, в `main` не объединена.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, базовый tracking веса и первый fake-runtime quick reply.
 - Реальный AI provider, платежи, рефералы, AI memory, полноценный chat UX и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- Следующая вертикаль не начата; требуется отдельная задача для VERT-001.5.
+- Следующая вертикаль не начата; для неё требуется отдельная задача и продуктовое решение по feedback/analytics delivery.
+
+## BACK-UI-001 — ожидает приёмку
+
+- `weight_entries` поддерживает одну актуальную запись на локальную календарную дату пользователя: первое сохранение возвращает `created`, повтор за ту же дату — `updated`.
+- Дата вычисляется по IANA timezone профиля в момент сохранения; PostgreSQL partial unique index защищает одну текущую строку на `(user_id, local_date)`.
+- Исторические дубли не удаляются. Migration помечает текущей последнюю строку по `updated_at DESC`, `created_at DESC`, `id DESC`; API history возвращает только актуальные ежедневные значения.
+- PostgreSQL runtime integration 6/6, migration legacy-data check, API build, backend typecheck, OpenAPI/client drift check и focused lint подтверждены в изолированном test-server environment.
+- Frontend, UI branch, `main`, stable `atlas-v01` и его data volumes не менялись.
 
 ## VERT-001.5 — завершена
 
