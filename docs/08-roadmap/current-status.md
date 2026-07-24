@@ -6,7 +6,7 @@
 - Реальный AI provider, платежи, рефералы, AI memory и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
-- BUG-UI-001/UI-003 добавляют только owner-scoped чтение уже существующих conversation/messages; migrations, AI provider и analytics events не меняются.
+- BUG-UI-001/UI-003 добавляют owner-scoped чтение уже существующих conversation/messages и корректирующую ledger migration `0007`; AI provider и analytics events не меняются.
 
 ## UI-001 — ежедневная фиксация веса
 
@@ -31,12 +31,14 @@
 
 ## BUG-UI-001 / UI-003 / UI-004
 
-- Причина `Unexpected server error` установлена: старый `/quick-reply` повторно использовал один `Idempotency-Key` для разных payload. API корректно возвращал `409 IDEMPOTENCY_KEY_REUSED`, а форма не давала пользователю восстановиться.
+- Точная причина `Unexpected server error` установлена runtime-проверкой: legacy constraint `uq_token_transactions_starter_grant_user` ошибочно запрещал второй `aiReservation` одного пользователя, PostgreSQL возвращал `23505`, а общий API filter скрывал infrastructure exception.
+- Migration `0007_ai_reservation_uniqueness.sql` заменяет constraint частичным уникальным индексом только для `starterGrant`; последовательные AI reservations снова разрешены, одноразовый starter grant остаётся защищён.
+- Дополнительно старый `/quick-reply` повторно использовал один `Idempotency-Key` для разных payload, из-за чего API возвращал `409 IDEMPOTENCY_KEY_REUSED`.
 - Ключ AI operation теперь живёт вместе с каноническим payload: новая отправка получает новый ключ, а потерянный сетевой ответ безопасно повторяется с прежним ключом.
 - `/quick-reply` переделан в mobile-first чат с persisted PostgreSQL messages, разделёнными user/assistant сообщениями, ожиданием fake AI, inline error/retry и компактной ценой.
 - Реализованы owner-scoped `GET /ai-conversations/current` и ранее спроектированный `GET /ai-conversations/{id}`; пустые conversation не скрывают последнюю беседу с сообщениями.
 - На `/today` добавлен лёгкий SVG-график над сохранённым списком. Одна запись и несколько записей в один день отображаются без изменения модели данных и без UI-библиотеки.
-- Automated verification: lint и production build проходят; web 31/31, API unit 27/27, worker 2/2 и PostgreSQL AI integration 3/3. Root `pnpm typecheck` по-прежнему выявляет baseline `TS6307` в существующей API/project-reference конфигурации, при этом production build выполняет TypeScript-проверку успешно.
+- Automated verification: lint и production build проходят; web 31/31, API unit 27/27, worker 2/2 и PostgreSQL AI integration 4/4. Root `pnpm typecheck` по-прежнему выявляет baseline `TS6307` в существующей API/project-reference конфигурации, при этом production build выполняет TypeScript-проверку успешно.
 
 ## VERT-001.5 — завершена
 

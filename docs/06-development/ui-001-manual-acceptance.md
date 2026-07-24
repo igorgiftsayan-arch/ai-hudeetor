@@ -36,7 +36,7 @@
 ## Definition of Done applicability
 
 - Код и web tests: применимо.
-- Миграции: применимо для UI-002 — migration `0006_ui_002_weight_precision.sql` переводит numeric precision без потери существующих строк.
+- Миграции: применимо — migration `0006_ui_002_weight_precision.sql` переводит numeric precision без потери существующих строк; migration `0007_ai_reservation_uniqueness.sql` сохраняет единственность starter grant и разрешает последовательные AI reservations.
 - API documentation/contracts: применимо — DTO/OpenAPI допускают вес до двух знаков и owner-scoped чтение persisted AI conversation/messages.
 - Analytics events: N/A — новые frontend events не создаются; `weight_added` уже возникает на backend.
 - Ownership: применимо и проверяется server-side для weight entries, AI conversations, messages и operations.

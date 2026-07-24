@@ -58,6 +58,73 @@ describeWithDatabase('AI operation PostgreSQL transaction', () => {
     await expectCounts(fixture.walletId, operation.id, 1, 1, 1);
   });
 
+  it('allows two completed quick replies for the same user', async () => {
+    const fixture = await completedUserFixture();
+    const first = await database.transaction((client) =>
+      repository.startQuickReply(client, {
+        userId: fixture.userId,
+        idempotencyKey: randomUUID(),
+        conversationId: fixture.conversationId,
+        content: 'Первое сообщение',
+        expectedPriceTokens: 1,
+        priceVersion: 1,
+      }),
+    );
+    const reservation = await database.query<{ id: string }>(
+      `select id from token_transactions
+        where operation_id=$1 and entry_type='aiReservation'`,
+      [first.id],
+    );
+    await database.transaction(async (client) => {
+      await client.query(
+        `insert into token_transactions
+          (id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id,operation_id,reservation_id)
+         values ($1,$2,$3,'aiConfirmation',0,'aiOperation',$4,$4,$5)`,
+        [
+          randomUUID(),
+          fixture.walletId,
+          fixture.userId,
+          first.id,
+          reservation.rows[0]!.id,
+        ],
+      );
+      await client.query(
+        `update ai_operations set status='succeeded',updated_at=now()
+          where id=$1`,
+        [first.id],
+      );
+    });
+
+    const second = await database.transaction((client) =>
+      repository.startQuickReply(client, {
+        userId: fixture.userId,
+        idempotencyKey: randomUUID(),
+        conversationId: fixture.conversationId,
+        content: 'Второе сообщение',
+        expectedPriceTokens: 1,
+        priceVersion: 1,
+      }),
+    );
+
+    expect(second.id).not.toBe(first.id);
+    const totals = await database.query<{
+      operations: string;
+      reservations: string;
+      balance: string;
+    }>(
+      `select
+        (select count(*) from ai_operations where user_id=$1)::text as operations,
+        (select count(*) from token_transactions where user_id=$1 and entry_type='aiReservation')::text as reservations,
+        (select sum(amount_tokens) from token_transactions where wallet_id=$2)::text as balance`,
+      [fixture.userId, fixture.walletId],
+    );
+    expect(totals.rows[0]).toEqual({
+      operations: '2',
+      reservations: '2',
+      balance: '98',
+    });
+  });
+
   it('rolls back every new record when the client price is stale', async () => {
     const fixture = await completedUserFixture();
 
