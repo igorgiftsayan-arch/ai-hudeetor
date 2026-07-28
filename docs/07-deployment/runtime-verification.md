@@ -1,5 +1,13 @@
 # BOOT-001 — runtime verification
 
+## UI-005 / BACK-UI-001 — isolated daily-upsert verification
+
+- Date: 2026-07-28. Branch `ui/ui-001-daily-weight` was deployed from checkout `e25d85e` as the isolated Compose project `atlas-ui-001`; stable `atlas-v01` and its containers, volumes, environment and ports were not changed.
+- Migration: renamed `0008_back_001_daily_weight.sql` was built into the migration image, applied to the isolated PostgreSQL database and re-run safely. The resulting schema has `local_date`, `updated_at` and `is_current`; the migration journal has nine entries.
+- Contract and data: backend PostgreSQL integration `weight-daily-postgres.integration.spec.ts` passed 6/6; it covers created/updated results, local-date boundaries, idempotent replay, concurrent saves and one current history value per day. OpenAPI regeneration and generated-client drift check passed.
+- Web: the production web container ran the targeted `/today` component suite, 11/11. In a clean browser profile the synthetic completed user logged in, created `84.25`, updated it to `84.26` on the same day, reloaded the persisted value and opened `/quick-reply`. At mobile viewport `390×844`, the field, update action, history, graph and navigation remained usable.
+- Exposure: only the nginx gateway is published at `http://5.42.126.71:3102`; API, worker, PostgreSQL and Redis remain internal to the dedicated Compose network.
+
 ## UI-001 — isolated daily-weight UI verification
 
 - Date: 2026-07-22. Branch `ui/ui-001-daily-weight` was copied into `/opt/projects/ai-hudeetor-ui-001-verify` and started as Compose project `atlas-ui001`; stable `atlas-v01` containers and volumes were not changed.

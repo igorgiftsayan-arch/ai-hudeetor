@@ -1,7 +1,7 @@
 # Текущий статус
 
 - Дата: 2026-07-28
-- Текущая задача: UI-005 интегрирует BACK-UI-001 в ветку `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
+- Текущая задача: UI-005/BACK-UI-001 объединены и проверены в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось, результат ожидает ручной приёмки.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса с графиком, daily upsert и persisted fake-runtime AI chat.
 - Реальный AI provider, платежи, рефералы, AI memory и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
@@ -46,6 +46,8 @@
 - Дата вычисляется по IANA timezone профиля в момент сохранения; PostgreSQL partial unique index защищает одну текущую строку на `(user_id, local_date)`.
 - Исторические дубли не удаляются. Migration `0008_back_001_daily_weight.sql` помечает текущей последнюю строку по `updated_at DESC`, `created_at DESC`, `id DESC`; API history возвращает только актуальные ежедневные значения.
 - Контракт и хранение веса сохраняют точность UI-002: до двух знаков после запятой, OpenAPI `multipleOf: 0.01`, PostgreSQL `numeric(5,2)`.
+- Изолированная runtime-проверка `atlas-ui-001` пройдена: migration `0008` выполнена повторно, PostgreSQL integration 6/6, contract/client drift отсутствует, targeted `/today` web tests 11/11 и browser/mobile сценарий create → update → reload → `/quick-reply` подтверждены.
+- В `atlas-v01` не вносились изменения: его контейнеры, volumes, runtime env и опубликованные ports сохранены.
 
 ## VERT-001.5 — завершена
 
