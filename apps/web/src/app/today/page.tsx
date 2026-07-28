@@ -32,7 +32,7 @@ export default function TodayPage() {
   const [weightInput, setWeightInput] = useState('');
   const [validationError, setValidationError] = useState<string>();
   const [saveError, setSaveError] = useState<string>();
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<string>();
   const [saving, setSaving] = useState(false);
   const pendingSubmission = useRef<PendingSubmission | undefined>(undefined);
 
@@ -43,6 +43,10 @@ export default function TodayPage() {
       setEntries(newestFirst(data.entries));
       setCsrfToken(data.csrfToken);
       setTimezone(data.timezone);
+      const todayEntry = data.entries.find((entry) =>
+        isTodayEntry(entry, data.timezone),
+      );
+      if (todayEntry) setWeightInput(weightInputValue(todayEntry.weightKg));
       setViewState('ready');
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') {
@@ -63,7 +67,7 @@ export default function TodayPage() {
     setWeightInput(value);
     setValidationError(undefined);
     setSaveError(undefined);
-    setSaved(false);
+    setSaved(undefined);
   }
 
   async function saveWeight(event?: FormEvent<HTMLFormElement>) {
@@ -83,22 +87,29 @@ export default function TodayPage() {
 
     setSaving(true);
     setSaveError(undefined);
-    setSaved(false);
+    setSaved(undefined);
     try {
-      const created = await createWeightEntry({
+      const savedEntry = await createWeightEntry({
         csrfToken,
         idempotencyKey: pendingSubmission.current.idempotencyKey,
         weightKg: validation.value,
       });
-      setEntries((current) =>
-        newestFirst([
-          created,
-          ...current.filter((entry) => entry.id !== created.id),
-        ]).slice(0, 10),
-      );
+      setEntries((current) => {
+        const updatedEntries =
+          savedEntry.result === 'updated'
+            ? current.map((entry) =>
+                entry.id === savedEntry.id ? savedEntry : entry,
+              )
+            : [savedEntry, ...current];
+        return newestFirst(updatedEntries).slice(0, 10);
+      });
       pendingSubmission.current = undefined;
-      setWeightInput('');
-      setSaved(true);
+      setWeightInput(weightInputValue(savedEntry.weightKg));
+      setSaved(
+        savedEntry.result === 'created'
+          ? 'Вес за сегодня записан'
+          : 'Вес за сегодня обновлён',
+      );
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') {
         replace('/login');
@@ -120,6 +131,7 @@ export default function TodayPage() {
 
   const latest = entries[0];
   const previous = entries[1];
+  const todayEntry = entries.find((entry) => isTodayEntry(entry, timezone));
 
   return (
     <main className="app-shell today-shell">
@@ -164,6 +176,11 @@ export default function TodayPage() {
             <span aria-hidden="true" className="soft-dot" />
           </div>
           <form onSubmit={saveWeight} noValidate>
+            {todayEntry && (
+              <p className="today-recorded" aria-live="polite">
+                Сегодня уже записано: {formatWeight(todayEntry.weightKg)}
+              </p>
+            )}
             <label htmlFor="today-weight" className="sr-only">
               Вес сегодня
             </label>
@@ -188,7 +205,11 @@ export default function TodayPage() {
               type="submit"
               disabled={saving || !weightInput.trim()}
             >
-              {saving ? 'Сохраняем…' : 'Сохранить вес'}
+              {saving
+                ? 'Сохраняем…'
+                : todayEntry
+                  ? 'Обновить вес'
+                  : 'Записать вес'}
             </button>
           </form>
           {validationError && (
@@ -211,7 +232,7 @@ export default function TodayPage() {
           )}
           {saved && (
             <p className="save-confirmation" aria-live="polite">
-              Записано
+              {saved}
             </p>
           )}
         </section>
@@ -258,6 +279,29 @@ export default function TodayPage() {
       <MobileNavigation active="today" />
     </main>
   );
+}
+
+function isTodayEntry(entry: WeightEntry, timezone: string) {
+  return (
+    localCalendarDate(entry.recordedAt, timezone) ===
+    localCalendarDate(new Date(), timezone)
+  );
+}
+
+function localCalendarDate(value: string | Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+function weightInputValue(weightKg: string) {
+  return Number(weightKg).toFixed(2);
 }
 
 function TodayBoundary({

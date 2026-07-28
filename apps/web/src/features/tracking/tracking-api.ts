@@ -1,10 +1,12 @@
 import type {
+  CreateWeightEntryResponseDto,
   OnboardingResourceDto,
   WeightEntryResourceDto,
 } from '@atlas/api-contracts';
 import { ApiError, apiRequest, mutationHeaders } from '../../shared/api';
 
 export type WeightEntry = WeightEntryResourceDto;
+export type SavedWeightEntry = CreateWeightEntryResponseDto;
 
 type WeightEntryPage = {
   items: WeightEntry[];
@@ -43,8 +45,8 @@ export async function createWeightEntry(input: {
   csrfToken: string;
   idempotencyKey: string;
   weightKg: number;
-}): Promise<WeightEntry> {
-  return apiRequest<WeightEntry>('/weight-entries', {
+}): Promise<SavedWeightEntry> {
+  return apiRequest<SavedWeightEntry>('/weight-entries', {
     method: 'POST',
     headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
     body: JSON.stringify({ weightKg: input.weightKg }),

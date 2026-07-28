@@ -11,6 +11,15 @@
 - Access from the owner's computer while the SSH tunnel is active: `http://localhost:3100/today`; API remains isolated at `http://localhost:3001/api/v1` through the same tunnel.
 - A fresh browser without an existing completed cookie session intentionally shows `Сессия закончилась`; UI-001 does not add or weaken authentication, and the current `main` has no login UI.
 
+## BACK-UI-001 — isolated PostgreSQL verification
+
+- Date: 2026-07-25. Verification ran on the test server in an isolated checkout and temporary PostgreSQL 17 containers; stable `atlas-v01`, its containers, volumes and ports were not touched.
+- Migration: `0007_back_001_daily_weight.sql` was applied after the existing schema. The normal Drizzle runner applied the migration safely and its repeat run was idempotent. A separate legacy-data check applied the migration to two same-day historical rows: neither was deleted, the row latest by `updated_at`, then `created_at`, then `id` became `is_current=true`.
+- PostgreSQL integration: `weight-daily-postgres.integration.spec.ts` passed 6/6. It confirms create/update for one IANA-timezone local date, next-day creation around a UTC boundary, identical idempotency replay, concurrent saves, legacy-current history filtering and daily ordering used by history/graphs.
+- API/contract quality: backend typecheck and API production build passed; OpenAPI/client generation produced no generated drift and focused ESLint passed. The workspace-wide API `tsc --noEmit` still reports pre-existing `TS6307` project-reference errors across unrelated backend sources; it is not used by the production API build.
+
+This verification covers the original backend-only scope. The later UI merge and current runtime verification are recorded separately.
+
 ## VERT-001.5 — final fake-runtime verification
 
 - Date: 2026-07-21. Isolated test-server topology used a clean checkout of verification commit `7a794a0`, PostgreSQL 17, Redis 8, BullMQ and explicit `AI_PROVIDER=fake`.

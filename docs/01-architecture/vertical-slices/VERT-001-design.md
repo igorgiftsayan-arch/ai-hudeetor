@@ -137,7 +137,7 @@ Composition между модулями выполняют application use cases
 | `user_consents` | `id`, `user_id`, `consent_type`, `document_version`, `accepted_at`, `source` | unique user/type/version; immutable evidence |
 | `user_profiles` | `user_id`, `timezone`, `onboarding_status`, `onboarding_completed_at`, timestamps | PK/FK user; IANA timezone validation in application |
 | `ai_preferences` | `user_id`, `persona_id`, `strictness`, `response_length`, timestamps | PK/FK user; closed-value checks |
-| `weight_entries` | `id`, `user_id`, `weight_value`, `recorded_at`, timestamps | positive bounded numeric; ownership FK |
+| `weight_entries` | `id`, `user_id`, `weight_kg numeric(5,2)`, `recorded_at`, `local_date`, `is_current`, `updated_at`, timestamps | positive bounded exact numeric; owner FK; одна `is_current=true` строка на user-local date |
 | `token_wallets` | `id`, `user_id`, timestamps | unique user; wallet не хранит изменяемый authoritative balance |
 | `token_transactions` | `id`, `wallet_id`, `type`, `amount`, `status`, `reservation_id`, `source_type`, `source_id`, `idempotency_key`, timestamps | integer amount; unique source/idempotency effects; ledger sum не уходит ниже нуля под lock |
 | `ai_action_prices` | `id`, `action_type`, `price_tokens`, `valid_from`, `valid_to`, `enabled`, timestamps | integer `>=1`; не более одной действующей цены на action type |
@@ -165,7 +165,7 @@ Composition между модулями выполняют application use cases
 - `uq_token_transactions_source_effect` и `uq_token_transactions_idempotency`.
 - `idx_token_transactions_wallet_id_created_at`.
 - `uq_ai_operations_user_id_idempotency_key`, `idx_ai_operations_status_created_at`.
-- `idx_weight_entries_user_id_recorded_at`.
+- `uq_weight_entries_user_local_date_current`, `idx_weight_entries_user_local_date_current`.
 - `idx_ai_conversations_user_id_created_at`, `idx_ai_messages_conversation_id_created_at`.
 - `uq_ai_feedback_user_id_message_id`.
 - `idx_outbox_messages_pending` по `processed_at/available_at`.
@@ -197,8 +197,8 @@ Ledger mutation выполняется под row lock кошелька/согл
 | `PATCH /users/me/profile` | timezone и разрешённые onboarding fields | `200` profile | recommended |
 | `PUT /users/me/ai-preference` | выбор persona | `200` preference | natural resource idempotency |
 | `POST /users/me/onboarding-completions` | завершение + starter grant | `201` completion/wallet summary | required |
-| `POST /weight-entries` | добавить вес | `201` weight entry | required |
-| `GET /weight-entries?limit=&cursor=` | принадлежащая пользователю история | `200` cursor page | read |
+| `POST /weight-entries` | создать или обновить актуальный вес за локальную дату пользователя | `201` weight entry + `result=created\|updated` | required |
+| `GET /weight-entries?limit=&cursor=` | принадлежащая пользователю история актуальных дневных значений | `200` cursor page | read |
 | `GET /ai-action-prices/quick-reply` | текущая цена до подтверждения | `200` price/version | read |
 | `POST /ai-conversations` | создать разговор | `201` conversation | required |
 | `POST /ai/operations` | сохранить user message, reserve, запустить reply | `202` operation resource | required |

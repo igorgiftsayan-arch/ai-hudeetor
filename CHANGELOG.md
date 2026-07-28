@@ -6,6 +6,7 @@
 
 ### Added
 
+- UI-005: `/today` различает первую запись и обновление веса за текущую локальную дату; после ответа `created|updated` сохраняет значение в поле, показывает нейтральное подтверждение и обновляет историю/график без frontend-дедупликации.
 - UI-001: mobile-first `/today` с последним весом, нейтральной динамикой, быстрым вводом, историей до 10 записей и минимальной навигацией `Сегодня`/`AI`.
 - UI-001: явные loading/empty/saved/validation/network retry/session expired states и безопасный повтор weight POST с тем же `Idempotency-Key`.
 - UI-001: web component tests для latest/history/create/validation/loading/error/retry/session/navigation и ручной acceptance-сценарий.
@@ -18,6 +19,7 @@
 - UI-003: добавлены owner-scoped reads текущей и выбранной AI conversation с сообщениями; OpenAPI client сгенерирован штатно.
 - UI-004: над недавним списком веса добавлен адаптивный SVG-график, устойчивый к одной записи и нескольким записям за день.
 - BUG-UI-001: migration `0007_ai_reservation_uniqueness.sql` исправляет ошибочное legacy-ограничение ledger, которое допускало только один `aiReservation` каждого пользователя; уникальность starter grant сохранена частичным индексом.
+- BACK-UI-001: daily weight upsert by user-local date, non-destructive legacy-row strategy, `created|updated` response contract, PostgreSQL daily uniqueness constraint and focused test-server verification.
 - VERT-001.5: minimal `/quick-reply` web boundary, owner-scoped operation polling, fake-runtime notice and safe display of the completed assistant response.
 - VERT-001.5 final verification: isolated test-server fake-adapter acceptance confirmed success, technical refund, outcomeUnknown blocking, HTTP idempotency, duplicate outbox delivery, worker restart, PostgreSQL/worker regression and safe log/outbox payload boundaries.
 

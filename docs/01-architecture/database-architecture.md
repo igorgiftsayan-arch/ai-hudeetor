@@ -5,7 +5,7 @@ PostgreSQL — источник бизнес-истины по [ADR-005](archite
 ## Основные таблицы по группам
 
 - Identity: users, credentials/identity bindings, sessions, roles, permissions.
-- Profile/tracking: user_profiles, nutrition_profiles, ai_preferences, weight_entries, body_measurements, daily_checkins, activity_entries.
+- Profile/tracking: user_profiles, nutrition_profiles, ai_preferences, weight_entries, body_measurements, daily_checkins, activity_entries. `weight_entries` сохраняет audit-safe historical rows, но partial unique index допускает только одну `is_current=true` запись на `(user_id, local_date)`; `local_date` вычисляется по timezone профиля при сохранении.
 - AI: ai_conversations, ai_messages, ai_memories, ai_operations, prompt_versions, ai_feedback, ai_usage_records.
 - Food/planning/files: uploaded_images, food_analyses, product_analyses, meal_suggestions, menu_plans/items, shopping_lists/items.
 - Economy: token_wallets, token_transactions, ai_action_prices, payments, payment_events.

@@ -262,6 +262,12 @@ button:disabled {
   margin-top: 1.25rem;
 }
 
+.today-recorded {
+  margin: 0 0 0.9rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .weight-input-wrap {
   display: flex;
   align-items: baseline;

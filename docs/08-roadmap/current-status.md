@@ -1,8 +1,8 @@
 # Текущий статус
 
-- Дата: 2026-07-24
-- Текущая задача: BUG-UI-001, UI-003 и UI-004 реализованы в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
-- Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса с графиком и persisted fake-runtime AI chat.
+- Дата: 2026-07-28
+- Текущая задача: UI-005 интегрирует BACK-UI-001 в ветку `ui/ui-001-daily-weight`; слияние в `main` не выполнялось.
+- Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса с графиком, daily upsert и persisted fake-runtime AI chat.
 - Реальный AI provider, платежи, рефералы, AI memory и feedback: отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: не выбран.
@@ -39,6 +39,13 @@
 - Реализованы owner-scoped `GET /ai-conversations/current` и ранее спроектированный `GET /ai-conversations/{id}`; пустые conversation не скрывают последнюю беседу с сообщениями.
 - На `/today` добавлен лёгкий SVG-график над сохранённым списком. Одна запись и несколько записей в один день отображаются без изменения модели данных и без UI-библиотеки.
 - Automated verification: lint и production build проходят; web 31/31, API unit 27/27, worker 2/2 и PostgreSQL AI integration 4/4. Root `pnpm typecheck` по-прежнему выявляет baseline `TS6307` в существующей API/project-reference конфигурации, при этом production build выполняет TypeScript-проверку успешно.
+
+## UI-005 / BACK-UI-001 — daily weight upsert
+
+- `weight_entries` хранит одну актуальную запись на локальную календарную дату пользователя: первое сохранение возвращает `created`, повтор за ту же дату — `updated`.
+- Дата вычисляется по IANA timezone профиля в момент сохранения; PostgreSQL partial unique index защищает одну текущую строку на `(user_id, local_date)`.
+- Исторические дубли не удаляются. Migration `0008_back_001_daily_weight.sql` помечает текущей последнюю строку по `updated_at DESC`, `created_at DESC`, `id DESC`; API history возвращает только актуальные ежедневные значения.
+- Контракт и хранение веса сохраняют точность UI-002: до двух знаков после запятой, OpenAPI `multipleOf: 0.01`, PostgreSQL `numeric(5,2)`.
 
 ## VERT-001.5 — завершена
 

@@ -13,7 +13,11 @@ export class ListWeightEntriesUseCase {
       recorded_at: Date;
       source: 'manual';
     }>(
-      `select id,weight_kg::text,recorded_at,source from weight_entries where user_id=$1 order by recorded_at desc,id desc limit 50`,
+      `select id,weight_kg::text,recorded_at,source
+       from weight_entries
+       where user_id=$1 and is_current
+       order by local_date desc,recorded_at desc,id desc
+       limit 50`,
       [user.userId],
     );
     return {

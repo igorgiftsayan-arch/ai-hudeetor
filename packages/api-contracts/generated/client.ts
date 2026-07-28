@@ -350,11 +350,38 @@ export interface CreateWeightEntryRequestDto {
   recordedAt?: string;
 }
 
+export type CreateWeightEntryResponseDtoResult = typeof CreateWeightEntryResponseDtoResult[keyof typeof CreateWeightEntryResponseDtoResult];
+
+
+export const CreateWeightEntryResponseDtoResult = {
+  created: 'created',
+  updated: 'updated',
+} as const;
+
+export interface CreateWeightEntryResponseDto {
+  id: string;
+  weightKg: string;
+  recordedAt: string;
+  source: string;
+  result: CreateWeightEntryResponseDtoResult;
+}
+
 export interface WeightEntryResourceDto {
   id: string;
   weightKg: string;
   recordedAt: string;
   source: string;
+}
+
+/**
+ * @nullable
+ */
+export type WeightEntryPageDtoNextCursor = { [key: string]: unknown } | null;
+
+export interface WeightEntryPageDto {
+  items: WeightEntryResourceDto[];
+  /** @nullable */
+  nextCursor: WeightEntryPageDtoNextCursor;
 }
 
 export type healthControllerLivenessApiV1Response200 = {
@@ -1084,7 +1111,7 @@ export const tokenEconomyControllerCurrentApiV1 = async ( options?: RequestInit)
 
 
 export type trackingControllerCreateEntryApiV1Response201 = {
-  data: WeightEntryResourceDto
+  data: CreateWeightEntryResponseDto
   status: 201
 }
 
@@ -1124,7 +1151,7 @@ export const trackingControllerCreateEntryApiV1 = async (createWeightEntryReques
 
 
 export type trackingControllerEntriesApiV1Response200 = {
-  data: void
+  data: WeightEntryPageDto
   status: 200
 }
 
@@ -1157,6 +1184,6 @@ export const trackingControllerEntriesApiV1 = async ( options?: RequestInit): Pr
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
 
-  const data: trackingControllerEntriesApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  const data: trackingControllerEntriesApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as trackingControllerEntriesApiV1Response
 }

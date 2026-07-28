@@ -8,8 +8,8 @@ import {
   Req,
 } from '@nestjs/common';
 import {
-  ApiCookieAuth,
   ApiBody,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiTags,
@@ -20,8 +20,10 @@ import { CreateWeightEntryUseCase } from '../application/create-weight-entry.use
 import { ListWeightEntriesUseCase } from '../application/list-weight-entries.use-case';
 import {
   CreateWeightEntryRequestDto,
-  WeightEntryResourceDto,
+  CreateWeightEntryResponseDto,
+  WeightEntryPageDto,
 } from './tracking.dto';
+
 @ApiTags('tracking')
 @ApiCookieAuth()
 @Controller('weight-entries')
@@ -32,9 +34,10 @@ export class TrackingController {
     @Inject(ListWeightEntriesUseCase)
     private readonly list: ListWeightEntriesUseCase,
   ) {}
+
   @Post()
   @ApiBody({ type: CreateWeightEntryRequestDto })
-  @ApiCreatedResponse({ type: WeightEntryResourceDto })
+  @ApiCreatedResponse({ type: CreateWeightEntryResponseDto })
   createEntry(
     @Body() body: CreateWeightEntryRequestDto,
     @Req() req: Request,
@@ -52,7 +55,10 @@ export class TrackingController {
       ...body,
     });
   }
-  @Get() @ApiOkResponse() entries(@Req() req: Request) {
+
+  @Get()
+  @ApiOkResponse({ type: WeightEntryPageDto })
+  entries(@Req() req: Request) {
     return this.list.execute(req.cookies?.atlas_access ?? '');
   }
 }

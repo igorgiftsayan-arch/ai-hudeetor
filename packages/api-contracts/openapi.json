@@ -194,6 +194,67 @@
         ]
       }
     },
+    "/api/v1/ai-conversations/current": {
+      "get": {
+        "operationId": "AiCompanionController_currentConversation_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConversationDetailResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/ai-conversations/{id}": {
+      "get": {
+        "operationId": "AiCompanionController_conversationById_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConversationDetailResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
     "/api/v1/ai-conversations": {
       "post": {
         "operationId": "AiCompanionController_conversation_api/v1",
@@ -513,7 +574,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WeightEntryResourceDto"
+                  "$ref": "#/components/schemas/CreateWeightEntryResponseDto"
                 }
               }
             }
@@ -533,7 +594,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeightEntryPageDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -745,6 +813,54 @@
           "actionType",
           "priceTokens",
           "priceVersion"
+        ]
+      },
+      "AiConversationMessageResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "content",
+          "createdAt"
+        ]
+      },
+      "AiConversationDetailResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiConversationMessageResourceDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "messages"
         ]
       },
       "AiConversationResourceDto": {
@@ -1123,6 +1239,37 @@
           "weightKg"
         ]
       },
+      "CreateWeightEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "weightKg": {
+            "type": "string"
+          },
+          "recordedAt": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "created",
+              "updated"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "weightKg",
+          "recordedAt",
+          "source",
+          "result"
+        ]
+      },
       "WeightEntryResourceDto": {
         "type": "object",
         "properties": {
@@ -1144,6 +1291,25 @@
           "weightKg",
           "recordedAt",
           "source"
+        ]
+      },
+      "WeightEntryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeightEntryResourceDto"
+            }
+          },
+          "nextCursor": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
         ]
       }
     }

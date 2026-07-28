@@ -55,6 +55,15 @@ describe('today weight screen', () => {
       screen.getByRole('img', { name: 'График изменения веса' }),
     ).toBeInTheDocument();
     expect(
+      screen.getByText('Сегодня уже записано: 98,4 кг'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Вес сегодня' })).toHaveValue(
+      '98.40',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Обновить вес' }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole('link', { name: 'Поговорить с AI' }),
     ).toHaveAttribute('href', '/quick-reply');
   });
@@ -127,10 +136,7 @@ describe('today weight screen', () => {
           expect(new Headers(init.headers).get('Idempotency-Key')).toMatch(
             /.+/,
           );
-          return json(
-            entry('weight-1', '98.4', '2026-07-22T04:00:00.000Z'),
-            201,
-          );
+          return json(savedEntry('weight-1', '98.40', 'created'), 201);
         }
         throw new Error(`Unexpected fetch: ${url}`);
       },
@@ -145,10 +151,61 @@ describe('today weight screen', () => {
       screen.getByRole('textbox', { name: 'Вес сегодня' }),
       '98,4',
     );
-    await user.click(screen.getByRole('button', { name: 'Сохранить вес' }));
+    await user.click(screen.getByRole('button', { name: 'Записать вес' }));
 
-    expect(await screen.findByText('Записано')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Вес за сегодня записан'),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('weight-summary')).toHaveTextContent('98,4 кг');
+    expect(
+      screen.getByText('Сегодня уже записано: 98,4 кг'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Обновить вес' }),
+    ).toBeInTheDocument();
+  });
+
+  it('updates today’s value and keeps a single backend history entry and chart point', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/weight-entries` && !init?.method)
+          return json({
+            items: [entry('weight-1', '84.24', '2026-07-22T01:00:00.000Z')],
+            nextCursor: null,
+          });
+        if (url === `${api}/weight-entries` && init?.method === 'POST') {
+          expect(init.body).toBe(JSON.stringify({ weightKg: 83.95 }));
+          return json(savedEntry('weight-1', '83.95', 'updated'), 201);
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<TodayPage />);
+    const field = await screen.findByRole('textbox', { name: 'Вес сегодня' });
+    expect(field).toHaveValue('84.24');
+    await user.clear(field);
+    await user.type(field, '83,95');
+    await user.click(screen.getByRole('button', { name: 'Обновить вес' }));
+
+    expect(
+      await screen.findByText('Вес за сегодня обновлён'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Сегодня уже записано: 83,95 кг'),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Недавняя история веса')).toHaveTextContent(
+      '83,95 кг',
+    );
+    expect(
+      within(
+        screen.getByRole('img', { name: 'График изменения веса' }),
+      ).getAllByTestId('weight-chart-point'),
+    ).toHaveLength(1);
   });
 
   it('retries a network failure with the same idempotency key', async () => {
@@ -166,10 +223,7 @@ describe('today weight screen', () => {
           keys.push(new Headers(init.headers).get('Idempotency-Key') ?? '');
           saves += 1;
           if (saves === 1) throw new TypeError('Failed to fetch');
-          return json(
-            entry('weight-1', '98.4', '2026-07-22T04:00:00.000Z'),
-            201,
-          );
+          return json(savedEntry('weight-1', '98.40', 'created'), 201);
         }
         throw new Error(`Unexpected fetch: ${url}`);
       }),
@@ -183,12 +237,14 @@ describe('today weight screen', () => {
       screen.getByRole('textbox', { name: 'Вес сегодня' }),
       '98,4',
     );
-    await user.click(screen.getByRole('button', { name: 'Сохранить вес' }));
+    await user.click(screen.getByRole('button', { name: 'Записать вес' }));
     await user.click(
       await screen.findByRole('button', { name: 'Повторить сохранение' }),
     );
 
-    expect(await screen.findByText('Записано')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Вес за сегодня записан'),
+    ).toBeInTheDocument();
     expect(keys).toHaveLength(2);
     expect(keys[0]).toBe(keys[1]);
   });
@@ -220,13 +276,13 @@ describe('today weight screen', () => {
       screen.getByRole('textbox', { name: 'Вес сегодня' }),
       '98,4',
     );
-    await user.click(screen.getByRole('button', { name: 'Сохранить вес' }));
+    await user.click(screen.getByRole('button', { name: 'Записать вес' }));
 
     expect(screen.getByRole('button', { name: 'Сохраняем…' })).toBeDisabled();
-    finishSave(
-      json(entry('weight-1', '98.4', '2026-07-22T04:00:00.000Z'), 201),
-    );
-    expect(await screen.findByText('Записано')).toBeInTheDocument();
+    finishSave(json(savedEntry('weight-1', '98.40', 'created'), 201));
+    expect(
+      await screen.findByText('Вес за сегодня записан'),
+    ).toBeInTheDocument();
   });
 
   it('submits a two-decimal weight through the existing API', async () => {
@@ -239,10 +295,7 @@ describe('today weight screen', () => {
           return json({ items: [], nextCursor: null });
         if (url === `${api}/weight-entries` && init?.method === 'POST') {
           expect(init.body).toBe(JSON.stringify({ weightKg: 98.45 }));
-          return json(
-            entry('weight-1', '98.45', '2026-07-22T04:00:00.000Z'),
-            201,
-          );
+          return json(savedEntry('weight-1', '98.45', 'created'), 201);
         }
         throw new Error(`Unexpected fetch: ${url}`);
       },
@@ -257,9 +310,11 @@ describe('today weight screen', () => {
       screen.getByRole('textbox', { name: 'Вес сегодня' }),
       '98,45',
     );
-    await user.click(screen.getByRole('button', { name: 'Сохранить вес' }));
+    await user.click(screen.getByRole('button', { name: 'Записать вес' }));
 
-    expect(await screen.findByText('Записано')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Вес за сегодня записан'),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('weight-summary')).toHaveTextContent('98,45 кг');
   });
 
@@ -282,7 +337,7 @@ describe('today weight screen', () => {
       screen.getByRole('textbox', { name: 'Вес сегодня' }),
       '98,456',
     );
-    await user.click(screen.getByRole('button', { name: 'Сохранить вес' }));
+    await user.click(screen.getByRole('button', { name: 'Записать вес' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Используйте не больше двух знаков после запятой.',
@@ -363,6 +418,17 @@ function onboarding(): Response {
 
 function entry(id: string, weightKg: string, recordedAt: string) {
   return { id, weightKg, recordedAt, source: 'manual' };
+}
+
+function savedEntry(
+  id: string,
+  weightKg: string,
+  result: 'created' | 'updated',
+) {
+  return {
+    ...entry(id, weightKg, '2026-07-22T04:00:00.000Z'),
+    result,
+  };
 }
 
 function json(body: unknown, status = 200): Response {
