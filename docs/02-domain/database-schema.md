@@ -6,7 +6,7 @@ PostgreSQL — источник истины для структурирован
 
 - Identity/profile: User, UserProfile, NutritionProfile, AiPreference, NotificationPreference.
 - Tracking: WeightEntry, BodyMeasurement, DailyCheckin, ActivityEntry.
-- AI: AiConversation, AiMessage, AiMemory, AiFeedback.
+- AI: AiConversation, AiMessage, AiMemory, durable AiMemoryExtraction receipt, AiFeedback.
 - Food: UploadedImage metadata, FoodAnalysis, ProductAnalysis, MealSuggestion, MenuPlan/Item, ShoppingList/Item.
 - Economy: TokenWallet, append-only TokenTransaction, AiActionPrice.
 - Growth/content: Referral, ReferralProgress, ContentItem.
@@ -19,6 +19,7 @@ PostgreSQL — источник истины для структурирован
 - У приглашённого не более одного пригласившего; самоссылка запрещена.
 - Токенные проводки и изменение баланса атомарны.
 - Внешние запросы получают идемпотентные ключи там, где повтор опасен.
+- Активная AI-память уникальна по владельцу, категории и каноническому ключу; удаление мягкое, а обработанное source message имеет отдельный durable unique receipt.
 - Все изменения схемы — только миграциями вперёд с проверенным откатом/восстановлением.
 
 Сроки хранения и удаление описаны в [privacy-and-data.md](../05-security/privacy-and-data.md).

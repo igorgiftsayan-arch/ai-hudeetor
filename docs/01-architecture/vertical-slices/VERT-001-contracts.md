@@ -40,7 +40,7 @@
 
 ### 2.1 Минимальные данные
 
-V0.1 не собирает display name, пол, дату рождения, рост, цель по весу, медицинские данные, пищевые предпочтения или фото профиля. Возраст подтверждается boolean без хранения даты рождения.
+V0.1 не собирает пол, дату рождения, рост, медицинские данные, пищевые предпочтения или фото профиля. AI-002 добавляет необязательные `displayName` и `targetWeightKg`; отсутствие значений не заменяется фиктивными данными. Возраст подтверждается boolean без хранения даты рождения.
 
 | Поле | Тип | Обязательность | Правила |
 |---|---|---|---|
@@ -49,6 +49,8 @@ V0.1 не собирает display name, пол, дату рождения, ро
 | `ageConfirmed` | boolean | registration: да | принимается только literal `true`; означает подтверждение возраста 18+ |
 | `consents` | array | registration/onboarding: да | отдельное явное `accepted: true` для каждой обязательной версии; prechecked UI запрещён |
 | `timezone` | string | до completion: да | canonical IANA timezone |
+| `displayName` | string или null | нет | trim, NFC, 1–80 Unicode code points; отсутствие сохраняет текущее значение, `null` очищает |
+| `targetWeightKg` | decimal или null | нет | 20.00–500.00 kg, максимум 2 знака; отсутствие сохраняет текущее значение, `null` очищает |
 | `personaId` | enum | до completion: да | одно из пяти значений persona contract |
 | `strictness` | enum | нет | default `medium`; настройка не ослабляет safety |
 | `responseLength` | enum | нет | default `medium`; меняет объём, не смысл/safety |

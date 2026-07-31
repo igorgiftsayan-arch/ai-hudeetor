@@ -12,6 +12,8 @@ Fake adapter сохраняется для automated/stable smoke. GenAPI раз
 ## Границы
 
 - Adapter не владеет токенами, ценой, consent или operation lifecycle.
+- Структурированный memory context формируется до adapter boundary и передаётся как отдельная часть системного prompt; adapter не читает profile/tracking/memory persistence.
+- AI-002 extraction выполняется локальным deterministic worker extractor и не вызывает GenAPI или другой внешний provider.
 - Повтор допустим один раз только при подтверждённой ошибке установления соединения.
 - Timeout после возможного принятия запроса даёт `outcomeUnknown`; подтверждённые HTTP/provider errors и невалидный ответ дают `technicalError` и refund.
 - Technical log не содержит API key, prompt, пользовательский текст, полный ответ или raw provider error.
