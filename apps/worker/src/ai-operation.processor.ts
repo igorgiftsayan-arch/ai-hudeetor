@@ -20,6 +20,7 @@ export class AiOperationProcessor extends WorkerHost {
     @Inject(AiProviderAdapterToken) private readonly adapter: AiProviderAdapter,
     @Inject(MemoryContextBuilderToken)
     private readonly memoryContext: MemoryContextBuilder,
+    @Inject(MemoryExtractionProcessor)
     private readonly memoryExtraction: MemoryExtractionProcessor,
   ) {
     super();
