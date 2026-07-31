@@ -16,6 +16,8 @@ export type ResponseLength = (typeof responseLengthValues)[number];
 export interface UserProfile {
   userId: string;
   timezone: string;
+  displayName: string | null;
+  targetWeightKg: string | null;
 }
 
 export interface AiPreference {

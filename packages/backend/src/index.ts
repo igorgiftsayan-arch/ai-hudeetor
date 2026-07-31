@@ -53,6 +53,15 @@ export { GetAiOperationUseCase } from './ai-companion/application/get-ai-operati
 export { GetAiConversationUseCase } from './ai-companion/application/get-ai-conversation.use-case';
 export { CreateAiConversationUseCase } from './ai-companion/application/create-ai-conversation.use-case';
 export { AiCompanionModule } from './ai-companion/transport/ai-companion.module';
+export { AiMemoryRepository } from './ai-companion/application/ai-memory-repository';
+export { PostgresAiMemoryRepository } from './ai-companion/infrastructure/postgres-ai-memory.repository';
+export { ListAiMemoryUseCase } from './ai-companion/application/list-ai-memory.use-case';
+export { DeleteAiMemoryUseCase } from './ai-companion/application/delete-ai-memory.use-case';
+export type {
+  AiMemory,
+  AiMemoryCategory,
+  AiMemorySource,
+} from './ai-companion/domain/ai-memory';
 export { PostgresAiCompanionRepository } from './ai-companion/infrastructure/postgres-ai-companion.repository';
 export {
   AiProviderAdapter,
@@ -68,6 +77,24 @@ export {
   type AiTechnicalLogRecord,
 } from './ai-companion/infrastructure/genapi-ai-provider.adapter';
 export { ProfilesRepository } from './profiles/application/profiles-repository';
+export {
+  GetCompanionProfileContextUseCase,
+  type CompanionProfileContext,
+} from './profiles/application/get-companion-profile-context.use-case';
+export {
+  GetCompanionWeightContextUseCase,
+  type CompanionWeightContext,
+} from './tracking/application/get-companion-weight-context.use-case';
+export {
+  MemoryContextBuilder,
+  containsSensitiveContent,
+  type MemoryContextDependencies,
+} from './ai-companion/application/memory-context-builder';
+export {
+  DeterministicMemoryExtractor,
+  type ExtractedMemoryFact,
+} from './ai-companion/application/deterministic-memory-extractor';
+export { ExtractMemoryUseCase } from './ai-companion/application/extract-memory.use-case';
 export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-profiles.repository';
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';
 export { SaveProfileSetupUseCase } from './profiles/application/save-profile-setup.use-case';

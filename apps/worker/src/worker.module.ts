@@ -5,12 +5,21 @@ import {
   AiProviderAdapter,
   FakeAiProviderAdapter,
   GenApiAiProviderAdapter,
+  PostgresAiMemoryRepository,
+  AiMemoryRepository,
+  DeterministicMemoryExtractor,
+  ExtractMemoryUseCase,
+  MemoryContextBuilder,
+  GetCompanionProfileContextUseCase,
+  GetCompanionWeightContextUseCase,
+  DatabaseService,
   TechnicalInfrastructureModule,
   workerConfigSchema,
 } from '@atlas/backend';
 import { loadWorkerConfig } from './config/load-config';
 import { AiOperationProcessor } from './ai-operation.processor';
 import { OutboxPublisherService } from './outbox-publisher.service';
+import { MemoryExtractionProcessor } from './memory-extraction.processor';
 
 const configModule = ConfigModule.forRoot({
   envFilePath: ['../../.env.local', '../../.env', '.env.local', '.env'],
@@ -40,6 +49,56 @@ const redisUrl = new URL(config.REDIS_URL);
   ],
   providers: [
     {
+      provide: AiMemoryRepository,
+      useFactory: (database: DatabaseService) =>
+        new PostgresAiMemoryRepository(database),
+      inject: [DatabaseService],
+    },
+    DeterministicMemoryExtractor,
+    {
+      provide: ExtractMemoryUseCase,
+      useFactory: (
+        database: DatabaseService,
+        repository: AiMemoryRepository,
+        extractor: DeterministicMemoryExtractor,
+      ) => new ExtractMemoryUseCase(database, repository, extractor),
+      inject: [
+        DatabaseService,
+        AiMemoryRepository,
+        DeterministicMemoryExtractor,
+      ],
+    },
+    {
+      provide: GetCompanionProfileContextUseCase,
+      useFactory: (database: DatabaseService) =>
+        new GetCompanionProfileContextUseCase(database),
+      inject: [DatabaseService],
+    },
+    {
+      provide: GetCompanionWeightContextUseCase,
+      useFactory: (database: DatabaseService) =>
+        new GetCompanionWeightContextUseCase(database),
+      inject: [DatabaseService],
+    },
+    {
+      provide: MemoryContextBuilder,
+      useFactory: (
+        profile: GetCompanionProfileContextUseCase,
+        weight: GetCompanionWeightContextUseCase,
+        memory: AiMemoryRepository,
+      ) =>
+        new MemoryContextBuilder({
+          profile: (userId) => profile.execute(userId),
+          weight: (userId) => weight.execute(userId),
+          memories: (userId) => memory.listActive(userId),
+        }),
+      inject: [
+        GetCompanionProfileContextUseCase,
+        GetCompanionWeightContextUseCase,
+        AiMemoryRepository,
+      ],
+    },
+    {
       provide: AiProviderAdapter,
       useFactory: () =>
         config.AI_PROVIDER === 'genapi'
@@ -52,6 +111,7 @@ const redisUrl = new URL(config.REDIS_URL);
           : new FakeAiProviderAdapter(config.AI_FAKE_MODE),
     },
     AiOperationProcessor,
+    MemoryExtractionProcessor,
     OutboxPublisherService,
   ],
 })

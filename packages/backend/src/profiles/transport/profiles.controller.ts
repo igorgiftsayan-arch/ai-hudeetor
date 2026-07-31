@@ -78,8 +78,23 @@ export class ProfilesController {
     return this.saveProfile.execute({
       accessToken: this.accessToken(request),
       timezone: body.timezone,
+      ...(Object.hasOwn(body, 'displayName')
+        ? { displayName: body.displayName?.trim().normalize('NFC') ?? null }
+        : {}),
+      ...(Object.hasOwn(body, 'targetWeightKg')
+        ? {
+            targetWeightKg:
+              body.targetWeightKg === null
+                ? null
+                : body.targetWeightKg?.toFixed(2),
+          }
+        : {}),
       wellnessNoticeVersion: body.consents?.[0]?.documentVersion,
-    });
+    }).then((profile) => ({
+      ...profile,
+      targetWeightKg:
+        profile.targetWeightKg === null ? null : Number(profile.targetWeightKg),
+    }));
   }
   @Put('ai-preference')
   @ApiOkResponse({ type: AiPreferenceResourceDto })

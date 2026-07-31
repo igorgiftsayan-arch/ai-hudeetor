@@ -7,6 +7,10 @@ import { GetAiConversationUseCase } from '../application/get-ai-conversation.use
 import { GetAiOperationUseCase } from '../application/get-ai-operation.use-case';
 import { AiCompanionRepository } from '../application/ai-companion-repository';
 import { StartQuickReplyUseCase } from '../application/start-quick-reply.use-case';
+import { AiMemoryRepository } from '../application/ai-memory-repository';
+import { ListAiMemoryUseCase } from '../application/list-ai-memory.use-case';
+import { DeleteAiMemoryUseCase } from '../application/delete-ai-memory.use-case';
+import { PostgresAiMemoryRepository } from '../infrastructure/postgres-ai-memory.repository';
 import { PostgresAiCompanionRepository } from '../infrastructure/postgres-ai-companion.repository';
 import { AiCompanionController } from './ai-companion.controller';
 
@@ -22,6 +26,30 @@ export class AiCompanionModule {
           useFactory: (database: DatabaseService) =>
             new PostgresAiCompanionRepository(database),
           inject: [DatabaseService],
+        },
+        {
+          provide: AiMemoryRepository,
+          useFactory: (database: DatabaseService) =>
+            new PostgresAiMemoryRepository(database),
+          inject: [DatabaseService],
+        },
+        {
+          provide: ListAiMemoryUseCase,
+          useFactory: (
+            currentUser: GetCurrentUserUseCase,
+            repository: AiMemoryRepository,
+          ) => new ListAiMemoryUseCase(currentUser, repository),
+          inject: [GetCurrentUserUseCase, AiMemoryRepository],
+        },
+        {
+          provide: DeleteAiMemoryUseCase,
+          useFactory: (
+            database: DatabaseService,
+            currentUser: GetCurrentUserUseCase,
+            repository: AiMemoryRepository,
+          ) =>
+            new DeleteAiMemoryUseCase(database, currentUser, repository),
+          inject: [DatabaseService, GetCurrentUserUseCase, AiMemoryRepository],
         },
         {
           provide: GetQuickReplyPriceUseCase,

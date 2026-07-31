@@ -4,7 +4,12 @@ import type { AiPreference, UserProfile } from '../domain/profile-types';
 export abstract class ProfilesRepository {
   abstract upsertProfile(
     client: PoolClient,
-    input: UserProfile,
+    input: {
+      userId: string;
+      timezone: string;
+      displayName?: string | null;
+      targetWeightKg?: string | null;
+    },
   ): Promise<UserProfile>;
 
   abstract findProfile(userId: string): Promise<UserProfile | null>;

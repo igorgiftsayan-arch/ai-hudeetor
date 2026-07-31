@@ -6,6 +6,7 @@ import { GetOnboardingUseCase } from '../application/get-onboarding.use-case';
 import { ProfilesRepository } from '../application/profiles-repository';
 import { SavePersonaPreferenceUseCase } from '../application/save-persona-preference.use-case';
 import { SaveProfileSetupUseCase } from '../application/save-profile-setup.use-case';
+import { GetCompanionProfileContextUseCase } from '../application/get-companion-profile-context.use-case';
 import { PostgresProfilesRepository } from '../infrastructure/postgres-profiles.repository';
 import { ProfilesController } from './profiles.controller';
 import { PROFILES_OPTIONS, type ProfilesOptions } from './profiles.tokens';
@@ -17,6 +18,12 @@ export class ProfilesModule {
       controllers: [ProfilesController],
       providers: [
         { provide: PROFILES_OPTIONS, useValue: options },
+        {
+          provide: GetCompanionProfileContextUseCase,
+          useFactory: (database: DatabaseService) =>
+            new GetCompanionProfileContextUseCase(database),
+          inject: [DatabaseService],
+        },
         {
           provide: ProfilesRepository,
           useFactory: (database: DatabaseService) =>
@@ -74,7 +81,7 @@ export class ProfilesModule {
           ],
         },
       ],
-      exports: [ProfilesRepository],
+      exports: [ProfilesRepository, GetCompanionProfileContextUseCase],
     };
   }
 }

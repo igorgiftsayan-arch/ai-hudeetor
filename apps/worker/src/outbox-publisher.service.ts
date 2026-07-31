@@ -16,12 +16,20 @@ export class OutboxPublisherService implements OnModuleInit {
     void this.publish();
   }
   async publish(): Promise<void> {
-    const rows = await this.database.query<{ id: string }>(
-      `select id from outbox_messages where published_at is null and event_type='ai-companion.quick_reply_requested.v1' order by created_at limit 50`,
+    const rows = await this.database.query<{ id: string; event_type: string }>(
+      `select id,event_type from outbox_messages
+        where published_at is null
+          and event_type in (
+            'ai-companion.quick_reply_requested.v1',
+            'ai-companion.memory_extraction_requested.v1'
+          )
+        order by created_at limit 50`,
     );
     for (const row of rows.rows) {
       await this.queue.add(
-        'ai-operation',
+        row.event_type === 'ai-companion.memory_extraction_requested.v1'
+          ? 'memory-extraction'
+          : 'ai-operation',
         { outboxId: row.id },
         {
           jobId: row.id,

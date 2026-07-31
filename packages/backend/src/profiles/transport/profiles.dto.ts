@@ -4,9 +4,12 @@ import {
   ArrayMaxSize,
   IsBoolean,
   IsIn,
+  IsNumber,
   IsOptional,
   IsString,
   Length,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import {
@@ -33,6 +36,17 @@ export class UpdateProfileRequestDto {
   @IsString()
   @Length(1, 64)
   timezone!: string;
+  @ApiPropertyOptional({ nullable: true, minLength: 1, maxLength: 80 })
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  displayName?: string | null;
+  @ApiPropertyOptional({ nullable: true, minimum: 20, maximum: 500 })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(20)
+  @Max(500)
+  targetWeightKg?: number | null;
   @ApiPropertyOptional({ type: () => [WellnessNoticeConsentDto], maxItems: 1 })
   @IsOptional()
   @ArrayMaxSize(1)
@@ -54,6 +68,8 @@ export class AiPreferenceRequestDto {
 export class UserProfileResourceDto {
   @ApiProperty({ format: 'uuid' }) userId!: string;
   @ApiProperty() timezone!: string;
+  @ApiPropertyOptional({ nullable: true }) displayName!: string | null;
+  @ApiPropertyOptional({ nullable: true }) targetWeightKg!: number | null;
   @ApiProperty({
     enum: ['registered', 'profileReady', 'personaReady', 'completed'],
   })

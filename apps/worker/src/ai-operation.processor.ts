@@ -1,22 +1,35 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import type { Job } from 'bullmq';
-import type { DatabaseService, AiProviderAdapter } from '@atlas/backend';
+import type {
+  DatabaseService,
+  AiProviderAdapter,
+  MemoryContextBuilder,
+} from '@atlas/backend';
 import {
   AiProviderAdapter as AiProviderAdapterToken,
   DatabaseService as DatabaseToken,
+  MemoryContextBuilder as MemoryContextBuilderToken,
 } from '@atlas/backend';
+import { MemoryExtractionProcessor } from './memory-extraction.processor';
 
 @Processor('atlas-system')
 export class AiOperationProcessor extends WorkerHost {
   constructor(
     @Inject(DatabaseToken) private readonly database: DatabaseService,
     @Inject(AiProviderAdapterToken) private readonly adapter: AiProviderAdapter,
+    @Inject(MemoryContextBuilderToken)
+    private readonly memoryContext: MemoryContextBuilder,
+    private readonly memoryExtraction: MemoryExtractionProcessor,
   ) {
     super();
   }
 
   async process(job: Job<{ outboxId: string }>): Promise<void> {
+    if (job.name === 'memory-extraction') {
+      await this.memoryExtraction.process(job);
+      return;
+    }
     const event = await this.database.query<{
       payload: { operationId: string };
     }>(
@@ -65,7 +78,11 @@ export class AiOperationProcessor extends WorkerHost {
       ? await this.adapter.execute({
           operationId,
           promptVersion: 'quick-reply-v1',
-          personaId: claimed.persona_id,
+        personaId: claimed.persona_id,
+          memoryContext: await this.memoryContext.build(
+            claimed.user_id,
+            history.rows.at(-1)?.content ?? '',
+          ),
           messages: history.rows,
         })
       : ({ kind: 'technicalError', errorClass: 'safetyRejected' } as const);
@@ -74,8 +91,9 @@ export class AiOperationProcessor extends WorkerHost {
       const operation = await client.query<{
         user_id: string;
         conversation_id: string;
+        input_message_id: string;
       }>(
-        `select user_id,conversation_id from ai_operations where id=$1 and status='processing' for update`,
+        `select user_id,conversation_id,input_message_id from ai_operations where id=$1 and status='processing' for update`,
         [operationId],
       );
       if (!operation.rows[0]) return;
@@ -117,6 +135,23 @@ export class AiOperationProcessor extends WorkerHost {
             result.usage.cost ?? null,
             latencyMs,
           ],
+        );
+        await client.query(
+          `insert into outbox_messages
+            (id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts)
+           values (
+             gen_random_uuid(),
+             'ai-companion.memory_extraction_requested.v1',
+             'aiOperation',
+             $1,
+             jsonb_build_object(
+               'userId', ($2::uuid)::text,
+               'operationId', ($1::uuid)::text,
+               'sourceMessageId', ($3::uuid)::text
+             ),
+             now(),now(),0
+           )`,
+          [operationId, row.user_id, row.input_message_id],
         );
       } else if (result.kind === 'technicalError') {
         await client.query(

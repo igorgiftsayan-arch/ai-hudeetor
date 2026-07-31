@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpCode,
@@ -16,6 +17,7 @@ import {
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiHeader,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -26,11 +28,14 @@ import { GetQuickReplyPriceUseCase } from '../application/get-quick-reply-price.
 import { GetAiOperationUseCase } from '../application/get-ai-operation.use-case';
 import { GetAiConversationUseCase } from '../application/get-ai-conversation.use-case';
 import { StartQuickReplyUseCase } from '../application/start-quick-reply.use-case';
+import { ListAiMemoryUseCase } from '../application/list-ai-memory.use-case';
+import { DeleteAiMemoryUseCase } from '../application/delete-ai-memory.use-case';
 import {
   AiActionPriceResourceDto,
   AiConversationDetailResourceDto,
   AiConversationResourceDto,
   AiOperationResourceDto,
+  AiMemoryListResourceDto,
   StartQuickReplyRequestDto,
 } from './ai-companion.dto';
 
@@ -49,6 +54,10 @@ export class AiCompanionController {
     private readonly getOperation: GetAiOperationUseCase,
     @Inject(GetAiConversationUseCase)
     private readonly getConversation: GetAiConversationUseCase,
+    @Inject(ListAiMemoryUseCase)
+    private readonly listMemory: ListAiMemoryUseCase,
+    @Inject(DeleteAiMemoryUseCase)
+    private readonly deleteMemory: DeleteAiMemoryUseCase,
   ) {}
 
   @Get('ai-action-prices/quick-reply')
@@ -118,6 +127,25 @@ export class AiCompanionController {
     return this.getOperation.execute({
       accessToken: this.accessToken(request),
       operationId,
+    });
+  }
+
+  @Get('ai-memory')
+  @ApiOkResponse({ type: AiMemoryListResourceDto })
+  memory(@Req() request: Request): Promise<AiMemoryListResourceDto> {
+    return this.listMemory.execute(this.accessToken(request));
+  }
+
+  @Delete('ai-memory/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
+  deleteMemoryById(
+    @Param('id') memoryId: string,
+    @Req() request: Request,
+  ): Promise<void> {
+    return this.deleteMemory.execute({
+      accessToken: this.accessToken(request),
+      memoryId,
     });
   }
 

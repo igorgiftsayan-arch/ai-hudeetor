@@ -3,6 +3,7 @@ import { DatabaseService } from '../../infrastructure/database/database.service'
 import { GetCurrentUserUseCase } from '../../identity/application/get-current-user.use-case';
 import { CreateWeightEntryUseCase } from '../application/create-weight-entry.use-case';
 import { ListWeightEntriesUseCase } from '../application/list-weight-entries.use-case';
+import { GetCompanionWeightContextUseCase } from '../application/get-companion-weight-context.use-case';
 import { TrackingController } from './tracking.controller';
 @Module({})
 export class TrackingModule {
@@ -11,6 +12,12 @@ export class TrackingModule {
       module: TrackingModule,
       controllers: [TrackingController],
       providers: [
+        {
+          provide: GetCompanionWeightContextUseCase,
+          useFactory: (database: DatabaseService) =>
+            new GetCompanionWeightContextUseCase(database),
+          inject: [DatabaseService],
+        },
         {
           provide: CreateWeightEntryUseCase,
           useFactory: (d: DatabaseService, c: GetCurrentUserUseCase) =>
@@ -24,6 +31,7 @@ export class TrackingModule {
           inject: [DatabaseService, GetCurrentUserUseCase],
         },
       ],
+      exports: [GetCompanionWeightContextUseCase],
     };
   }
 }

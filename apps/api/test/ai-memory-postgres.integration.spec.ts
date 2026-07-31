@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { DatabaseService } from '@atlas/backend';
+import {
+  DatabaseService,
+  DeterministicMemoryExtractor,
+  ExtractMemoryUseCase,
+  PostgresAiMemoryRepository,
+} from '@atlas/backend';
 
 const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -114,6 +119,38 @@ describeWithDatabase('AI memory PostgreSQL constraints', () => {
     ).rejects.toMatchObject({ code: '23505' });
   });
 
+  it('extracts once and does not resurrect a deleted fact on retry', async () => {
+    const { userId, messageId } = await createConversationFixture();
+    const repository = new PostgresAiMemoryRepository(database);
+    const useCase = new ExtractMemoryUseCase(
+      database,
+      repository,
+      new DeterministicMemoryExtractor(),
+    );
+    await useCase.execute(messageId);
+    await useCase.execute(messageId);
+    const first = await database.query<{ id: string }>(
+      `select id from ai_memories where user_id=$1 and deleted_at is null`,
+      [userId],
+    );
+    expect(first.rowCount).toBe(1);
+    await database.query(
+      'update ai_memories set deleted_at=now() where id=$1',
+      [first.rows[0]!.id],
+    );
+    await useCase.execute(messageId);
+    const result = await database.query<{
+      active: string;
+      receipts: string;
+    }>(
+      `select
+        (select count(*) from ai_memories where user_id=$1 and deleted_at is null)::text active,
+        (select count(*) from ai_memory_extractions where user_id=$1)::text receipts`,
+      [userId],
+    );
+    expect(result.rows[0]).toEqual({ active: '0', receipts: '1' });
+  });
+
   async function createUser(): Promise<string> {
     const userId = randomUUID();
     await database.query(
@@ -158,4 +195,3 @@ describeWithDatabase('AI memory PostgreSQL constraints', () => {
     );
   }
 });
-

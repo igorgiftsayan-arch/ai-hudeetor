@@ -2,6 +2,7 @@ export type AiProviderRequest = {
   operationId: string;
   promptVersion: 'quick-reply-v1';
   personaId: string;
+  memoryContext?: string;
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
 };
 

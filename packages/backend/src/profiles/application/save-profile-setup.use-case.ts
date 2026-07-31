@@ -16,6 +16,8 @@ export class SaveProfileSetupUseCase {
   async execute(input: {
     accessToken: string;
     timezone: string;
+    displayName?: string | null;
+    targetWeightKg?: string | null;
     wellnessNoticeVersion?: string;
   }): Promise<UserProfile & { onboardingStatus: OnboardingStatus }> {
     const identity = await this.currentUser.execute(input.accessToken);
@@ -23,6 +25,12 @@ export class SaveProfileSetupUseCase {
       const profile = await this.repository.upsertProfile(client, {
         userId: identity.userId,
         timezone: input.timezone,
+        ...('displayName' in input
+          ? { displayName: input.displayName }
+          : {}),
+        ...('targetWeightKg' in input
+          ? { targetWeightKg: input.targetWeightKg }
+          : {}),
       });
       const onboardingStatus = input.wellnessNoticeVersion
         ? await this.onboardingState.acceptWellnessNoticeAndAdvanceProfile(

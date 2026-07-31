@@ -58,3 +58,30 @@ export class AiOperationResourceDto {
   @ApiProperty({ required: false }) responseText?: string;
   @ApiProperty({ required: false }) errorCode?: string;
 }
+
+export class AiMemoryResourceDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({
+    enum: [
+      'preference',
+      'restriction',
+      'trigger',
+      'supportStrategy',
+      'goal',
+      'communicationPreference',
+    ],
+  })
+  category!: string;
+  @ApiProperty() key!: string;
+  @ApiProperty() value!: string;
+  @ApiProperty({ enum: ['conversation', 'profile', 'system'] })
+  source!: string;
+  @ApiProperty() confidence!: number;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: string;
+}
+
+export class AiMemoryListResourceDto {
+  @ApiProperty({ type: () => [AiMemoryResourceDto] })
+  items!: AiMemoryResourceDto[];
+}

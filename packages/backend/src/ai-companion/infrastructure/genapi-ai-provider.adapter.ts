@@ -135,7 +135,10 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
         messages: [
           {
             role: 'system',
-            content: buildSystemPrompt(request.personaId),
+            content: buildSystemPrompt(
+              request.personaId,
+              request.memoryContext,
+            ),
           },
           ...request.messages,
         ],
@@ -172,12 +175,13 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
   }
 }
 
-function buildSystemPrompt(personaId: string): string {
+function buildSystemPrompt(personaId: string, memoryContext?: string): string {
   return [
     'Ты — AI-друг в wellness-продукте для снижения веса.',
     personaInstructions[personaId] ?? personaInstructions.gentleFriend,
     'Не ставь диагнозы, не стыди за вес или еду, не рекомендуй голодание или наказание едой.',
     'Не обещай гарантированный результат. Предлагай один безопасный небольшой следующий шаг.',
+    memoryContext ? `Контекст пользователя:\n${memoryContext}` : '',
   ].join(' ');
 }
 
