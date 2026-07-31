@@ -162,6 +162,7 @@ export type AiOperationResourceDtoRuntimeAdapter = typeof AiOperationResourceDto
 
 export const AiOperationResourceDtoRuntimeAdapter = {
   fake: 'fake',
+  genapi: 'genapi',
 } as const;
 
 export interface AiOperationResourceDto {
@@ -178,6 +179,52 @@ export interface AiOperationResourceDto {
   errorCode?: string;
 }
 
+export type AiMemoryResourceDtoCategory = typeof AiMemoryResourceDtoCategory[keyof typeof AiMemoryResourceDtoCategory];
+
+
+export const AiMemoryResourceDtoCategory = {
+  preference: 'preference',
+  restriction: 'restriction',
+  trigger: 'trigger',
+  supportStrategy: 'supportStrategy',
+  goal: 'goal',
+  communicationPreference: 'communicationPreference',
+} as const;
+
+export type AiMemoryResourceDtoSource = typeof AiMemoryResourceDtoSource[keyof typeof AiMemoryResourceDtoSource];
+
+
+export const AiMemoryResourceDtoSource = {
+  conversation: 'conversation',
+  profile: 'profile',
+  system: 'system',
+} as const;
+
+export interface AiMemoryResourceDto {
+  id: string;
+  category: AiMemoryResourceDtoCategory;
+  key: string;
+  value: string;
+  source: AiMemoryResourceDtoSource;
+  confidence: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiMemoryListResourceDto {
+  items: AiMemoryResourceDto[];
+}
+
+/**
+ * @nullable
+ */
+export type UserProfileResourceDtoDisplayName = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type UserProfileResourceDtoTargetWeightKg = { [key: string]: unknown } | null;
+
 export type UserProfileResourceDtoOnboardingStatus = typeof UserProfileResourceDtoOnboardingStatus[keyof typeof UserProfileResourceDtoOnboardingStatus];
 
 
@@ -191,6 +238,10 @@ export const UserProfileResourceDtoOnboardingStatus = {
 export interface UserProfileResourceDto {
   userId: string;
   timezone: string;
+  /** @nullable */
+  displayName?: UserProfileResourceDtoDisplayName;
+  /** @nullable */
+  targetWeightKg?: UserProfileResourceDtoTargetWeightKg;
   onboardingStatus: UserProfileResourceDtoOnboardingStatus;
 }
 
@@ -275,9 +326,35 @@ export interface WellnessNoticeConsentDto {
   accepted: true;
 }
 
+/**
+ * @minLength 1
+ * @maxLength 80
+ * @nullable
+ */
+export type UpdateProfileRequestDtoDisplayName = { [key: string]: unknown } | null;
+
+/**
+ * @minimum 20
+ * @maximum 500
+ * @nullable
+ */
+export type UpdateProfileRequestDtoTargetWeightKg = { [key: string]: unknown } | null;
+
 export interface UpdateProfileRequestDto {
   /** @maxLength 64 */
   timezone: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     * @nullable
+     */
+  displayName?: UpdateProfileRequestDtoDisplayName;
+  /**
+     * @minimum 20
+     * @maximum 500
+     * @nullable
+     */
+  targetWeightKg?: UpdateProfileRequestDtoTargetWeightKg;
   /** @maxItems 1 */
   consents?: WellnessNoticeConsentDto[];
 }
@@ -906,6 +983,86 @@ export const aiCompanionControllerGetOperationByIdApiV1 = async (id: string, opt
 
   const data: aiCompanionControllerGetOperationByIdApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as aiCompanionControllerGetOperationByIdApiV1Response
+}
+
+
+
+export type aiCompanionControllerMemoryApiV1Response200 = {
+  data: AiMemoryListResourceDto
+  status: 200
+}
+
+export type aiCompanionControllerMemoryApiV1ResponseSuccess = (aiCompanionControllerMemoryApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerMemoryApiV1Response = (aiCompanionControllerMemoryApiV1ResponseSuccess)
+
+export const getAiCompanionControllerMemoryApiV1Url = () => {
+
+
+
+
+  return `/api/v1/ai-memory`
+}
+
+export const aiCompanionControllerMemoryApiV1 = async ( options?: RequestInit): Promise<aiCompanionControllerMemoryApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerMemoryApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerMemoryApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerMemoryApiV1Response
+}
+
+
+
+export type aiCompanionControllerDeleteMemoryByIdApiV1Response204 = {
+  data: void
+  status: 204
+}
+
+export type aiCompanionControllerDeleteMemoryByIdApiV1ResponseSuccess = (aiCompanionControllerDeleteMemoryByIdApiV1Response204) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerDeleteMemoryByIdApiV1Response = (aiCompanionControllerDeleteMemoryByIdApiV1ResponseSuccess)
+
+export const getAiCompanionControllerDeleteMemoryByIdApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/ai-memory/${id}`
+}
+
+export const aiCompanionControllerDeleteMemoryByIdApiV1 = async (id: string, options?: RequestInit): Promise<aiCompanionControllerDeleteMemoryByIdApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerDeleteMemoryByIdApiV1Url(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerDeleteMemoryByIdApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerDeleteMemoryByIdApiV1Response
 }
 
 
