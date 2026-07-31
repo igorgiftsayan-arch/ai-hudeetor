@@ -52,7 +52,8 @@ export class AiOperationResourceDto {
   @ApiProperty() reservedTokens!: number;
   @ApiProperty() priceVersion!: number;
   @ApiProperty() pollUrl!: string;
-  @ApiProperty({ enum: ['fake'] }) runtimeAdapter!: 'fake';
+  @ApiProperty({ enum: ['fake', 'genapi'] })
+  runtimeAdapter!: 'fake' | 'genapi';
   @ApiProperty({ format: 'uuid', required: false }) outputMessageId?: string;
   @ApiProperty({ required: false }) responseText?: string;
   @ApiProperty({ required: false }) errorCode?: string;

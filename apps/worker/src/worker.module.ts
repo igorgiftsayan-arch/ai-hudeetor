@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import {
+  AiProviderAdapter,
+  FakeAiProviderAdapter,
+  GenApiAiProviderAdapter,
   TechnicalInfrastructureModule,
   workerConfigSchema,
 } from '@atlas/backend';
 import { loadWorkerConfig } from './config/load-config';
-import { FakeAiProviderAdapter } from '@atlas/backend';
 import { AiOperationProcessor } from './ai-operation.processor';
 import { OutboxPublisherService } from './outbox-publisher.service';
 
@@ -38,8 +40,16 @@ const redisUrl = new URL(config.REDIS_URL);
   ],
   providers: [
     {
-      provide: FakeAiProviderAdapter,
-      useFactory: () => new FakeAiProviderAdapter(config.AI_FAKE_MODE),
+      provide: AiProviderAdapter,
+      useFactory: () =>
+        config.AI_PROVIDER === 'genapi'
+          ? new GenApiAiProviderAdapter({
+              apiKey: config.GENAPI_API_KEY!,
+              baseUrl: config.GENAPI_BASE_URL!,
+              model: config.GENAPI_MODEL!,
+              timeoutMs: config.GENAPI_TIMEOUT_MS,
+            })
+          : new FakeAiProviderAdapter(config.AI_FAKE_MODE),
     },
     AiOperationProcessor,
     OutboxPublisherService,

@@ -77,6 +77,10 @@ services:
       <<: *app-environment
       AI_PROVIDER: ${AI_PROVIDER:-fake}
       AI_FAKE_MODE: ${AI_FAKE_MODE:-success}
+      GENAPI_API_KEY: ${GENAPI_API_KEY:-}
+      GENAPI_BASE_URL: ${GENAPI_BASE_URL:-}
+      GENAPI_MODEL: ${GENAPI_MODEL:-}
+      GENAPI_TIMEOUT_MS: ${GENAPI_TIMEOUT_MS:-60000}
       WORKER_HEALTH_PORT: 3002
       WORKER_QUEUE_NAME: atlas-system
     depends_on:

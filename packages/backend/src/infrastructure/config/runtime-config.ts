@@ -48,12 +48,34 @@ export const apiConfigSchema = baseSchema
     }
   });
 
-export const workerConfigSchema = baseSchema.extend({
-  AI_FAKE_MODE: z.enum(['success', 'technicalError', 'outcomeUnknown']),
-  AI_PROVIDER: z.literal('fake'),
-  WORKER_HEALTH_PORT: z.coerce.number().int().positive().default(3002),
-  WORKER_QUEUE_NAME: z.string().min(1).default('atlas-system'),
-});
+export const workerConfigSchema = baseSchema
+  .extend({
+    AI_FAKE_MODE: z
+      .enum(['success', 'technicalError', 'outcomeUnknown'])
+      .default('success'),
+    AI_PROVIDER: z.enum(['fake', 'genapi']),
+    GENAPI_API_KEY: z.string().min(1).optional(),
+    GENAPI_BASE_URL: z.url().optional(),
+    GENAPI_MODEL: z.string().min(1).optional(),
+    GENAPI_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+    WORKER_HEALTH_PORT: z.coerce.number().int().positive().default(3002),
+    WORKER_QUEUE_NAME: z.string().min(1).default('atlas-system'),
+  })
+  .superRefine((config, context) => {
+    if (config.AI_PROVIDER !== 'genapi') return;
+    for (const key of [
+      'GENAPI_API_KEY',
+      'GENAPI_BASE_URL',
+      'GENAPI_MODEL',
+    ] as const) {
+      if (!config[key])
+        context.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `${key} is required when AI_PROVIDER=genapi`,
+        });
+    }
+  });
 
 export type ApiConfig = z.infer<typeof apiConfigSchema>;
 export type WorkerConfig = z.infer<typeof workerConfigSchema>;

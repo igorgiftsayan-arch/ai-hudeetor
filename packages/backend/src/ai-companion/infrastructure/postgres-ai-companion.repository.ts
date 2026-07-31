@@ -296,7 +296,7 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
       response_text: string | null;
       reserved_tokens: number;
       price_version: number;
-      runtime_adapter: 'fake';
+      runtime_adapter: 'fake' | 'genapi';
       error_class: string | null;
     }>(
       `select operation.id, operation.status, operation.conversation_id,

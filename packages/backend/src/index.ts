@@ -63,6 +63,10 @@ export {
   FakeAiProviderAdapter,
   type FakeAiMode,
 } from './ai-companion/infrastructure/fake-ai-provider.adapter';
+export {
+  GenApiAiProviderAdapter,
+  type AiTechnicalLogRecord,
+} from './ai-companion/infrastructure/genapi-ai-provider.adapter';
 export { ProfilesRepository } from './profiles/application/profiles-repository';
 export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-profiles.repository';
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';

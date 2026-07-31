@@ -1,17 +1,17 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import type { Job } from 'bullmq';
-import type { DatabaseService, FakeAiProviderAdapter } from '@atlas/backend';
+import type { DatabaseService, AiProviderAdapter } from '@atlas/backend';
 import {
+  AiProviderAdapter as AiProviderAdapterToken,
   DatabaseService as DatabaseToken,
-  FakeAiProviderAdapter as FakeAdapterToken,
 } from '@atlas/backend';
 
 @Processor('atlas-system')
 export class AiOperationProcessor extends WorkerHost {
   constructor(
     @Inject(DatabaseToken) private readonly database: DatabaseService,
-    @Inject(FakeAdapterToken) private readonly adapter: FakeAiProviderAdapter,
+    @Inject(AiProviderAdapterToken) private readonly adapter: AiProviderAdapter,
   ) {
     super();
   }
@@ -26,20 +26,50 @@ export class AiOperationProcessor extends WorkerHost {
     const operationId = event.rows[0]?.payload.operationId;
     if (!operationId) return;
     const claimed = await this.database.transaction(async (client) => {
-      const result = await client.query<{ persona_id: string }>(
-        `update ai_operations set status='processing',updated_at=now()
+      const result = await client.query<{
+        persona_id: string;
+        user_id: string;
+        conversation_id: string;
+      }>(
+        `update ai_operations set status='processing',runtime_adapter=$2,updated_at=now()
           where id=$1 and status='queued'
-          returning (select persona_id from ai_preferences where user_id=ai_operations.user_id) as persona_id`,
-        [operationId],
+          returning user_id,conversation_id,
+            (select persona_id from ai_preferences where user_id=ai_operations.user_id) as persona_id`,
+        [operationId, this.adapter.providerName],
       );
       return result.rows[0] ?? null;
     });
     if (!claimed) return;
-    const result = await this.adapter.execute({
-      operationId,
-      promptVersion: 'quick-reply-v1',
-      personaId: claimed.persona_id,
-    });
+    const consent =
+      this.adapter.providerName === 'fake' ||
+      Boolean(
+        (
+          await this.database.query(
+            `select 1 from user_consents
+              where user_id=$1 and consent_type='aiProviderProcessing'
+              limit 1`,
+            [claimed.user_id],
+          )
+        ).rows[0],
+      );
+    const history = await this.database.query<{
+      role: 'user' | 'assistant';
+      content: string;
+    }>(
+      `select role,content from ai_messages
+        where conversation_id=$1 order by created_at,id`,
+      [claimed.conversation_id],
+    );
+    const startedAt = Date.now();
+    const result = consent
+      ? await this.adapter.execute({
+          operationId,
+          promptVersion: 'quick-reply-v1',
+          personaId: claimed.persona_id,
+          messages: history.rows,
+        })
+      : ({ kind: 'technicalError', errorClass: 'safetyRejected' } as const);
+    const latencyMs = Date.now() - startedAt;
     await this.database.transaction(async (client) => {
       const operation = await client.query<{
         user_id: string;
@@ -70,8 +100,21 @@ export class AiOperationProcessor extends WorkerHost {
           [r.wallet_id, row.user_id, operationId, r.id],
         );
         await client.query(
-          `update ai_operations set status='succeeded',output_message_id=$2,updated_at=now() where id=$1`,
-          [operationId, assistantMessage.rows[0]!.id],
+          `update ai_operations set status='succeeded',output_message_id=$2,
+             provider_reference=$3,provider_model=$4,provider_input_tokens=$5,
+             provider_output_tokens=$6,provider_total_tokens=$7,provider_cost=$8,
+             provider_latency_ms=$9,updated_at=now() where id=$1`,
+          [
+            operationId,
+            assistantMessage.rows[0]!.id,
+            result.providerReference ?? null,
+            this.adapter.providerName === 'genapi' ? process.env.GENAPI_MODEL : null,
+            result.usage.inputTokens,
+            result.usage.outputTokens,
+            result.usage.totalTokens,
+            result.usage.cost ?? null,
+            latencyMs,
+          ],
         );
       } else if (result.kind === 'technicalError') {
         await client.query(

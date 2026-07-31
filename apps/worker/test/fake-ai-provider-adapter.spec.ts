@@ -9,11 +9,12 @@ describe('FakeAiProviderAdapter', () => {
         operationId: 'op-1',
         promptVersion: 'quick-reply-v1',
         personaId: 'gentleFriend',
+        messages: [{ role: 'user', content: 'Привет' }],
       }),
     ).resolves.toEqual({
       kind: 'success',
       text: 'Тестовый ответ AI. Сделайте один небольшой следующий шаг сегодня.',
-      usage: { inputTokens: 0, outputTokens: 0 },
+      usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
     });
   });
 });

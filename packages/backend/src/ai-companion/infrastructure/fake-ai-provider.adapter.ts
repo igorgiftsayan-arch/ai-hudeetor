@@ -7,6 +7,7 @@ import {
 export type FakeAiMode = 'success' | 'technicalError' | 'outcomeUnknown';
 
 export class FakeAiProviderAdapter extends AiProviderAdapter {
+  readonly providerName = 'fake' as const;
   constructor(private readonly mode: FakeAiMode) {
     super();
   }
@@ -19,7 +20,7 @@ export class FakeAiProviderAdapter extends AiProviderAdapter {
     return {
       kind: 'success',
       text: 'Тестовый ответ AI. Сделайте один небольшой следующий шаг сегодня.',
-      usage: { inputTokens: 0, outputTokens: 0 },
+      usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
     };
   }
 }

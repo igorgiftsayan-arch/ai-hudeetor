@@ -64,6 +64,13 @@
       "when": 1785283200000,
       "tag": "0008_back_001_daily_weight",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785456000000,
+      "tag": "0009_ai_001_genapi_adapter",
+      "breakpoints": true
     }
   ]
 }

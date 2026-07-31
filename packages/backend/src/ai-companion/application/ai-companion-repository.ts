@@ -17,7 +17,7 @@ export type QueuedAiOperation = {
   reservedTokens: number;
   priceVersion: number;
   pollUrl: string;
-  runtimeAdapter: 'fake';
+  runtimeAdapter: 'fake' | 'genapi';
 };
 
 export type AiOperation = {
@@ -31,7 +31,7 @@ export type AiOperation = {
   reservedTokens: number;
   priceVersion: number;
   pollUrl: string;
-  runtimeAdapter: 'fake';
+  runtimeAdapter: 'fake' | 'genapi';
   errorCode?: string;
 };
 
