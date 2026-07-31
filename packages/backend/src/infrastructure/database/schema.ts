@@ -5,6 +5,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -148,6 +149,11 @@ export const userProfiles = pgTable('user_profiles', {
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
   timezone: text('timezone').notNull(),
+  displayName: text('display_name'),
+  targetWeightKg: numeric('target_weight_kg', {
+    precision: 5,
+    scale: 2,
+  }),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -155,6 +161,84 @@ export const userProfiles = pgTable('user_profiles', {
     .defaultNow()
     .notNull(),
 });
+
+export const aiMemoryExtractions = pgTable(
+  'ai_memory_extractions',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    sourceMessageId: uuid('source_message_id').notNull(),
+    status: text('status').notNull(),
+    factsWritten: integer('facts_written').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('uq_ai_memory_extractions_user_source').on(
+      table.userId,
+      table.sourceMessageId,
+    ),
+    index('idx_ai_memory_extractions_user_created').on(
+      table.userId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      'ck_ai_memory_extractions_status',
+      sql`${table.status} in ('completed')`,
+    ),
+    check(
+      'ck_ai_memory_extractions_facts_written',
+      sql`${table.factsWritten} >= 0`,
+    ),
+  ],
+);
+
+export const aiMemories = pgTable(
+  'ai_memories',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    category: text('category').notNull(),
+    key: text('key').notNull(),
+    value: text('value').notNull(),
+    source: text('source').notNull(),
+    confidence: numeric('confidence', { precision: 3, scale: 2 }).notNull(),
+    sourceMessageId: uuid('source_message_id'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('uq_ai_memories_user_category_key_active')
+      .on(table.userId, table.category, table.key)
+      .where(sql`${table.deletedAt} is null`),
+    index('idx_ai_memories_user_active')
+      .on(table.userId, table.category, table.updatedAt, table.id)
+      .where(sql`${table.deletedAt} is null`),
+    check(
+      'ck_ai_memories_category',
+      sql`${table.category} in ('preference','restriction','trigger','supportStrategy','goal','communicationPreference')`,
+    ),
+    check(
+      'ck_ai_memories_source',
+      sql`${table.source} in ('conversation','profile','system')`,
+    ),
+    check(
+      'ck_ai_memories_confidence',
+      sql`${table.confidence} between 0 and 1`,
+    ),
+  ],
+);
 
 export const aiPreferences = pgTable('ai_preferences', {
   userId: uuid('user_id')

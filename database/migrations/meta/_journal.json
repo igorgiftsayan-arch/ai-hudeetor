@@ -71,6 +71,13 @@
       "when": 1785456000000,
       "tag": "0009_ai_001_genapi_adapter",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785513600000,
+      "tag": "0010_ai_002_companion_memory",
+      "breakpoints": true
     }
   ]
 }
