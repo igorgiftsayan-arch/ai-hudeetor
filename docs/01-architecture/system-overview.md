@@ -12,7 +12,7 @@ flowchart LR
   API --> PG["PostgreSQL"]
   API --> R["Redis"]
   API --> S3["S3-compatible storage"]
-  API --> AI["AI provider: TBD"]
+  API --> AI["AI provider adapter: fake / GenAPI"]
   API --> EXT["Analytics / payments: TBD"]
 ```
 
@@ -26,4 +26,4 @@ flowchart LR
 
 ## Инварианты
 
-Баланс изменяется только транзакционно и не бывает отрицательным. Доступ к пользовательским данным проверяется на backend. AI-провайдер скрыт за адаптером и выбирается отдельным ADR. Подробности — в [доменной модели](../02-domain/domain-model.md) и [security baseline](../05-security/security-baseline.md).
+Баланс изменяется только транзакционно и не бывает отрицательным. Доступ к пользовательским данным проверяется на backend. AI-провайдер скрыт за адаптером; GenAPI выбран в [ADR-011](architecture-decisions/ADR-011-genapi-ai-provider.md), fake adapter сохраняется для тестов. Подробности — в [доменной модели](../02-domain/domain-model.md) и [security baseline](../05-security/security-baseline.md).
