@@ -20,9 +20,7 @@ export type AiProviderResult =
   | {
       kind: 'technicalError';
       errorClass:
-        | 'providerUnavailable'
-        | 'invalidProviderResponse'
-        | 'safetyRejected';
+        'providerUnavailable' | 'invalidProviderResponse' | 'safetyRejected';
     }
   | { kind: 'outcomeUnknown' };
 

@@ -108,7 +108,9 @@ export class AiOperationProcessor extends WorkerHost {
             operationId,
             assistantMessage.rows[0]!.id,
             result.providerReference ?? null,
-            this.adapter.providerName === 'genapi' ? process.env.GENAPI_MODEL : null,
+            this.adapter.providerName === 'genapi'
+              ? process.env.GENAPI_MODEL
+              : null,
             result.usage.inputTokens,
             result.usage.outputTokens,
             result.usage.totalTokens,

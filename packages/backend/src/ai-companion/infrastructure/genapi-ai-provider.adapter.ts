@@ -38,7 +38,8 @@ const connectionFailureCodes = new Set([
 const personaInstructions: Record<string, string> = {
   gentleFriend: 'Общайся тепло, бережно и без осуждения.',
   strictCoach: 'Общайся прямо и структурно, но без стыда и унижения.',
-  russianKick: 'Используй доброжелательную разговорную встряску без оскорблений.',
+  russianKick:
+    'Используй доброжелательную разговорную встряску без оскорблений.',
   glamorousFriend: 'Общайся ярко, уверенно и дружелюбно без оценки внешности.',
   analyst: 'Общайся спокойно, нейтрально и причинно-следственно.',
 };
@@ -61,10 +62,14 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
     const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
     let response: Response;
     try {
-      response = await this.fetchWithConnectionRetry(request, controller.signal);
+      response = await this.fetchWithConnectionRetry(
+        request,
+        controller.signal,
+      );
     } catch (error) {
       clearTimeout(timer);
-      const outcomeUnknown = isAbort(error) || !isConfirmedConnectionFailure(error);
+      const outcomeUnknown =
+        isAbort(error) || !isConfirmedConnectionFailure(error);
       this.writeLog(request, startedAt, {
         status: outcomeUnknown ? 'outcomeUnknown' : 'technicalError',
         errorCode: outcomeUnknown ? 'timeout' : 'providerUnavailable',
@@ -193,9 +198,7 @@ function extractText(body: unknown): string | null {
   const first = body.choices[0];
   if (!isRecord(first) || !isRecord(first.message)) return null;
   const content = first.message.content;
-  return typeof content === 'string' && content.trim()
-    ? content.trim()
-    : null;
+  return typeof content === 'string' && content.trim() ? content.trim() : null;
 }
 
 function extractUsage(body: unknown): {
@@ -207,9 +210,15 @@ function extractUsage(body: unknown): {
   const usage = isRecord(body) && isRecord(body.usage) ? body.usage : {};
   const inputTokens = numberOrZero(usage.prompt_tokens);
   const outputTokens = numberOrZero(usage.completion_tokens);
-  const totalTokens = numberOrZero(usage.total_tokens) || inputTokens + outputTokens;
+  const totalTokens =
+    numberOrZero(usage.total_tokens) || inputTokens + outputTokens;
   const cost = typeof usage.cost === 'number' ? usage.cost : undefined;
-  return { inputTokens, outputTokens, totalTokens, ...(cost !== undefined ? { cost } : {}) };
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    ...(cost !== undefined ? { cost } : {}),
+  };
 }
 
 function numberOrZero(value: unknown): number {

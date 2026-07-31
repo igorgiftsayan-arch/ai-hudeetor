@@ -8,7 +8,9 @@ const base = {
 
 describe('workerConfigSchema AI provider selection', () => {
   it('keeps fake configuration independent from GenAPI secrets', () => {
-    expect(workerConfigSchema.parse({ ...base, AI_PROVIDER: 'fake' })).toMatchObject({
+    expect(
+      workerConfigSchema.parse({ ...base, AI_PROVIDER: 'fake' }),
+    ).toMatchObject({
       AI_PROVIDER: 'fake',
     });
   });

@@ -18,7 +18,9 @@ describe('AiOperationProcessor GenAPI boundary', () => {
           rows: [{ user_id: 'user-1', conversation_id: 'conversation-1' }],
         })
         .mockResolvedValueOnce({
-          rows: [{ id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -1 }],
+          rows: [
+            { id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -1 },
+          ],
         })
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] }),
@@ -31,15 +33,18 @@ describe('AiOperationProcessor GenAPI boundary', () => {
         .mockResolvedValueOnce({
           rows: [{ role: 'user', content: 'Не отправлять провайдеру' }],
         }),
-      transaction: jest.fn(async (callback: (value: typeof client) => unknown) =>
-        callback(client),
+      transaction: jest.fn(
+        async (callback: (value: typeof client) => unknown) => callback(client),
       ),
     };
     const adapter = {
       providerName: 'genapi',
       execute: jest.fn(),
     };
-    const processor = new AiOperationProcessor(database as never, adapter as never);
+    const processor = new AiOperationProcessor(
+      database as never,
+      adapter as never,
+    );
 
     await processor.process({ data: { outboxId: 'outbox-1' } } as never);
 
@@ -71,7 +76,9 @@ describe('AiOperationProcessor GenAPI boundary', () => {
           rows: [{ user_id: 'user-1', conversation_id: 'conversation-1' }],
         })
         .mockResolvedValueOnce({
-          rows: [{ id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -1 }],
+          rows: [
+            { id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -1 },
+          ],
         })
         .mockResolvedValueOnce({ rows: [{ id: 'assistant-1' }] })
         .mockResolvedValueOnce({ rows: [] })
@@ -88,8 +95,8 @@ describe('AiOperationProcessor GenAPI boundary', () => {
         .mockResolvedValueOnce({ rows: [{ payload: { operationId: 'op-1' } }] })
         .mockResolvedValueOnce({ rows: [{ exists: 1 }] })
         .mockResolvedValueOnce({ rows: messages }),
-      transaction: jest.fn(async (callback: (value: typeof client) => unknown) =>
-        callback(client),
+      transaction: jest.fn(
+        async (callback: (value: typeof client) => unknown) => callback(client),
       ),
     };
     const adapter = {
@@ -101,7 +108,10 @@ describe('AiOperationProcessor GenAPI boundary', () => {
         providerReference: 'response-1',
       }),
     };
-    const processor = new AiOperationProcessor(database as never, adapter as never);
+    const processor = new AiOperationProcessor(
+      database as never,
+      adapter as never,
+    );
 
     await processor.process({ data: { outboxId: 'outbox-1' } } as never);
 
