@@ -1,10 +1,11 @@
 # Текущий статус
 
 - Дата: 2026-07-31
+- AI-002: structured companion memory, nullable profile context, migration `0010`, owner list/delete API, deterministic worker extraction и bounded memory context реализованы и проверены в отдельной ветке; `main` не изменён.
 - AI-001: GenAPI adapter реализован и проверен в отдельной ветке на synthetic test-пользователях; `main` и stable остаются на fake до приёмки и merge.
 - Текущая задача: UI-005/BACK-UI-001 объединены и проверены в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось, результат ожидает ручной приёмки.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса с графиком, daily upsert и persisted fake-runtime AI chat.
-- Реальный AI provider, платежи, рефералы, AI memory и feedback: отсутствуют.
+- Реальный AI provider остаётся только в несмёрженной AI-001 базе; платежи, рефералы, memory frontend и feedback отсутствуют.
 - Тестовый сервер: технический scaffold web/API/worker с PostgreSQL 17 и Redis 8 развёрнут и проверен.
 - AI-провайдер: GenAPI выбран ADR-011 и технически проверен; merge и пользовательский consent-flow не выполнены.
 - BUG-UI-001/UI-003 добавляют owner-scoped чтение уже существующих conversation/messages и корректирующую ledger migration `0007`; AI provider и analytics events не меняются.

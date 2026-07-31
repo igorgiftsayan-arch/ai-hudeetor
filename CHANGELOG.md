@@ -6,6 +6,8 @@
 
 ### Added
 
+- AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.
+- AI-002 verification: repeatable migrations, durable source-message receipts, dedup/update/delete, owner scoping, daily weight context, API/worker regressions и isolated fake-runtime flow подтверждены без изменения `main`.
 - AI-001: env-переключаемый GenAPI adapter, provider consent guard, безопасная usage/cost/latency телеметрия и migration `0009`; fake adapter сохранён.
 - AI-001 verification: два последовательных реальных `grok-4-5` запроса, history, ledger confirmation, consentless refund, repeatable migration и regression suites подтверждены в isolated runtime; provider не вернул monetary cost.
 - UI-005: `/today` различает первую запись и обновление веса за текущую локальную дату; после ответа `created|updated` сохраняет значение в поле, показывает нейтральное подтверждение и обновляет историю/график без frontend-дедупликации.

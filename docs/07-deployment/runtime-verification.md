@@ -1,5 +1,20 @@
 # BOOT-001 — runtime verification
 
+## AI-002 — isolated companion-memory verification
+
+- Дата: 2026-07-31. Ветка `back/ai-002-companion-memory`; stable `atlas-v01` и `main` не изменялись.
+- Изоляция: Compose project `atlas-ai002`, отдельные PostgreSQL/Redis volumes и runtime containers; API был доступен только на временном порту `3201`.
+- Runtime: Node.js `24.18.0`, pnpm `11.14.0`, PostgreSQL `17`, Redis `8`, `AI_PROVIDER=fake`.
+- Migration image собран из актуального checkout и содержит `0010_ai_002_companion_memory.sql`. Migrations `0000–0010` применены дважды; `drizzle.__drizzle_migrations` содержит 11 записей.
+- Созданы nullable profile columns, `ai_memories`, `ai_memory_extractions`, active partial unique index и constraints.
+- API regression: 13 suites / 55 tests; worker regression: 7 suites / 32 tests. Focused PostgreSQL memory suite подтверждает persistence, receipt idempotency, owner scoping, deletion и replay guards.
+- Синтетический flow registration → profile → persona → completion → two daily weights → quick reply прошёл. Operation завершилась `succeeded`, wallet изменился `100 → 99`.
+- HTTP retry вернул тот же operation. Success создал ровно один extraction outbox, один durable receipt и один active fact.
+- Runtime `MemoryContextBuilder` подтвердил наличие target/start/current weight и active fact; размер context — 237 из 1600 Unicode code points.
+- `DELETE /api/v1/ai-memory/{id}` вернул `204`; следующий list вернул 0 элементов. Receipt сохраняется и не позволяет retry воскресить удалённый факт.
+- Extraction использует stable BullMQ `jobId = outboxId`, не вызывает GenAPI и не создаёт токенных эффектов.
+- Logs/outbox не содержат prompt, response, memory value, API keys или raw provider errors. Реальный AI provider в AI-002 не проверялся.
+
 ## AI-001 — GenAPI technical acceptance
 
 - Date: 2026-07-31. Branch commit `64a376d10958e49633701e7542a46930f28b6dc4` was deployed as isolated Compose project `atlas-ai-001`; stable `atlas-v01` remained on fake.

@@ -151,6 +151,49 @@ describeWithDatabase('AI memory PostgreSQL constraints', () => {
     expect(result.rows[0]).toEqual({ active: '0', receipts: '1' });
   });
 
+  it('does not allow another owner to list or delete memory', async () => {
+    const { userId, messageId } = await createConversationFixture();
+    const otherUserId = await createUser();
+    const repository = new PostgresAiMemoryRepository(database);
+    const memoryId = randomUUID();
+    await insertMemory(memoryId, userId, messageId, 'не любит рыбу');
+
+    await expect(repository.listActive(otherUserId)).resolves.toEqual([]);
+    await expect(
+      database.transaction((client) =>
+        repository.softDelete(client, otherUserId, memoryId),
+      ),
+    ).resolves.toBe(false);
+    await expect(repository.listActive(userId)).resolves.toHaveLength(1);
+  });
+
+  it('does not let an old source replay overwrite a newer contradiction', async () => {
+    const { userId, messageId } = await createConversationFixture();
+    const conversation = await database.query<{ conversation_id: string }>(
+      'select conversation_id from ai_messages where id=$1',
+      [messageId],
+    );
+    const newerMessageId = randomUUID();
+    await database.query(
+      `insert into ai_messages (id,conversation_id,role,content)
+       values ($1,$2,'user','люблю рыбу')`,
+      [newerMessageId, conversation.rows[0]!.conversation_id],
+    );
+    const repository = new PostgresAiMemoryRepository(database);
+    const useCase = new ExtractMemoryUseCase(
+      database,
+      repository,
+      new DeterministicMemoryExtractor(),
+    );
+    await useCase.execute(messageId);
+    await useCase.execute(newerMessageId);
+    await useCase.execute(messageId);
+
+    await expect(repository.listActive(userId)).resolves.toEqual([
+      expect.objectContaining({ key: 'food.рыбу', value: 'любит рыбу' }),
+    ]);
+  });
+
   async function createUser(): Promise<string> {
     const userId = randomUUID();
     await database.query(
