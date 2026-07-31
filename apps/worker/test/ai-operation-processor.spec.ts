@@ -11,11 +11,18 @@ describe('AiOperationProcessor GenAPI boundary', () => {
               persona_id: 'gentleFriend',
               user_id: 'user-1',
               conversation_id: 'conversation-1',
+              input_message_id: 'message-1',
             },
           ],
         })
         .mockResolvedValueOnce({
-          rows: [{ user_id: 'user-1', conversation_id: 'conversation-1' }],
+          rows: [
+            {
+              user_id: 'user-1',
+              conversation_id: 'conversation-1',
+              input_message_id: 'message-1',
+            },
+          ],
         })
         .mockResolvedValueOnce({
           rows: [
@@ -44,6 +51,8 @@ describe('AiOperationProcessor GenAPI boundary', () => {
     const processor = new AiOperationProcessor(
       database as never,
       adapter as never,
+      { build: jest.fn().mockResolvedValue('bounded context') } as never,
+      { process: jest.fn() } as never,
     );
 
     await processor.process({ data: { outboxId: 'outbox-1' } } as never);
@@ -69,11 +78,18 @@ describe('AiOperationProcessor GenAPI boundary', () => {
               persona_id: 'analyst',
               user_id: 'user-1',
               conversation_id: 'conversation-1',
+              input_message_id: 'message-1',
             },
           ],
         })
         .mockResolvedValueOnce({
-          rows: [{ user_id: 'user-1', conversation_id: 'conversation-1' }],
+          rows: [
+            {
+              user_id: 'user-1',
+              conversation_id: 'conversation-1',
+              input_message_id: 'message-1',
+            },
+          ],
         })
         .mockResolvedValueOnce({
           rows: [
@@ -81,6 +97,7 @@ describe('AiOperationProcessor GenAPI boundary', () => {
           ],
         })
         .mockResolvedValueOnce({ rows: [{ id: 'assistant-1' }] })
+        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] }),
     };
@@ -111,12 +128,18 @@ describe('AiOperationProcessor GenAPI boundary', () => {
     const processor = new AiOperationProcessor(
       database as never,
       adapter as never,
+      { build: jest.fn().mockResolvedValue('bounded context') } as never,
+      { process: jest.fn() } as never,
     );
 
     await processor.process({ data: { outboxId: 'outbox-1' } } as never);
 
     expect(adapter.execute).toHaveBeenCalledWith(
-      expect.objectContaining({ messages, personaId: 'analyst' }),
+      expect.objectContaining({
+        messages,
+        personaId: 'analyst',
+        memoryContext: 'bounded context',
+      }),
     );
     expect(client.query).toHaveBeenCalledWith(
       expect.stringContaining("status='succeeded'"),

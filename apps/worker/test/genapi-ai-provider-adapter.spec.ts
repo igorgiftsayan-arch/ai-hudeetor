@@ -7,6 +7,7 @@ const request = {
   operationId: 'operation-1',
   promptVersion: 'quick-reply-v1' as const,
   personaId: 'gentleFriend',
+  memoryContext: 'Не любит рыбу',
   messages: [
     { role: 'user' as const, content: 'Первое сообщение' },
     { role: 'assistant' as const, content: 'Первый ответ' },
@@ -52,6 +53,7 @@ describe('GenApiAiProviderAdapter', () => {
     const payload = JSON.parse(String(init.body));
     expect(payload.model).toBe('grok-4-5');
     expect(payload.messages[0].role).toBe('system');
+    expect(payload.messages[0].content).toContain('Не любит рыбу');
     expect(payload.messages.slice(1)).toEqual(request.messages);
     expect(String(init.headers)).not.toContain('secret-key');
     expect(logs[0]).toMatchObject({
