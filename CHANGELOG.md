@@ -7,6 +7,7 @@
 ### Added
 
 - AI-001: env-переключаемый GenAPI adapter, provider consent guard, безопасная usage/cost/latency телеметрия и migration `0009`; fake adapter сохранён.
+- AI-001 verification: два последовательных реальных `grok-4-5` запроса, history, ledger confirmation, consentless refund, repeatable migration и regression suites подтверждены в isolated runtime; provider не вернул monetary cost.
 - UI-005: `/today` различает первую запись и обновление веса за текущую локальную дату; после ответа `created|updated` сохраняет значение в поле, показывает нейтральное подтверждение и обновляет историю/график без frontend-дедупликации.
 - UI-005 verification: daily upsert migration `0008`, PostgreSQL integration, generated client drift check, browser/mobile create → update → reload и isolated `atlas-ui-001` deployment подтверждены без изменения `main` или stable `atlas-v01`.
 - UI-001: mobile-first `/today` с последним весом, нейтральной динамикой, быстрым вводом, историей до 10 записей и минимальной навигацией `Сегодня`/`AI`.

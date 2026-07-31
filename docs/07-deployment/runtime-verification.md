@@ -1,5 +1,19 @@
 # BOOT-001 — runtime verification
 
+## AI-001 — GenAPI technical acceptance
+
+- Date: 2026-07-31. Branch commit `64a376d10958e49633701e7542a46930f28b6dc4` was deployed as isolated Compose project `atlas-ai-001`; stable `atlas-v01` remained on fake.
+- API/worker/migrate images built successfully without published ports. Migration `0009_ai_001_genapi_adapter` ran twice; both runs passed and Drizzle metadata contained 10 entries.
+- Two sequential synthetic requests with `aiProviderProcessing` succeeded through `grok-4-5`; conversation history was persisted and reused.
+- Usage was `293/125/418` and `338/132/470` input/output/total tokens. Latency was `3596 ms` and `3744 ms`, average `3670 ms`.
+- GenAPI did not return monetary cost, so `cost=null` was recorded instead of inventing a tariff.
+- Ledger contained two reservations and two confirmations; balance changed from 100 to 98.
+- A synthetic user without provider consent caused no GenAPI request: `technicalError/safetyRejected`, one refund and restored balance 100.
+- Worker tests passed 16/16; API plus PostgreSQL integration tests passed 50/50; focused lint exited 0.
+- Technical logs contained only safe provider/model/request/response IDs, usage, latency and status/error metadata. API key, prompt, user text, full response and raw provider body were absent.
+
+This acceptance is limited to synthetic test users. User-facing provider consent and `outcomeUnknown` reconciliation remain separate tasks.
+
 ## UI-005 / BACK-UI-001 — isolated daily-upsert verification
 
 - Date: 2026-07-28. Branch `ui/ui-001-daily-weight` was deployed from checkout `e25d85e` as the isolated Compose project `atlas-ui-001`; stable `atlas-v01` and its containers, volumes, environment and ports were not changed.
