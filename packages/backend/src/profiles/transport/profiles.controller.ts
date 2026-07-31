@@ -60,7 +60,14 @@ export class ProfilesController {
         request.cookies?.atlas_refresh ?? '',
       ),
       profile: state.profile
-        ? { ...state.profile, onboardingStatus: state.status }
+        ? {
+            ...state.profile,
+            targetWeightKg:
+              state.profile.targetWeightKg === null
+                ? null
+                : Number(state.profile.targetWeightKg),
+            onboardingStatus: state.status,
+          }
         : undefined,
       aiPreference: state.preference
         ? { ...state.preference, onboardingStatus: state.status }
