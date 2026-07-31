@@ -37,7 +37,6 @@ export class DeterministicMemoryExtractor {
   }
 
   private extractSentence(sentence: string): ExtractedMemoryFact[] {
-    if (containsSensitiveContent(sentence)) return [];
     if (sentence === 'не хочу жёсткого давления')
       return [{
         category: 'communicationPreference',
@@ -45,6 +44,7 @@ export class DeterministicMemoryExtractor {
         value: 'предпочитает общение без жёсткого давления',
         confidence: 0.95,
       }];
+    if (containsSensitiveContent(sentence)) return [];
     if (
       sentence === 'говори короче' ||
       sentence === 'предпочитаю короткие ответы'
