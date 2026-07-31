@@ -213,7 +213,15 @@ class InMemoryIdentityRepository extends IdentityRepository {
 }
 
 class InMemoryProfilesRepository extends ProfilesRepository {
-  readonly profiles = new Map<string, { userId: string; timezone: string }>();
+  readonly profiles = new Map<
+    string,
+    {
+      userId: string;
+      timezone: string;
+      displayName: string | null;
+      targetWeightKg: string | null;
+    }
+  >();
   readonly preferences = new Map<
     string,
     {
@@ -231,10 +239,28 @@ class InMemoryProfilesRepository extends ProfilesRepository {
   readonly events: Array<{ userId: string; personaId: string }> = [];
   async upsertProfile(
     _client: unknown,
-    input: { userId: string; timezone: string },
+    input: {
+      userId: string;
+      timezone: string;
+      displayName?: string | null;
+      targetWeightKg?: string | null;
+    },
   ) {
-    this.profiles.set(input.userId, input);
-    return input;
+    const previous = this.profiles.get(input.userId);
+    const profile = {
+      userId: input.userId,
+      timezone: input.timezone,
+      displayName:
+        'displayName' in input
+          ? (input.displayName ?? null)
+          : (previous?.displayName ?? null),
+      targetWeightKg:
+        'targetWeightKg' in input
+          ? (input.targetWeightKg ?? null)
+          : (previous?.targetWeightKg ?? null),
+    };
+    this.profiles.set(input.userId, profile);
+    return profile;
   }
   async findProfile(userId: string) {
     return this.profiles.get(userId) ?? null;
