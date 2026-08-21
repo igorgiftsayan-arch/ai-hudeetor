@@ -29,6 +29,35 @@
 
 This acceptance is limited to synthetic test users. User-facing provider consent and `outcomeUnknown` reconciliation remain separate tasks.
 
+## AI-003 — isolated Daily Coach verification
+
+- Date: 2026-08-21. Clean test-server checkout and runtime image were built
+  from implementation commit `3683737` on branch
+  `back/ai-003-daily-coach`; `main`, `atlas-v01` and `atlas-ui-001` were not
+  changed.
+- Runtime: Node.js `24.18.0`, pnpm `11.14.0`, PostgreSQL `17.10`; API image
+  digest `sha256:7975271b8e54fc13d02b84f400fab6e5bd4b4dfd3dce3398be39f7c5f4b79dbc`.
+- Migration `0011_ai_003_daily_coach.sql` was present in the exact image,
+  applied twice safely, registered as the twelfth Drizzle migration and
+  created the unique owner/local-date constraint.
+- PostgreSQL integration passed 6/6: eight concurrent lazy reads produced one
+  row, the local date followed the profile IANA timezone, valid transitions
+  and exact replay succeeded, changed payload/resource reuse conflicted,
+  invalid transitions rolled back, and ownership/onboarding guards held.
+- HTTP acceptance passed registration → profile → persona → onboarding
+  completion → weight → `GET /ai-daily-states/today` → `inProgress` →
+  `completed`. The persisted result was one `completed` row for one local date;
+  same-key replay returned the stored response, changed payload returned `409`,
+  and a backward transition returned `409` without changing state.
+- Daily context contained only existing profile, current daily weight and one
+  active safe memory fixture. The marker was absent from API logs and outbox
+  payloads; no Daily Coach analytics/outbox event was invented.
+- Exact-image regression: API 76/76 including all PostgreSQL suites; worker
+  32/32. Stable `atlas-v01` and isolated UI project `atlas-ui-001` remained
+  healthy throughout verification.
+- Scope remained backend-only: no frontend, scheduling, notifications,
+  prompts, character behavior or AI-provider change was introduced.
+
 ## UI-005 / BACK-UI-001 — isolated daily-upsert verification
 
 - Date: 2026-07-28. Branch `ui/ui-001-daily-weight` was deployed from checkout `e25d85e` as the isolated Compose project `atlas-ui-001`; stable `atlas-v01` and its containers, volumes, environment and ports were not changed.
