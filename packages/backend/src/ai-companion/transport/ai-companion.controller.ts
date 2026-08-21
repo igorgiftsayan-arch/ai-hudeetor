@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Req,
 } from '@nestjs/common';
@@ -30,6 +31,8 @@ import { GetAiConversationUseCase } from '../application/get-ai-conversation.use
 import { StartQuickReplyUseCase } from '../application/start-quick-reply.use-case';
 import { ListAiMemoryUseCase } from '../application/list-ai-memory.use-case';
 import { DeleteAiMemoryUseCase } from '../application/delete-ai-memory.use-case';
+import { GetTodayAiDailyStateUseCase } from '../application/get-today-ai-daily-state.use-case';
+import { TransitionAiDailyStateUseCase } from '../application/transition-ai-daily-state.use-case';
 import {
   AiActionPriceResourceDto,
   AiConversationDetailResourceDto,
@@ -37,6 +40,9 @@ import {
   AiOperationResourceDto,
   AiMemoryListResourceDto,
   StartQuickReplyRequestDto,
+  AiDailyStateResourceDto,
+  AiDailyStateTransitionResourceDto,
+  TransitionAiDailyStateRequestDto,
 } from './ai-companion.dto';
 
 @ApiTags('ai-companion')
@@ -58,6 +64,10 @@ export class AiCompanionController {
     private readonly listMemory: ListAiMemoryUseCase,
     @Inject(DeleteAiMemoryUseCase)
     private readonly deleteMemory: DeleteAiMemoryUseCase,
+    @Inject(GetTodayAiDailyStateUseCase)
+    private readonly getTodayDailyState: GetTodayAiDailyStateUseCase,
+    @Inject(TransitionAiDailyStateUseCase)
+    private readonly transitionDailyState: TransitionAiDailyStateUseCase,
   ) {}
 
   @Get('ai-action-prices/quick-reply')
@@ -146,6 +156,31 @@ export class AiCompanionController {
     return this.deleteMemory.execute({
       accessToken: this.accessToken(request),
       memoryId,
+    });
+  }
+
+  @Get('ai-daily-states/today')
+  @ApiOkResponse({ type: AiDailyStateResourceDto })
+  todayDailyState(@Req() request: Request): Promise<AiDailyStateResourceDto> {
+    return this.getTodayDailyState.execute(this.accessToken(request));
+  }
+
+  @Post('ai-daily-states/:id/transitions')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: TransitionAiDailyStateRequestDto })
+  @ApiHeader({ name: 'Idempotency-Key', required: true })
+  @ApiOkResponse({ type: AiDailyStateTransitionResourceDto })
+  transitionDailyStateById(
+    @Param('id', new ParseUUIDPipe()) stateId: string,
+    @Body() body: TransitionAiDailyStateRequestDto,
+    @Req() request: Request,
+    @Headers('idempotency-key') idempotencyKey?: string,
+  ): Promise<AiDailyStateTransitionResourceDto> {
+    return this.transitionDailyState.execute({
+      accessToken: this.accessToken(request),
+      stateId,
+      targetStatus: body.targetStatus,
+      idempotencyKey: requiredIdempotencyKey(idempotencyKey),
     });
   }
 

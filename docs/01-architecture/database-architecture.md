@@ -6,7 +6,7 @@ PostgreSQL — источник бизнес-истины по [ADR-005](archite
 
 - Identity: users, credentials/identity bindings, sessions, roles, permissions.
 - Profile/tracking: user_profiles, nutrition_profiles, ai_preferences, weight_entries, body_measurements, daily_checkins, activity_entries. `weight_entries` сохраняет audit-safe historical rows, но partial unique index допускает только одну `is_current=true` запись на `(user_id, local_date)`; `local_date` вычисляется по timezone профиля при сохранении.
-- AI: ai_conversations, ai_messages, ai_memories, ai_operations, prompt_versions, ai_feedback, ai_usage_records.
+- AI: ai_conversations, ai_messages, ai_memories, ai_memory_extractions, ai_daily_states, ai_operations, prompt_versions, ai_feedback, ai_usage_records. `ai_daily_states` допускает одну строку на owner-local date и защищает state/timestamp invariants PostgreSQL constraints.
 - Food/planning/files: uploaded_images, food_analyses, product_analyses, meal_suggestions, menu_plans/items, shopping_lists/items.
 - Economy: token_wallets, token_transactions, ai_action_prices, payments, payment_events.
 - Referrals/content: referrals, referral_progress, referral_rewards, content_items, notification_preferences.

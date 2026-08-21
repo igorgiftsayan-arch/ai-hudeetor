@@ -4,6 +4,8 @@ import {
   LoginAttemptLimiter,
   ProfilesRepository,
   DatabaseService,
+  AiDailyStateRepository,
+  DailyContextBuilder,
   type CreateIdentitySessionInput,
   type IdentitySessionRecord,
   type OnboardingStatus,
@@ -194,6 +196,13 @@ class InMemoryIdentityRepository extends IdentityRepository {
     }
   }
 
+  setOnboardingStatus(userId: string, status: OnboardingStatus): void {
+    const user = [...this.users.values()].find(
+      (candidate) => candidate.id === userId,
+    );
+    if (user) user.onboardingStatus = status;
+  }
+
   private sessionRecord(
     input: CreateIdentitySessionInput,
   ): IdentitySessionRecord {
@@ -301,6 +310,37 @@ class InMemoryDatabaseService {
     operation: (client: unknown) => Promise<TResult>,
   ): Promise<TResult> {
     return operation({});
+  }
+}
+
+class InMemoryAiDailyStateRepository extends AiDailyStateRepository {
+  private status: 'notStarted' | 'inProgress' | 'completed' = 'notStarted';
+
+  async getOrCreateToday(userId: string) {
+    return this.state(userId);
+  }
+
+  async transition(input: {
+    userId: string;
+    targetStatus: 'inProgress' | 'completed';
+  }) {
+    this.status = input.targetStatus;
+    return this.state(input.userId);
+  }
+
+  private state(userId: string) {
+    return {
+      id: '019d23a0-2ec0-7000-8000-000000000001',
+      userId,
+      localDate: '2026-08-21',
+      status: this.status,
+      startedAt:
+        this.status === 'notStarted' ? null : '2026-08-21T01:00:00.000Z',
+      completedAt:
+        this.status === 'completed' ? '2026-08-21T02:00:00.000Z' : null,
+      createdAt: '2026-08-21T00:00:00.000Z',
+      updatedAt: '2026-08-21T01:00:00.000Z',
+    };
   }
 }
 
@@ -695,6 +735,78 @@ describe('Identity API', () => {
       csrfToken: expect.any(String),
     });
   });
+
+  it('requires an authenticated completed user for today daily state', async () => {
+    const unauthorized = await request(app.getHttpServer()).get(
+      '/api/v1/ai-daily-states/today',
+    );
+    expect(unauthorized.status).toBe(401);
+
+    const agent = request.agent(app.getHttpServer());
+    const registration = await register(agent);
+    repository.setOnboardingStatus(registration.body.userId, 'completed');
+    const response = await agent.get('/api/v1/ai-daily-states/today');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: expect.any(String),
+      localDate: '2026-08-21',
+      status: 'notStarted',
+      context: { timezone: 'UTC', memories: [] },
+    });
+    expect(response.body).not.toHaveProperty('userId');
+  });
+
+  it('requires CSRF, Origin and a valid idempotency key for transitions', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registration = await register(agent);
+    repository.setOnboardingStatus(registration.body.userId, 'completed');
+    const state = await agent.get('/api/v1/ai-daily-states/today');
+    const endpoint = `/api/v1/ai-daily-states/${state.body.id}/transitions`;
+
+    const missingCsrf = await agent
+      .post(endpoint)
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send({ targetStatus: 'inProgress' });
+    expect(missingCsrf.status).toBe(403);
+    expect(missingCsrf.body.error.code).toBe('CSRF_VALIDATION_FAILED');
+
+    const invalidKey = await agent
+      .post(endpoint)
+      .set('Origin', origin)
+      .set('x-csrf-token', registration.body.csrfToken)
+      .set('Idempotency-Key', 'short')
+      .send({ targetStatus: 'inProgress' });
+    expect(invalidKey.status).toBe(400);
+    expect(invalidKey.body.error.code).toBe('IDEMPOTENCY_KEY_REQUIRED');
+  });
+
+  it('validates and applies the daily state transition DTO', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registration = await register(agent);
+    repository.setOnboardingStatus(registration.body.userId, 'completed');
+    const state = await agent.get('/api/v1/ai-daily-states/today');
+    const endpoint = `/api/v1/ai-daily-states/${state.body.id}/transitions`;
+    const headers = {
+      Origin: origin,
+      'x-csrf-token': registration.body.csrfToken,
+      'Idempotency-Key': crypto.randomUUID(),
+    };
+
+    const invalid = await agent
+      .post(endpoint)
+      .set(headers)
+      .send({ targetStatus: 'notStarted' });
+    expect(invalid.status).toBe(422);
+    expect(invalid.body.error.code).toBe('VALIDATION_ERROR');
+
+    const transitioned = await agent
+      .post(endpoint)
+      .set({ ...headers, 'Idempotency-Key': crypto.randomUUID() })
+      .send({ targetStatus: 'inProgress' });
+    expect(transitioned.status).toBe(200);
+    expect(transitioned.body.status).toBe('inProgress');
+  });
 });
 
 async function createApp(repository: InMemoryIdentityRepository) {
@@ -708,6 +820,18 @@ async function createApp(repository: InMemoryIdentityRepository) {
     .useValue(profiles)
     .overrideProvider(DatabaseService)
     .useValue(new InMemoryDatabaseService())
+    .overrideProvider(AiDailyStateRepository)
+    .useValue(new InMemoryAiDailyStateRepository())
+    .overrideProvider(DailyContextBuilder)
+    .useValue({
+      build: jest.fn().mockImplementation((_userId, localDate) => ({
+        localDate,
+        timezone: 'UTC',
+        profile: {},
+        weight: {},
+        memories: [],
+      })),
+    })
     .compile();
   const nestApp = moduleRef.createNestApplication();
   configureApplication(nestApp);

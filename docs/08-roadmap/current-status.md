@@ -1,6 +1,7 @@
 # Текущий статус
 
-- Дата: 2026-07-31
+- Дата: 2026-08-21
+- AI-003: Daily Coach backend реализует одну timezone-aware state row на локальную дату, state machine `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API в отдельной ветке; frontend, scheduling, prompts и Character не входят.
 - AI-002: structured companion memory, nullable profile context, migration `0010`, owner list/delete API, deterministic worker extraction и bounded memory context реализованы и проверены в отдельной ветке; `main` не изменён.
 - AI-001: GenAPI adapter реализован и проверен в отдельной ветке на synthetic test-пользователях; `main` и stable остаются на fake до приёмки и merge.
 - Текущая задача: UI-005/BACK-UI-001 объединены и проверены в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось, результат ожидает ручной приёмки.

@@ -95,6 +95,20 @@ export {
   type ExtractedMemoryFact,
 } from './ai-companion/application/deterministic-memory-extractor';
 export { ExtractMemoryUseCase } from './ai-companion/application/extract-memory.use-case';
+export {
+  applyAiDailyStateTransition,
+  type AiDailyState,
+  type AiDailyStateStatus,
+} from './ai-companion/domain/ai-daily-state';
+export { AiDailyStateRepository } from './ai-companion/application/ai-daily-state-repository';
+export { PostgresAiDailyStateRepository } from './ai-companion/infrastructure/postgres-ai-daily-state.repository';
+export {
+  DailyContextBuilder,
+  type DailyContext,
+  type DailyContextDependencies,
+} from './ai-companion/application/daily-context-builder';
+export { GetTodayAiDailyStateUseCase } from './ai-companion/application/get-today-ai-daily-state.use-case';
+export { TransitionAiDailyStateUseCase } from './ai-companion/application/transition-ai-daily-state.use-case';
 export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-profiles.repository';
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';
 export { SaveProfileSetupUseCase } from './profiles/application/save-profile-setup.use-case';

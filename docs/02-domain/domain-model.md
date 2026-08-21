@@ -14,6 +14,7 @@
 
 - **AiConversation** содержит `AiMessage` и принадлежит пользователю.
 - **AiMemory** хранит активный структурированный устойчивый факт закрытой категории, происхождение, confidence и soft-delete state. Durable extraction receipt не позволяет повторной обработке source message воскресить удалённый факт.
+- **AiDailyState** хранит owner-scoped состояние дневного AI-сценария на одну локальную календарную дату. Lifecycle ограничен `notStarted → inProgress → completed`; daily context вычисляется при чтении и не сохраняется как prompt.
 - **AiFeedback** связывает оценку/комментарий пользователя с AI-ответом.
 - **UploadedImage** — метаданные приватного объекта; может быть источником `FoodAnalysis`.
 - **FoodAnalysis** и **ProductAnalysis** — результаты анализа блюда и продукта.

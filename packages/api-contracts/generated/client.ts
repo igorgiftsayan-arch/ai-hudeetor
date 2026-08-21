@@ -215,6 +215,100 @@ export interface AiMemoryListResourceDto {
   items: AiMemoryResourceDto[];
 }
 
+export interface AiDailyProfileContextResourceDto {
+  displayName?: string;
+  targetWeightKg?: string;
+  personaId?: string;
+}
+
+export interface AiDailyWeightContextResourceDto {
+  startWeightKg?: string;
+  currentWeightKg?: string;
+  changeWeightKg?: string;
+  lastRecordedAt?: string;
+}
+
+export type AiDailyMemoryContextResourceDtoCategory = typeof AiDailyMemoryContextResourceDtoCategory[keyof typeof AiDailyMemoryContextResourceDtoCategory];
+
+
+export const AiDailyMemoryContextResourceDtoCategory = {
+  preference: 'preference',
+  restriction: 'restriction',
+  trigger: 'trigger',
+  supportStrategy: 'supportStrategy',
+  goal: 'goal',
+  communicationPreference: 'communicationPreference',
+} as const;
+
+export interface AiDailyMemoryContextResourceDto {
+  category: AiDailyMemoryContextResourceDtoCategory;
+  key: string;
+  value: string;
+}
+
+export interface AiDailyContextResourceDto {
+  localDate: string;
+  timezone: string;
+  profile: AiDailyProfileContextResourceDto;
+  weight: AiDailyWeightContextResourceDto;
+  memories: AiDailyMemoryContextResourceDto[];
+}
+
+export type AiDailyStateResourceDtoStatus = typeof AiDailyStateResourceDtoStatus[keyof typeof AiDailyStateResourceDtoStatus];
+
+
+export const AiDailyStateResourceDtoStatus = {
+  notStarted: 'notStarted',
+  inProgress: 'inProgress',
+  completed: 'completed',
+} as const;
+
+export interface AiDailyStateResourceDto {
+  id: string;
+  localDate: string;
+  status: AiDailyStateResourceDtoStatus;
+  /** @nullable */
+  startedAt: string | null;
+  /** @nullable */
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  context: AiDailyContextResourceDto;
+}
+
+export type TransitionAiDailyStateRequestDtoTargetStatus = typeof TransitionAiDailyStateRequestDtoTargetStatus[keyof typeof TransitionAiDailyStateRequestDtoTargetStatus];
+
+
+export const TransitionAiDailyStateRequestDtoTargetStatus = {
+  inProgress: 'inProgress',
+  completed: 'completed',
+} as const;
+
+export interface TransitionAiDailyStateRequestDto {
+  targetStatus: TransitionAiDailyStateRequestDtoTargetStatus;
+}
+
+export type AiDailyStateTransitionResourceDtoStatus = typeof AiDailyStateTransitionResourceDtoStatus[keyof typeof AiDailyStateTransitionResourceDtoStatus];
+
+
+export const AiDailyStateTransitionResourceDtoStatus = {
+  notStarted: 'notStarted',
+  inProgress: 'inProgress',
+  completed: 'completed',
+} as const;
+
+export interface AiDailyStateTransitionResourceDto {
+  id: string;
+  localDate: string;
+  status: AiDailyStateTransitionResourceDtoStatus;
+  /** @nullable */
+  startedAt: string | null;
+  /** @nullable */
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * @nullable
  */
@@ -1063,6 +1157,87 @@ export const aiCompanionControllerDeleteMemoryByIdApiV1 = async (id: string, opt
 
   const data: aiCompanionControllerDeleteMemoryByIdApiV1Response['data'] = body ? JSON.parse(body) : undefined
   return { data, status: res.status, headers: res.headers } as aiCompanionControllerDeleteMemoryByIdApiV1Response
+}
+
+
+
+export type aiCompanionControllerTodayDailyStateApiV1Response200 = {
+  data: AiDailyStateResourceDto
+  status: 200
+}
+
+export type aiCompanionControllerTodayDailyStateApiV1ResponseSuccess = (aiCompanionControllerTodayDailyStateApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerTodayDailyStateApiV1Response = (aiCompanionControllerTodayDailyStateApiV1ResponseSuccess)
+
+export const getAiCompanionControllerTodayDailyStateApiV1Url = () => {
+
+
+
+
+  return `/api/v1/ai-daily-states/today`
+}
+
+export const aiCompanionControllerTodayDailyStateApiV1 = async ( options?: RequestInit): Promise<aiCompanionControllerTodayDailyStateApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerTodayDailyStateApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerTodayDailyStateApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerTodayDailyStateApiV1Response
+}
+
+
+
+export type aiCompanionControllerTransitionDailyStateByIdApiV1Response200 = {
+  data: AiDailyStateTransitionResourceDto
+  status: 200
+}
+
+export type aiCompanionControllerTransitionDailyStateByIdApiV1ResponseSuccess = (aiCompanionControllerTransitionDailyStateByIdApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type aiCompanionControllerTransitionDailyStateByIdApiV1Response = (aiCompanionControllerTransitionDailyStateByIdApiV1ResponseSuccess)
+
+export const getAiCompanionControllerTransitionDailyStateByIdApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/ai-daily-states/${id}/transitions`
+}
+
+export const aiCompanionControllerTransitionDailyStateByIdApiV1 = async (id: string,
+    transitionAiDailyStateRequestDto: TransitionAiDailyStateRequestDto, options?: RequestInit): Promise<aiCompanionControllerTransitionDailyStateByIdApiV1Response> => {
+
+  const res = await fetch(getAiCompanionControllerTransitionDailyStateByIdApiV1Url(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(transitionAiDailyStateRequestDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: aiCompanionControllerTransitionDailyStateByIdApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as aiCompanionControllerTransitionDailyStateByIdApiV1Response
 }
 
 

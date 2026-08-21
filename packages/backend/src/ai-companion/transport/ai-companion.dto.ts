@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsInt, IsString, IsUUID, Min } from 'class-validator';
 
 export class StartQuickReplyRequestDto {
@@ -84,4 +84,78 @@ export class AiMemoryResourceDto {
 export class AiMemoryListResourceDto {
   @ApiProperty({ type: () => [AiMemoryResourceDto] })
   items!: AiMemoryResourceDto[];
+}
+
+export class TransitionAiDailyStateRequestDto {
+  @ApiProperty({ enum: ['inProgress', 'completed'] })
+  @IsIn(['inProgress', 'completed'])
+  targetStatus!: 'inProgress' | 'completed';
+}
+
+export class AiDailyProfileContextResourceDto {
+  @ApiPropertyOptional() displayName?: string;
+  @ApiPropertyOptional() targetWeightKg?: string;
+  @ApiPropertyOptional() personaId?: string;
+}
+
+export class AiDailyWeightContextResourceDto {
+  @ApiPropertyOptional() startWeightKg?: string;
+  @ApiPropertyOptional() currentWeightKg?: string;
+  @ApiPropertyOptional() changeWeightKg?: string;
+  @ApiPropertyOptional({ format: 'date-time' }) lastRecordedAt?: string;
+}
+
+export class AiDailyMemoryContextResourceDto {
+  @ApiProperty({
+    enum: [
+      'preference',
+      'restriction',
+      'trigger',
+      'supportStrategy',
+      'goal',
+      'communicationPreference',
+    ],
+  })
+  category!: string;
+  @ApiProperty() key!: string;
+  @ApiProperty() value!: string;
+}
+
+export class AiDailyContextResourceDto {
+  @ApiProperty({ format: 'date' }) localDate!: string;
+  @ApiProperty() timezone!: string;
+  @ApiProperty({ type: () => AiDailyProfileContextResourceDto })
+  profile!: AiDailyProfileContextResourceDto;
+  @ApiProperty({ type: () => AiDailyWeightContextResourceDto })
+  weight!: AiDailyWeightContextResourceDto;
+  @ApiProperty({ type: () => [AiDailyMemoryContextResourceDto] })
+  memories!: AiDailyMemoryContextResourceDto[];
+}
+
+export class AiDailyStateResourceDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'date' }) localDate!: string;
+  @ApiProperty({ enum: ['notStarted', 'inProgress', 'completed'] })
+  status!: 'notStarted' | 'inProgress' | 'completed';
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  startedAt!: string | null;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  completedAt!: string | null;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: string;
+  @ApiProperty({ type: () => AiDailyContextResourceDto })
+  context!: AiDailyContextResourceDto;
+}
+
+export class AiDailyStateTransitionResourceDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'date' }) localDate!: string;
+  @ApiProperty({ enum: ['notStarted', 'inProgress', 'completed'] })
+  status!: 'notStarted' | 'inProgress' | 'completed';
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  startedAt!: string | null;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  completedAt!: string | null;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: string;
 }

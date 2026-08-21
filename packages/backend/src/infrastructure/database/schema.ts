@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  date,
   foreignKey,
   index,
   integer,
@@ -236,6 +237,47 @@ export const aiMemories = pgTable(
     check(
       'ck_ai_memories_confidence',
       sql`${table.confidence} between 0 and 1`,
+    ),
+  ],
+);
+
+export const aiDailyStates = pgTable(
+  'ai_daily_states',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    localDate: date('local_date').notNull(),
+    status: text('status').notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('uq_ai_daily_states_user_local_date').on(
+      table.userId,
+      table.localDate,
+    ),
+    index('idx_ai_daily_states_user_local_date').on(
+      table.userId,
+      table.localDate,
+      table.id,
+    ),
+    check(
+      'ck_ai_daily_states_status',
+      sql`${table.status} in ('notStarted','inProgress','completed')`,
+    ),
+    check(
+      'ck_ai_daily_states_timestamps',
+      sql`(${table.status} = 'notStarted' and ${table.startedAt} is null and ${table.completedAt} is null)
+          or (${table.status} = 'inProgress' and ${table.startedAt} is not null and ${table.completedAt} is null)
+          or (${table.status} = 'completed' and ${table.startedAt} is not null and ${table.completedAt} is not null)`,
     ),
   ],
 );

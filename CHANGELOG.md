@@ -6,6 +6,7 @@
 
 ### Added
 
+- AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
 - AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.
 - AI-002 verification: repeatable migrations, durable source-message receipts, dedup/update/delete, owner scoping, daily weight context, API/worker regressions и isolated fake-runtime flow подтверждены без изменения `main`.
 - AI-001: env-переключаемый GenAPI adapter, provider consent guard, безопасная usage/cost/latency телеметрия и migration `0009`; fake adapter сохранён.

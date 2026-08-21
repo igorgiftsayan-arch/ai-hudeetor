@@ -386,6 +386,147 @@
         ]
       }
     },
+    "/api/v1/ai-memory": {
+      "get": {
+        "operationId": "AiCompanionController_memory_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiMemoryListResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/ai-memory/{id}": {
+      "delete": {
+        "operationId": "AiCompanionController_deleteMemoryById_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/ai-daily-states/today": {
+      "get": {
+        "operationId": "AiCompanionController_todayDailyState_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDailyStateResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
+    "/api/v1/ai-daily-states/{id}/transitions": {
+      "post": {
+        "operationId": "AiCompanionController_transitionDailyStateById_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionAiDailyStateRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDailyStateTransitionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "ai-companion"
+        ]
+      }
+    },
     "/api/v1/users/me/onboarding": {
       "get": {
         "operationId": "ProfilesController_onboarding_api/v1",
@@ -947,7 +1088,8 @@
           "runtimeAdapter": {
             "type": "string",
             "enum": [
-              "fake"
+              "fake",
+              "genapi"
             ]
           },
           "outputMessageId": {
@@ -972,6 +1114,280 @@
           "runtimeAdapter"
         ]
       },
+      "AiMemoryResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "preference",
+              "restriction",
+              "trigger",
+              "supportStrategy",
+              "goal",
+              "communicationPreference"
+            ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "conversation",
+              "profile",
+              "system"
+            ]
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "key",
+          "value",
+          "source",
+          "confidence",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AiMemoryListResourceDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiMemoryResourceDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AiDailyProfileContextResourceDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "targetWeightKg": {
+            "type": "string"
+          },
+          "personaId": {
+            "type": "string"
+          }
+        }
+      },
+      "AiDailyWeightContextResourceDto": {
+        "type": "object",
+        "properties": {
+          "startWeightKg": {
+            "type": "string"
+          },
+          "currentWeightKg": {
+            "type": "string"
+          },
+          "changeWeightKg": {
+            "type": "string"
+          },
+          "lastRecordedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AiDailyMemoryContextResourceDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "preference",
+              "restriction",
+              "trigger",
+              "supportStrategy",
+              "goal",
+              "communicationPreference"
+            ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "key",
+          "value"
+        ]
+      },
+      "AiDailyContextResourceDto": {
+        "type": "object",
+        "properties": {
+          "localDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/AiDailyProfileContextResourceDto"
+          },
+          "weight": {
+            "$ref": "#/components/schemas/AiDailyWeightContextResourceDto"
+          },
+          "memories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiDailyMemoryContextResourceDto"
+            }
+          }
+        },
+        "required": [
+          "localDate",
+          "timezone",
+          "profile",
+          "weight",
+          "memories"
+        ]
+      },
+      "AiDailyStateResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "localDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "notStarted",
+              "inProgress",
+              "completed"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "context": {
+            "$ref": "#/components/schemas/AiDailyContextResourceDto"
+          }
+        },
+        "required": [
+          "id",
+          "localDate",
+          "status",
+          "startedAt",
+          "completedAt",
+          "createdAt",
+          "updatedAt",
+          "context"
+        ]
+      },
+      "TransitionAiDailyStateRequestDto": {
+        "type": "object",
+        "properties": {
+          "targetStatus": {
+            "type": "string",
+            "enum": [
+              "inProgress",
+              "completed"
+            ]
+          }
+        },
+        "required": [
+          "targetStatus"
+        ]
+      },
+      "AiDailyStateTransitionResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "localDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "notStarted",
+              "inProgress",
+              "completed"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "localDate",
+          "status",
+          "startedAt",
+          "completedAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "UserProfileResourceDto": {
         "type": "object",
         "properties": {
@@ -981,6 +1397,14 @@
           },
           "timezone": {
             "type": "string"
+          },
+          "displayName": {
+            "type": "object",
+            "nullable": true
+          },
+          "targetWeightKg": {
+            "type": "object",
+            "nullable": true
           },
           "onboardingStatus": {
             "type": "string",
@@ -1134,6 +1558,18 @@
             "type": "string",
             "example": "Asia/Irkutsk",
             "maxLength": 64
+          },
+          "displayName": {
+            "type": "object",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "targetWeightKg": {
+            "type": "object",
+            "nullable": true,
+            "minimum": 20,
+            "maximum": 500
           },
           "consents": {
             "maxItems": 1,
