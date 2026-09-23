@@ -18,7 +18,7 @@ prompts, AI responses, cookies, CSRF values и provider secrets не запис�
   version `test-v1`.
 - Deployed local image digests:
   - API: `sha256:cc25c4d423be591ec578066a41c8cd048b85a49b92217c9a0721bc1bf1fef1f4`.
-  - Web: `sha256:7c111fb0eb17919974aa4f458453e18b0cf2451669f5ce795cfbc69259e9b738`.
+  - Web: `sha256:8c342e02812702a49f7e86fe57c400c450c0e81bb334ef04b9111a1ee98ba9c8`.
 
 ## Daily metrics
 
@@ -46,6 +46,10 @@ still had exactly one current row for today and immutable marathon baseline
   evidence recorded `runtimeAdapter=genapi`, two reservations and two
   confirmations, with no refund. Message contents and credentials are not
   recorded here.
+- On the clean `390px` browser profile, the pre-consent disclosure is exactly:
+  `Сообщения и необходимый контекст будут переданы внешнему сервису GenAPI для
+  формирования ответа.` The former test-mode claim is absent; this UI change
+  does not alter the server-provided `test-v1` consent version or evidence.
 - A loaded synthetic task was made stale only in the isolated test database.
   Its completion returned `409 MARATHON_TASK_DATE_INVALID`; the UI reloaded,
   removed the outdated card and showed a calm date-change message. The
