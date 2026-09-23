@@ -1,5 +1,21 @@
 # BOOT-001 — runtime verification
 
+## GERBI-MARATHON-PILOT — isolated backend and shared-stand verification
+
+- Дата: 2026-09-24. Backend branch `back/gerbi-marathon-pilot`; implementation/runtime commits до `b68f575`. `main`, stable `atlas-v01` и прежний `atlas-ui-001` не изменялись.
+- Migration `0012_gerbi_marathon_pilot.sql` присутствовала в актуальном migration image, migrations `0000–0012` применены дважды. В Drizzle metadata — 13 записей; созданы все шесть marathon tables.
+- PostgreSQL integration прошла 6/6: bootstrap/idempotent create, current-marathon `404`, shuffled wellness persistence, captain authority/completion, timezone mismatch, last-day report и first-day `notApplicable`.
+- Regression: API 11 suites / 44 tests; worker 7 suites / 32 tests. Backend typecheck, API build и OpenAPI generation прошли.
+- Shared isolated Compose project `atlas-gerbi-marathon`: PostgreSQL, Redis, API, worker, web и gateway healthy; наружу опубликован только gateway `http://5.42.126.71:3112`.
+- Browser/mobile acceptance отдельной frontend-задачи подтвердила join, wellness save/reload, captain-task completion/reload и существующий daily weight upsert. Team read model не выдаёт raw weight, chat, memory или cumulative totals.
+- Synthetic HTTP acceptance подтвердила registration/profile/persona/completion, join, wellness, captain task, safe team read, wallet `100`, fake quick reply `succeeded` и сохранение одного memory fact.
+- Отдельная backend-only GenAPI topology подтвердила current-version consent gate: запрос до consent получил `409 AI_PROVIDER_CONSENT_REQUIRED` без списания; после consent два последовательных запроса завершились `succeeded` через `genapi`, balance `100 → 98`, conversation history содержит четыре сообщения.
+- Backend-only real-provider logs/outbox не содержали API key, prompt, response, raw provider error или private memory. Полный browser consent → real-provider gate на shared stand — **NOT RUN**: единственная web-сборка дошла до Next.js TypeScript stage, после чего test server перестал отвечать по SSH и HTTP; новый web image и container health не подтверждены. `atlas-gerbi-marathon` на GenAPI не переключался, повторная сборка или restart вслепую не выполнялись.
+- Непринятые формулы не реализованы: `dailyPercent` и podiums остаются `null`; baseline не фиксируется автоматически. Реальные даты, команды и капитаны не создавались.
+- Food vision не входит в runtime: его storage, vision-provider, privacy и token/refund зависимости перечислены в product scope и требуют отдельной задачи.
+
+Ручной сценарий: [gerbi-marathon-manual-acceptance.md](../06-development/gerbi-marathon-manual-acceptance.md).
+
 ## AI-002 — isolated companion-memory verification
 
 - Дата: 2026-07-31. Ветка `back/ai-002-companion-memory`; stable `atlas-v01` и `main` не изменялись.

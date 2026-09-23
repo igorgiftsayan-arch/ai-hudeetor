@@ -126,9 +126,9 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
     await service.completeTask(participantId, randomUUID(), task.id, true);
     const view = await service.today(participantId);
     expect(view.captainTask?.currentUserCompletion.status).toBe('completed');
-    expect(
-      view.members.find((x: any) => x.isCurrentUser)?.captainTask.status,
-    ).toBe('completed');
+    expect(view.members.find((x) => x.isCurrentUser)?.captainTask.status).toBe(
+      'completed',
+    );
   });
   it('refuses membership when profile and marathon timezones differ', async () => {
     const other = await user(db, 'other', 'UTC');

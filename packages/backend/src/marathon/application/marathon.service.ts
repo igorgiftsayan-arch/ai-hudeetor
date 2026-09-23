@@ -29,6 +29,23 @@ type Membership = {
   ends_on: string;
   team_name: string;
 };
+type CaptainTaskRow = {
+  id: string;
+  taskDate: string;
+  title: string;
+  description: string;
+  completed: boolean | null;
+  completionUpdatedAt: Date | null;
+};
+type TeamMemberTodayRow = {
+  membershipId: string;
+  displayName: string | null;
+  role: 'captain' | 'participant';
+  isCurrentUser: boolean;
+  wellnessStatus: 'unknown' | 'reported';
+  markedCount: number | null;
+  taskStatus: 'notAssigned' | 'unknown' | 'completed' | 'notCompleted';
+};
 
 export class MarathonService {
   constructor(
@@ -411,12 +428,12 @@ export class MarathonService {
       displayDate = calendarDateInTimezone(new Date(), m.timezone),
       reportDate = previousCalendarDate(displayDate);
     const task = (
-      await this.db.query<any>(
+      await this.db.query<CaptainTaskRow>(
         `select t.id,t.task_date::text "taskDate",t.title,t.description,c.completed,c.updated_at "completionUpdatedAt" from marathon_captain_tasks t left join marathon_task_completions c on c.task_id=t.id and c.membership_id=$1 where t.team_id=$2 and t.task_date=$3`,
         [m.id, m.team_id, displayDate],
       )
     ).rows[0];
-    const members = await this.db.query<any>(
+    const members = await this.db.query<TeamMemberTodayRow>(
       `select mm.id "membershipId",up.display_name "displayName",mm.role,mm.user_id=$1 "isCurrentUser",case when wr.id is null then 'unknown' else 'reported' end "wellnessStatus",case when wr.id is null then null else (wr.morning_shake::int+wr.physical_activity::int+wr.water_target::int+wr.second_shake::int+wr.healthy_dinner::int+wr.good_sleep::int+wr.no_junk_food::int+wr.no_smoking::int) end "markedCount",case when $4::uuid is null then 'notAssigned' when tc.id is null then 'unknown' when tc.completed then 'completed' else 'notCompleted' end "taskStatus" from marathon_memberships mm left join user_profiles up on up.user_id=mm.user_id left join marathon_wellness_reports wr on wr.membership_id=mm.id and wr.report_date=$3::date-1 left join marathon_task_completions tc on tc.membership_id=mm.id and tc.task_id=$4 where mm.team_id=$2 order by mm.created_at`,
       [user.userId, m.team_id, displayDate, task?.id ?? null],
     );

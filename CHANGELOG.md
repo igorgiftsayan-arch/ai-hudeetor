@@ -6,6 +6,9 @@
 
 ### Added
 
+- GERBI-MARATHON-PILOT: additive migration `0012`, marathon/team/membership, owner-scoped wellness report, captain daily task/completion, safe daily team read model and explicit current-version provider consent boundary.
+- GERBI-MARATHON-PILOT verification: repeatable migrations, PostgreSQL 6/6, API 44/44, worker 32/32, isolated shared browser/mobile flow and backend-only synthetic real-GenAPI consent/history/ledger flow; shared browser real-provider gate remains `NOT RUN` after test-server SSH/HTTP loss, while `main` and stable remain unchanged.
+- GERBI-MARATHON-PILOT manual acceptance and food-vision dependency assessment; unapproved baseline, daily formulas, wellness aggregation and podium/tie rules remain explicit `TBD` and produce no invented metrics.
 - AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
 - AI-003 verification: exact-image isolated runtime подтвердил repeatable migration, concurrent lazy initialization, timezone/ownership/idempotency/rollback, полный HTTP state flow, отсутствие daily context в логах/outbox и regression 76 API + 32 worker tests без изменения `main` или stable.
 - AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.

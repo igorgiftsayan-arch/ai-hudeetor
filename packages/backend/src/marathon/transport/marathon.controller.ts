@@ -16,7 +16,11 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { IdentityError } from '../../identity/domain/identity-error';
+// The constructor value is required by Nest's emitted design:paramtypes metadata.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MarathonService } from '../application/marathon.service';
+// DTO values are required by Nest's emitted request metadata and OpenAPI decorators.
+/* eslint-disable @typescript-eslint/consistent-type-imports */
 import {
   CaptainTaskDto,
   CaptainTaskResponseDto,
@@ -32,6 +36,7 @@ import {
   WellnessReportReadDto,
   WellnessReportSavedDto,
 } from './marathon.dto';
+/* eslint-enable @typescript-eslint/consistent-type-imports */
 function key(value?: string) {
   if (!value || value.length < 16)
     throw new IdentityError(
