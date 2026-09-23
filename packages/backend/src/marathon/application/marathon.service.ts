@@ -88,15 +88,18 @@ export class MarathonService {
       return response;
     });
   }
-  private async membership(userId: string): Promise<Membership> {
+  private async membership(
+    userId: string,
+    missingCode = 'MARATHON_MEMBERSHIP_REQUIRED',
+  ): Promise<Membership> {
     const result = await this.db.query<Membership>(
       `select mm.id,mm.marathon_id,mm.team_id,mm.role,m.timezone,m.name marathon_name,m.starts_on::text,m.ends_on::text,mt.name team_name from marathon_memberships mm join marathons m on m.id=mm.marathon_id join marathon_teams mt on mt.id=mm.team_id where mm.user_id=$1 order by m.created_at desc limit 1`,
       [userId],
     );
     if (!result.rows[0])
       throw new IdentityError(
-        'MARATHON_MEMBERSHIP_REQUIRED',
-        403,
+        missingCode,
+        missingCode === 'MARATHON_NOT_FOUND' ? 404 : 403,
         'A marathon membership is required',
       );
     return result.rows[0];
@@ -244,7 +247,7 @@ export class MarathonService {
   }
   async current(token: string) {
     const user = await this.user(token),
-      m = await this.membership(user.userId),
+      m = await this.membership(user.userId, 'MARATHON_NOT_FOUND'),
       displayDate = calendarDateInTimezone(new Date(), m.timezone);
     return {
       marathon: {
@@ -273,6 +276,7 @@ export class MarathonService {
       : { status: 'unknown', reportDate: date, report: null };
   }
   private assertReportDate(m: Membership, date: string) {
+    this.assertActive(m);
     const expected = previousCalendarDate(
       calendarDateInTimezone(new Date(), m.timezone),
     );
@@ -283,11 +287,29 @@ export class MarathonService {
         'Only the previous marathon calendar date can be reported',
       );
   }
+  private assertActive(m: Membership) {
+    const today = calendarDateInTimezone(new Date(), m.timezone);
+    if (today < m.starts_on || today > m.ends_on)
+      throw new IdentityError(
+        'MARATHON_NOT_ACTIVE',
+        409,
+        'The marathon is not active',
+      );
+  }
   async saveReport(token: string, key: string, date: string, r: Report) {
     const user = await this.user(token),
       m = await this.membership(user.userId);
     this.assertReportDate(m, date);
-    const values = Object.values(r);
+    const values = [
+      r.morningShake,
+      r.physicalActivity,
+      r.waterTarget,
+      r.secondShake,
+      r.healthyDinner,
+      r.goodSleep,
+      r.noJunkFood,
+      r.noSmoking,
+    ];
     return this.idempotent(
       user.userId,
       'marathonWellnessReport',

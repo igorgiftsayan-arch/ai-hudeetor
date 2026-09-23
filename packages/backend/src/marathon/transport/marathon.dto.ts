@@ -44,16 +44,32 @@ export class ProviderConsentDto {
   @ApiProperty() @IsBoolean() accepted!: boolean;
   @ApiProperty() @IsString() @IsNotEmpty() documentVersion!: string;
 }
+export class TaskCompletionStatusDto {
+  @ApiProperty({ enum: ['unknown', 'completed', 'notCompleted'] }) status!:
+    'unknown' | 'completed' | 'notCompleted';
+  @ApiProperty({ type: String, nullable: true }) updatedAt!: string | null;
+}
 export class CaptainTaskReadDto {
   @ApiProperty() id!: string;
   @ApiProperty() taskDate!: string;
   @ApiProperty() title!: string;
   @ApiProperty() description!: string;
-  @ApiProperty({ enum: ['unknown', 'completed', 'notCompleted'] })
-  currentUserCompletion!: {
-    status: 'unknown' | 'completed' | 'notCompleted';
-    updatedAt: string | null;
-  };
+  @ApiProperty({ type: TaskCompletionStatusDto })
+  currentUserCompletion!: TaskCompletionStatusDto;
+}
+export class CaptainTaskResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() teamId!: string;
+  @ApiProperty() taskDate!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty() description!: string;
+  @ApiProperty() updatedAt!: string;
+}
+export class TaskCompletionResponseDto {
+  @ApiProperty() taskId!: string;
+  @ApiProperty() membershipId!: string;
+  @ApiProperty() completed!: boolean;
+  @ApiProperty() updatedAt!: string;
 }
 export class MarathonSummaryDto {
   @ApiProperty() id!: string;

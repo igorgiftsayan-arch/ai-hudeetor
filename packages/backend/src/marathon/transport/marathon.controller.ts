@@ -19,12 +19,14 @@ import { IdentityError } from '../../identity/domain/identity-error';
 import { MarathonService } from '../application/marathon.service';
 import {
   CaptainTaskDto,
+  CaptainTaskResponseDto,
   CreateMarathonDto,
   CurrentMarathonDto,
   JoinMarathonDto,
   ProviderConsentDto,
   ProviderConsentMetadataDto,
   TaskCompletionDto,
+  TaskCompletionResponseDto,
   TeamTodayDto,
   WellnessReportDto,
   WellnessReportReadDto,
@@ -82,7 +84,9 @@ export class MarathonController {
   ) {
     return this.service.saveReport(r.cookies?.atlas_access ?? '', key(k), d, b);
   }
-  @Put('marathon-captain-tasks/:taskDate') @ApiOkResponse() task(
+  @Put('marathon-captain-tasks/:taskDate')
+  @ApiOkResponse({ type: CaptainTaskResponseDto })
+  task(
     @Req() r: Request,
     @Headers('idempotency-key') k: string | undefined,
     @Param('taskDate') d: string,
@@ -90,7 +94,9 @@ export class MarathonController {
   ) {
     return this.service.saveTask(r.cookies?.atlas_access ?? '', key(k), d, b);
   }
-  @Put('marathon-captain-tasks/:taskId/completion') @ApiOkResponse() completion(
+  @Put('marathon-captain-tasks/:taskId/completion')
+  @ApiOkResponse({ type: TaskCompletionResponseDto })
+  completion(
     @Req() r: Request,
     @Headers('idempotency-key') k: string | undefined,
     @Param('taskId') id: string,
