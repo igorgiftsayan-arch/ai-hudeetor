@@ -1,5 +1,5 @@
 type MobileNavigationProps = {
-  active: 'today' | 'ai';
+  active: 'today' | 'ai' | 'marathon';
 };
 
 export function MobileNavigation({ active }: MobileNavigationProps) {
@@ -24,6 +24,14 @@ export function MobileNavigation({ active }: MobileNavigationProps) {
           ✦
         </span>
         AI
+      </a>
+      <a
+        href="/marathon"
+        className={active === 'marathon' ? 'is-active' : undefined}
+        aria-current={active === 'marathon' ? 'page' : undefined}
+      >
+        <span aria-hidden="true" className="nav-mark">↗</span>
+        Марафон
       </a>
     </nav>
   );

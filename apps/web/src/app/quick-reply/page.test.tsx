@@ -10,6 +10,18 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: replaceMock }),
 }));
 
+vi.mock('../../features/ai-companion/provider-consent', () => ({
+  loadProviderConsent: vi.fn(async () => ({
+    providerMode: 'fake',
+    externalProviderEnabled: false,
+    documentVersion: 'v1',
+    disclosure: 'Тестовый AI.',
+    accepted: false,
+    acceptedAt: null,
+  })),
+  ProviderConsentNotice: () => null,
+}));
+
 describe('AI chat screen', () => {
   beforeEach(() => {
     replaceMock.mockReset();

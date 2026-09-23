@@ -446,6 +446,150 @@ button:disabled {
   color: #8a1b1b !important;
 }
 
+.marathon-captain-editor {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+  padding: 1.25rem;
+  border: 1px solid #d8dccb;
+  border-radius: 1rem;
+  background: #fbfaef;
+}
+
+.marathon-captain-editor h2 {
+  margin-top: 0.1rem;
+  font-size: 1.45rem;
+}
+
+.marathon-captain-editor > p:not(.marathon-kicker) {
+  margin: 0;
+  color: #656555;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.marathon-captain-editor label {
+  display: grid;
+  gap: 0.35rem;
+  color: #526052;
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.marathon-captain-editor input,
+.marathon-captain-editor textarea {
+  width: 100%;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid #c8d1c1;
+  border-radius: 0.55rem;
+  outline: 0;
+  background: #fffef8;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.marathon-captain-editor input:focus,
+.marathon-captain-editor textarea:focus {
+  border-color: #126247;
+  box-shadow: 0 0 0 0.2rem rgb(18 98 71 / 0.12);
+}
+
+.marathon-captain-editor button {
+  min-height: 2.9rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: #164737;
+  color: #fffdf7;
+  font-weight: 800;
+}
+
+.marathon-captain-editor .marathon-task-error {
+  margin: 0;
+}
+
+.marathon-captain-editor .marathon-task-error button,
+.marathon-consent-card .marathon-task-error button {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.marathon-brand {
+  display: inline-block;
+  margin-bottom: 0.9rem;
+  color: #126247;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.marathon-spacer {
+  height: 1.25rem;
+}
+
+.marathon-unknown-note,
+.marathon-consent-notice {
+  margin: 0.7rem 0;
+  color: #697567;
+  font-size: 0.78rem;
+}
+
+.marathon-consent-card {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  background: #f1e7d3;
+  color: #554535;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.marathon-consent-card button {
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  background: #164737;
+  color: #fffdf7;
+  font-weight: 750;
+}
+
+.marathon-join {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.1rem;
+}
+
+.marathon-join label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.marathon-join input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #bfc1b8;
+  border-radius: 0.7rem;
+  background: #fffef9;
+  color: var(--ink);
+}
+
+.marathon-join [role='alert'] {
+  margin: 0;
+  color: #8a1b1b;
+  font-size: 0.82rem;
+}
+
 .marathon-report {
   padding: 1.25rem;
   border: 1px solid #d8dccb;

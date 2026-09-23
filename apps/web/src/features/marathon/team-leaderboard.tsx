@@ -5,7 +5,7 @@ import { useState } from 'react';
 export type MarathonNumericEntry = {
   id: string;
   name: string;
-  value: string;
+  value: string | null;
   place?: number;
   isCurrentUser?: boolean;
 };
@@ -13,7 +13,7 @@ export type MarathonNumericEntry = {
 export type MarathonTaskEntry = {
   id: string;
   name: string;
-  status: 'completed' | 'pending';
+  status: 'notAssigned' | 'unknown' | 'completed' | 'notCompleted';
   isCurrentUser?: boolean;
 };
 
@@ -38,6 +38,7 @@ export type CaptainTask = {
   description: string;
   completionLabel: string;
   onComplete?: () => void;
+  onRetry?: () => void;
   isCompleting?: boolean;
   error?: string;
 };
@@ -199,7 +200,7 @@ function TaskLeaders({ entries }: { entries: MarathonTaskEntry[] }) {
             {entry.isCurrentUser && <small>вы</small>}
           </span>
           <strong className="marathon-task-state">
-            {entry.status === 'completed' ? 'Выполнено' : 'Пока нет отметки'}
+            {taskStatusLabel(entry.status)}
           </strong>
         </li>
       ))}
@@ -220,11 +221,18 @@ function LeaderList({ entries }: { entries: MarathonNumericEntry[] }) {
             {entry.name}
             {entry.isCurrentUser && <small>вы</small>}
           </span>
-          <strong className="marathon-entry-value">{entry.value}</strong>
+          <strong className="marathon-entry-value">{entry.value ?? '—'}</strong>
         </li>
       ))}
     </ol>
   );
+}
+
+function taskStatusLabel(status: MarathonTaskEntry['status']) {
+  if (status === 'completed') return 'Выполнено';
+  if (status === 'notCompleted') return 'Не выполнено';
+  if (status === 'notAssigned') return 'Нет задания';
+  return 'Пока нет отметки';
 }
 
 function CaptainTaskCard({ task }: { task: CaptainTask }) {
@@ -241,6 +249,7 @@ function CaptainTaskCard({ task }: { task: CaptainTask }) {
         {task.isCompleting ? 'Сохраняем…' : task.completionLabel}
       </button>
       {task.error && <p className="marathon-task-error" role="alert">{task.error}</p>}
+      {task.error && task.onRetry && <button type="button" onClick={task.onRetry}>Повторить</button>}
     </section>
   );
 }

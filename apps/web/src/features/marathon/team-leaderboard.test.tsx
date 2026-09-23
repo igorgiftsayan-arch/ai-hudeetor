@@ -111,7 +111,7 @@ function metrics() {
       kind: 'binary' as const,
       entries: [
         { id: 'one', name: 'Иван', status: 'completed' as const },
-        { id: 'two', name: 'Игорь', status: 'pending' as const },
+        { id: 'two', name: 'Игорь', status: 'unknown' as const },
       ],
     },
   ];
