@@ -260,18 +260,26 @@ export default function MarathonPage() {
         )}
 
         <div className="marathon-spacer" />
-        <YesterdayReport
-          dateLabel={formatReportDate(data.current.reportDate)}
-          mode={data.report.status === 'reported' ? 'update' : 'create'}
-          isSaving={saving}
-          error={reportError}
-          onSave={saveReport}
-          items={habits.map((habit) => ({
-            id: habit.id,
-            label: habit.label,
-            checked: reportValues?.[habit.id] ?? false,
-          }))}
-        />
+        {data.report.status === 'unavailable' ? (
+          <section className="marathon-report" aria-label="Отчёт за вчера недоступен">
+            <p className="marathon-kicker">Отчёт за вчера</p>
+            <h2>Пока недоступен</h2>
+            <p className="marathon-report-intro">Этот отчёт станет доступен, когда для него наступит дата в периоде марафона.</p>
+          </section>
+        ) : (
+          <YesterdayReport
+            dateLabel={formatReportDate(data.current.reportDate)}
+            mode={data.report.status === 'reported' ? 'update' : 'create'}
+            isSaving={saving}
+            error={reportError}
+            onSave={saveReport}
+            items={habits.map((habit) => ({
+              id: habit.id,
+              label: habit.label,
+              checked: reportValues?.[habit.id] ?? false,
+            }))}
+          />
+        )}
         {data.report.status === 'unknown' && <p className="marathon-unknown-note">Пока нет отчёта за вчера.</p>}
         {saved && <p className="save-confirmation" aria-live="polite">{saved}</p>}
         <ProviderConsentNotice consent={data.consent} csrfToken={data.csrfToken} onAccepted={load} onSessionExpired={() => replace('/login')} />

@@ -128,6 +128,20 @@ describe('marathon page', () => {
     expect(await screen.findByText('Марафон сейчас не активен')).toBeInTheDocument();
     expect(screen.queryByText('Не удалось загрузить марафон')).not.toBeInTheDocument();
   });
+
+  it('keeps the team screen when yesterday report is not available on the first day', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `${api}/marathon-wellness-reports/2026-09-28`) {
+        return json({ error: { code: 'MARATHON_REPORT_DATE_INVALID', message: 'Дата вне периода.' } }, 409);
+      }
+      return responseFor(input, init);
+    }));
+
+    render(<MarathonPage />);
+    expect(await screen.findByText('Команда Антонины')).toBeInTheDocument();
+    expect(screen.getByLabelText('Отчёт за вчера недоступен')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Отправить отчёт' })).not.toBeInTheDocument();
+  });
 });
 
 function responseFor(input: RequestInfo | URL, init?: RequestInit): Response {
