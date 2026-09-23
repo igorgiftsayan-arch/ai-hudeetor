@@ -12,15 +12,16 @@ totals, invented podium rules, notifications, cron or food vision.
 
 ## Tasks
 
-1. Add RED domain/contract tests for report date, report upsert, membership
-   scoping, captain permissions, task completion, unknown-vs-zero and hidden
-   cumulative/raw data.
+1. Add RED domain/contract tests for marathon-timezone dates, report owner read
+   and upsert, membership scoping, captain permissions, task completion,
+   unknown-vs-zero and hidden cumulative/raw data.
 2. Add additive migration `0012` with marathon/team/membership/report/task,
    completion and immutable baseline-ready fields plus database constraints.
 3. Implement `marathon` domain/application/infrastructure/transport module,
    explicit transactions and PostgreSQL idempotency.
-4. Add provider-consent acceptance use case and endpoint; require configured
-   current version and preserve existing worker consent guard.
+4. Add provider-consent read/accept use cases; require configured current
+   version, expose disclosure/provider metadata and enforce current consent
+   before dispatch and again in the worker.
 5. Generate OpenAPI/client, run focused API/unit/PostgreSQL tests, lint/build
    and contract drift.
 6. Apply migrations twice and execute isolated synthetic runtime acceptance.
@@ -34,4 +35,3 @@ totals, invented podium rules, notifications, cron or food vision.
 - real membership/captain bootstrap waits for dates and user data;
 - food photo needs private object storage, upload/validation/lifecycle and a
   vision provider contract, so it remains a separate optional stage.
-
