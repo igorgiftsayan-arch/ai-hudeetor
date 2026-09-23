@@ -12,6 +12,7 @@
 - AI-002 verification: repeatable migrations, durable source-message receipts, dedup/update/delete, owner scoping, daily weight context, API/worker regressions и isolated fake-runtime flow подтверждены без изменения `main`.
 - AI-001: env-переключаемый GenAPI adapter, provider consent guard, безопасная usage/cost/latency телеметрия и migration `0009`; fake adapter сохранён.
 - AI-001 verification: два последовательных реальных `grok-4-5` запроса, history, ledger confirmation, consentless refund, repeatable migration и regression suites подтверждены в isolated runtime; provider не вернул monetary cost.
+- Герби-Марафон: закреплены название конкретного марафона и три независимых показателя — процент отвеса, Веллнес индекс и выполнение заданий капитана; общий балл не вводится.
 - Марафонный пилот (2026-09-24): в PROJECT-VISION зафиксированы приоритет командной динамики, восемь отметок прежнего бота за вчера, Велнесс Индекс, задание капитана и открытые правила командного зачёта.
 - PROJECT-VISION (2026-09-23): операционная конституция с проверенным состоянием `main` и отдельных AI-веток, полной картой версий, архитектурными инвариантами, правилами Codex, Git/deploy flow, проверками и явными TBD.
 - Чтение `PROJECT-VISION.md` добавлено в обязательный список `AGENTS.md`; `current-status.md` дополнен актуальным документальным срезом.
