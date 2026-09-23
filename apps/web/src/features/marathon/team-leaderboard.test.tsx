@@ -33,6 +33,33 @@ describe('TeamLeaderboard', () => {
     expect(screen.getByText('Пока нет отметки')).toBeInTheDocument();
   });
 
+  it('keeps every participant visible when the server reports tied places', () => {
+    render(
+      <TeamLeaderboard
+        teamName="Команда Антонины"
+        metrics={[
+          {
+            id: 'weight',
+            label: 'Отвес, %',
+            legend: 'Результаты дня',
+            kind: 'numeric',
+            entries: [
+              { id: 'one', name: 'Иван', value: '0,61 %', place: 1 },
+              { id: 'two', name: 'Олег', value: '0,61 %', place: 1 },
+              { id: 'three', name: 'Игорь', value: '0,36 %', place: 2 },
+              { id: 'four', name: 'Антонина', value: '0,32 %', place: 3 },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Три лидера дня')).not.toBeInTheDocument();
+    for (const name of ['Иван', 'Олег', 'Игорь', 'Антонина']) {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    }
+  });
+
   it('forwards captain task completion without claiming that it was saved', async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();

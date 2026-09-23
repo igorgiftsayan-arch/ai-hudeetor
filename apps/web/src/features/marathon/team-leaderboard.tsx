@@ -66,7 +66,10 @@ export function TeamLeaderboard({
       entry.place === 1 || entry.place === 2 || entry.place === 3,
   );
   const podiumByPlace = new Map(podium.map((entry) => [entry.place, entry]));
-  const hasPodium = activeMetric.kind === 'numeric' && podiumByPlace.size === 3;
+  const hasPodium =
+    activeMetric.kind === 'numeric' &&
+    podium.length === 3 &&
+    podiumByPlace.size === 3;
 
   return (
     <section className="marathon-team" aria-labelledby="marathon-team-title">
