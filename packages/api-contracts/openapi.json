@@ -942,7 +942,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptainTaskResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -980,7 +987,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCompletionResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2385,6 +2399,37 @@
           "description"
         ]
       },
+      "CaptainTaskResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "taskDate": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "teamId",
+          "taskDate",
+          "title",
+          "description",
+          "updatedAt"
+        ]
+      },
       "TaskCompletionDto": {
         "type": "object",
         "properties": {
@@ -2394,6 +2439,50 @@
         },
         "required": [
           "completed"
+        ]
+      },
+      "TaskCompletionResponseDto": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "membershipId": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "membershipId",
+          "completed",
+          "updatedAt"
+        ]
+      },
+      "TaskCompletionStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "completed",
+              "notCompleted"
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "updatedAt"
         ]
       },
       "CaptainTaskReadDto": {
@@ -2412,12 +2501,7 @@
             "type": "string"
           },
           "currentUserCompletion": {
-            "type": "string",
-            "enum": [
-              "unknown",
-              "completed",
-              "notCompleted"
-            ]
+            "$ref": "#/components/schemas/TaskCompletionStatusDto"
           }
         },
         "required": [

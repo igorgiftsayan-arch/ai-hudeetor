@@ -667,25 +667,47 @@ export interface CaptainTaskDto {
   description: string;
 }
 
+export interface CaptainTaskResponseDto {
+  id: string;
+  teamId: string;
+  taskDate: string;
+  title: string;
+  description: string;
+  updatedAt: string;
+}
+
 export interface TaskCompletionDto {
   completed: boolean;
 }
 
-export type CaptainTaskReadDtoCurrentUserCompletion = typeof CaptainTaskReadDtoCurrentUserCompletion[keyof typeof CaptainTaskReadDtoCurrentUserCompletion];
+export interface TaskCompletionResponseDto {
+  taskId: string;
+  membershipId: string;
+  completed: boolean;
+  updatedAt: string;
+}
+
+export type TaskCompletionStatusDtoStatus = typeof TaskCompletionStatusDtoStatus[keyof typeof TaskCompletionStatusDtoStatus];
 
 
-export const CaptainTaskReadDtoCurrentUserCompletion = {
+export const TaskCompletionStatusDtoStatus = {
   unknown: 'unknown',
   completed: 'completed',
   notCompleted: 'notCompleted',
 } as const;
+
+export interface TaskCompletionStatusDto {
+  status: TaskCompletionStatusDtoStatus;
+  /** @nullable */
+  updatedAt: string | null;
+}
 
 export interface CaptainTaskReadDto {
   id: string;
   taskDate: string;
   title: string;
   description: string;
-  currentUserCompletion: CaptainTaskReadDtoCurrentUserCompletion;
+  currentUserCompletion: TaskCompletionStatusDto;
 }
 
 export type MetricStatusDtoStatus = typeof MetricStatusDtoStatus[keyof typeof MetricStatusDtoStatus];
@@ -1975,7 +1997,7 @@ export const marathonControllerSaveReportApiV1 = async (reportDate: string,
 
 
 export type marathonControllerTaskApiV1Response200 = {
-  data: void
+  data: CaptainTaskResponseDto
   status: 200
 }
 
@@ -2009,14 +2031,14 @@ export const marathonControllerTaskApiV1 = async (taskDate: string,
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
 
-  const data: marathonControllerTaskApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  const data: marathonControllerTaskApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as marathonControllerTaskApiV1Response
 }
 
 
 
 export type marathonControllerCompletionApiV1Response200 = {
-  data: void
+  data: TaskCompletionResponseDto
   status: 200
 }
 
@@ -2050,7 +2072,7 @@ export const marathonControllerCompletionApiV1 = async (taskId: string,
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
 
-  const data: marathonControllerCompletionApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  const data: marathonControllerCompletionApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as marathonControllerCompletionApiV1Response
 }
 

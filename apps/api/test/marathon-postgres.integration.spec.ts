@@ -41,6 +41,10 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
   });
   afterAll(() => db.onApplicationShutdown());
   it('guards bootstrap and replays one atomic creation', async () => {
+    await expect(service.current(participantId)).rejects.toMatchObject({
+      code: 'MARATHON_NOT_FOUND',
+      status: 404,
+    });
     await expect(
       service.createMarathon(participantId, randomUUID(), request()),
     ).rejects.toMatchObject({ code: 'MARATHON_BOOTSTRAP_FORBIDDEN' });
@@ -68,14 +72,14 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
       report: null,
     });
     const report = {
-      morningShake: true,
-      physicalActivity: false,
-      waterTarget: true,
-      secondShake: false,
-      healthyDinner: true,
-      goodSleep: false,
-      noJunkFood: true,
       noSmoking: true,
+      goodSleep: false,
+      morningShake: true,
+      noJunkFood: true,
+      secondShake: false,
+      waterTarget: true,
+      healthyDinner: true,
+      physicalActivity: false,
     };
     const key = randomUUID();
     const saved = await service.saveReport(

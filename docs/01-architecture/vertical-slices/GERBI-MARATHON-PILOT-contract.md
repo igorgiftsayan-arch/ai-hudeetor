@@ -51,6 +51,8 @@ Response `201`:
 ```
 
 Реальный вызов не выполняется, пока владелец не даст даты и капитана.
+Daily reports и captain tasks принимаются только когда marathon-local today
+лежит внутри `startsOn..endsOn`; иначе возвращается `409 MARATHON_NOT_ACTIVE`.
 
 ### `POST /marathon-team-memberships`
 
@@ -70,6 +72,9 @@ Response `201`: marathon/team/membership IDs и `role: "participant"`.
 ## Current marathon
 
 ### `GET /marathons/current`
+
+Для пользователя без membership возвращает `404 MARATHON_NOT_FOUND`, что
+является штатным сигналом показать join flow, а не ошибкой прав доступа.
 
 Response `200`:
 
