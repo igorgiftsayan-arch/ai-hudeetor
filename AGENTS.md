@@ -4,15 +4,16 @@
 
 ## Обязательное чтение перед каждой задачей
 
-1. [PRD V1](docs/00-product/prd-v1.md)
-2. [Границы V1](docs/00-product/scope-v1.md)
-3. [Обзор системы](docs/01-architecture/system-overview.md)
-4. [Доменная модель](docs/02-domain/domain-model.md)
-5. [Реестр событий](docs/04-analytics/event-registry.md)
-6. [Definition of Done](docs/06-development/definition-of-done.md)
-7. [Техническая архитектура](docs/01-architecture/system-architecture.md)
-8. [Структура репозитория](docs/01-architecture/repository-structure.md)
-9. [Engineering baseline V0.1](docs/01-architecture/engineering-baseline.md)
+1. [PROJECT-VISION — операционная конституция и roadmap](PROJECT-VISION.md)
+2. [PRD V1](docs/00-product/prd-v1.md)
+3. [Границы V1](docs/00-product/scope-v1.md)
+4. [Обзор системы](docs/01-architecture/system-overview.md)
+5. [Доменная модель](docs/02-domain/domain-model.md)
+6. [Реестр событий](docs/04-analytics/event-registry.md)
+7. [Definition of Done](docs/06-development/definition-of-done.md)
+8. [Техническая архитектура](docs/01-architecture/system-architecture.md)
+9. [Структура репозитория](docs/01-architecture/repository-structure.md)
+10. [Engineering baseline V0.1](docs/01-architecture/engineering-baseline.md)
 
 Дополнительно прочитать документы затрагиваемой области и проверить [текущий статус](docs/08-roadmap/current-status.md).
 
