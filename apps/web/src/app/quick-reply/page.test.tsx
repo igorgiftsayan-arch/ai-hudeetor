@@ -385,9 +385,14 @@ describe('AI chat screen', () => {
     });
 
     expect(screen.getByLabelText('Сообщение')).toBeDisabled();
-    expect(screen.getByRole('alert')).toHaveTextContent(
+    const outcomeUnknownAlert = screen.getByRole('alert');
+    expect(outcomeUnknownAlert).toHaveTextContent(
       'Статус ответа уточняется.',
     );
+    expect(outcomeUnknownAlert).not.toHaveTextContent('возвращён');
+    expect(
+      screen.queryByRole('button', { name: 'Повторить отправку' }),
+    ).not.toBeInTheDocument();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_100);

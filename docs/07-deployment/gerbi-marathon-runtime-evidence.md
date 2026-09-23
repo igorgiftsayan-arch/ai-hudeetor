@@ -50,6 +50,8 @@ still had exactly one current row for today and immutable marathon baseline
   `Сообщения и необходимый контекст будут переданы внешнему сервису GenAPI для
   формирования ответа.` The former test-mode claim is absent; this UI change
   does not alter the server-provided `test-v1` consent version or evidence.
+- Existing `outcomeUnknown` UI coverage keeps the composer blocked and polling
+  active, does not promise a refund and does not render an automatic retry.
 - A loaded synthetic task was made stale only in the isolated test database.
   Its completion returned `409 MARATHON_TASK_DATE_INVALID`; the UI reloaded,
   removed the outdated card and showed a calm date-change message. The
