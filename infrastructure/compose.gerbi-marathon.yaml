@@ -24,6 +24,9 @@ services:
     environment:
       AI_PROVIDER: ${AI_PROVIDER:-fake}
       IDENTITY_AI_PROVIDER_PROCESSING_VERSION: ${IDENTITY_AI_PROVIDER_PROCESSING_VERSION:-test-v1}
+      GENAPI_API_KEY: ${GENAPI_API_KEY:-fake-provider-not-used}
+      GENAPI_BASE_URL: ${GENAPI_BASE_URL:-https://example.invalid}
+      GENAPI_MODEL: ${GENAPI_MODEL:-fake-provider-not-used}
 
   gateway:
     image: nginx:1.27-alpine
