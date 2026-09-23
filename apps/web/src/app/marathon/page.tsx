@@ -135,6 +135,14 @@ export default function MarathonPage() {
       await load();
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') replace('/login');
+      else if (
+        cause instanceof ApiError &&
+        cause.code === 'MARATHON_TASK_DATE_INVALID'
+      ) {
+        pendingCompletion.current = undefined;
+        await load();
+        setTaskError('Дата задания изменилась. Экран обновлён — можно продолжить.');
+      }
       else setTaskError(cause instanceof Error ? cause.message : 'Не удалось обновить отметку.');
     } finally {
       setSaving(false);

@@ -198,6 +198,62 @@ describe('marathon page', () => {
     expect(await screen.findByText('Сегодня · 2026-09-30')).toBeInTheDocument();
     expect(currentReads).toBe(2);
   });
+
+  it('refreshes a participant screen when yesterday task completion is rejected', async () => {
+    const user = userEvent.setup();
+    let currentReads = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/marathons/current`) {
+        currentReads += 1;
+        return json({
+          ...current(),
+          displayDate: currentReads === 1 ? '2026-09-29' : '2026-09-30',
+          reportDate: currentReads === 1 ? '2026-09-28' : '2026-09-29',
+        });
+      }
+      if (url.startsWith(`${api}/marathon-wellness-reports/`)) {
+        return json({ status: 'unknown', reportDate: url.slice(-10), report: null });
+      }
+      if (url === `${api}/marathon-teams/current/today`) {
+        return json({
+          ...team(),
+          captainTask: {
+            id: 'task-1',
+            taskDate: '2026-09-29',
+            title: 'Прогулка',
+            description: 'Синтетическая проверка',
+            currentUserCompletion: { status: 'unknown', updatedAt: null },
+          },
+        });
+      }
+      if (
+        url === `${api}/marathon-captain-tasks/task-1/completion` &&
+        init?.method === 'PUT'
+      ) {
+        return json(
+          {
+            error: {
+              code: 'MARATHON_TASK_DATE_INVALID',
+              message: 'Only the current marathon task can be completed',
+            },
+          },
+          409,
+        );
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    await user.click(await screen.findByRole('button', { name: 'Отметить выполнение' }));
+
+    expect(
+      await screen.findByText('Дата задания изменилась. Экран обновлён — можно продолжить.'),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Сегодня · 2026-09-30')).toBeInTheDocument();
+    expect(currentReads).toBe(2);
+  });
 });
 
 function responseFor(input: RequestInfo | URL, init?: RequestInit): Response {
