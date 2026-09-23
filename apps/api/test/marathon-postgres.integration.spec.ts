@@ -123,12 +123,31 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
       title: 'Шаги',
       description: 'Прогулка',
     });
-    await service.completeTask(participantId, randomUUID(), task.id, true);
+    const completionKey = randomUUID();
+    const completion = await service.completeTask(
+      participantId,
+      completionKey,
+      task.id,
+      true,
+    );
     const view = await service.today(participantId);
     expect(view.captainTask?.currentUserCompletion.status).toBe('completed');
     expect(view.members.find((x) => x.isCurrentUser)?.captainTask.status).toBe(
       'completed',
     );
+    await db.query(
+      `update marathon_captain_tasks set task_date=$2::date-1 where id=$1`,
+      [task.id, today],
+    );
+    await expect(
+      service.completeTask(participantId, completionKey, task.id, true),
+    ).resolves.toEqual(completion);
+    await expect(
+      service.completeTask(participantId, randomUUID(), task.id, true),
+    ).rejects.toMatchObject({
+      code: 'MARATHON_TASK_DATE_INVALID',
+      status: 409,
+    });
   });
   it('refuses membership when profile and marathon timezones differ', async () => {
     const other = await user(db, 'other', 'UTC');
