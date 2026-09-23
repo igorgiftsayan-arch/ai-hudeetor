@@ -12,6 +12,7 @@
 - GERBI-MARATHON-PILOT daily metrics: exact yesterday-to-today weight percentage, immutable first-in-period baseline, eight-point wellness, self-reported captain task and dense shared-place podium groups without cumulative team totals.
 - GERBI-MARATHON-PILOT migration `0013`: PostgreSQL captures the first in-period weight atomically on membership/weight writes and preserves it across later daily upserts.
 - GERBI-MARATHON-PILOT completion guard: a new command cannot complete a stale task, while an exact successful idempotency replay remains stable across the local-date boundary.
+- GERBI-MARATHON-PILOT runtime checkpoint: isolated shared browser confirmed mobile daily podiums, consent-gated GenAPI flow, two completed real-provider actions and stale-task recovery; evidence excludes credentials and AI contents.
 - AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
 - AI-003 verification: exact-image isolated runtime подтвердил repeatable migration, concurrent lazy initialization, timezone/ownership/idempotency/rollback, полный HTTP state flow, отсутствие daily context в логах/outbox и regression 76 API + 32 worker tests без изменения `main` или stable.
 - AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.
