@@ -18,7 +18,7 @@ import type { MarathonScreenData, WellnessValues } from '../../features/marathon
 import { ApiError, apiRequest, newIdempotencyKey } from '../../shared/api';
 import type { OnboardingResourceDto } from '@atlas/api-contracts';
 
-type ViewState = 'loading' | 'ready' | 'error' | 'onboarding' | 'notFound' | 'noMembership';
+type ViewState = 'loading' | 'ready' | 'error' | 'onboarding' | 'notFound' | 'noMembership' | 'notActive';
 type Pending = { payload: string; key: string };
 
 const habits: Array<{ id: keyof WellnessValues; label: string }> = [
@@ -55,6 +55,7 @@ export default function MarathonPage() {
       else if (cause instanceof ApiError && cause.kind === 'onboarding') setViewState('onboarding');
       else if (cause instanceof ApiError && cause.code === 'MARATHON_NOT_FOUND') setViewState('notFound');
       else if (cause instanceof ApiError && cause.code === 'MARATHON_MEMBERSHIP_REQUIRED') setViewState('noMembership');
+      else if (cause instanceof ApiError && cause.code === 'MARATHON_NOT_ACTIVE') setViewState('notActive');
       else setViewState('error');
     }
   }, [replace]);
@@ -284,7 +285,7 @@ export default function MarathonPage() {
 function MarathonBoundary({ state, onRetry, onJoin }: { state: Exclude<ViewState, 'ready'>; onRetry: () => Promise<void>; onJoin: (joinCode: string) => Promise<void> }) {
   if (state === 'loading') return <main className="app-shell"><div className="app-page loading-state" aria-live="polite"><span className="loading-orbit" aria-hidden="true" /><p>Загружаем марафон…</p></div></main>;
   const canJoin = state === 'notFound' || state === 'noMembership';
-  const message = canJoin ? ['Присоединитесь к команде', 'Введите код приглашения от капитана.'] : state === 'onboarding' ? ['Завершите настройку', 'После настройки можно присоединиться к марафону.'] : ['Не удалось загрузить марафон', 'Данные не пропали. Попробуйте ещё раз.'];
+  const message = canJoin ? ['Присоединитесь к команде', 'Введите код приглашения от капитана.'] : state === 'onboarding' ? ['Завершите настройку', 'После настройки можно присоединиться к марафону.'] : state === 'notActive' ? ['Марафон сейчас не активен', 'Дневной маршрут появится, когда период будет активен.'] : ['Не удалось загрузить марафон', 'Данные не пропали. Попробуйте ещё раз.'];
   return <main className="app-shell"><div className="app-page boundary-page"><div className="boundary-message" role={state === 'error' ? 'alert' : undefined}><p className="section-label">Герби-Марафон</p><h1>{message[0]}</h1><p>{message[1]}</p>{state === 'onboarding' ? <a href="/onboarding" className="primary-link">Продолжить настройку</a> : canJoin ? <JoinMarathon onJoin={onJoin} /> : <button type="button" className="primary-action" onClick={() => void onRetry()}>Попробовать снова</button>}</div></div></main>;
 }
 

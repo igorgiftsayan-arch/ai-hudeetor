@@ -115,6 +115,19 @@ describe('marathon page', () => {
     );
     expect(join?.[1]?.body).toBe(JSON.stringify({ joinCode: 'team-code' }));
   });
+
+  it('shows a calm period state when the server marks the marathon inactive', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `${api}/marathons/current`) {
+        return json({ error: { code: 'MARATHON_NOT_ACTIVE', message: 'Не активен.' } }, 409);
+      }
+      return responseFor(input, init);
+    }));
+
+    render(<MarathonPage />);
+    expect(await screen.findByText('Марафон сейчас не активен')).toBeInTheDocument();
+    expect(screen.queryByText('Не удалось загрузить марафон')).not.toBeInTheDocument();
+  });
 });
 
 function responseFor(input: RequestInfo | URL, init?: RequestInit): Response {

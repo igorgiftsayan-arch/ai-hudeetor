@@ -1,7 +1,12 @@
 import type {
+  CaptainTaskDto,
+  CaptainTaskResponseDto,
   CurrentMarathonDto,
   JoinMarathonDto,
   OnboardingResourceDto,
+  TaskCompletionDto,
+  TaskCompletionResponseDto,
+  TeamTodayDto,
   WellnessReportDto,
   WellnessReportReadDto,
   WellnessReportSavedDto,
@@ -16,31 +21,7 @@ export type WellnessValues = WellnessReportDto;
 export type WellnessReport = WellnessReportReadDto;
 export type MarathonCurrent = CurrentMarathonDto;
 
-type MemberMetric = { status: 'unknown' | 'reported'; dailyPercent?: number | null; markedCount?: number | null };
-
-export type MarathonTeamToday = {
-  displayDate: string;
-  reportDate: string;
-  team: { id: string; name: string };
-  currentMembership: { id: string; role: 'captain' | 'participant' };
-  captainTask: {
-    id: string;
-    taskDate: string;
-    title: string;
-    description: string;
-    currentUserCompletion: { status: 'unknown' | 'completed' | 'notCompleted'; updatedAt: string | null };
-  } | null;
-  members: Array<{
-    membershipId: string;
-    displayName: string | null;
-    isCurrentUser: boolean;
-    role: 'captain' | 'participant';
-    weight: MemberMetric;
-    wellness: MemberMetric;
-    captainTask: { status: 'notAssigned' | 'unknown' | 'completed' | 'notCompleted' };
-  }>;
-  podiums: { weight: null; wellness: null; captainTask: null };
-};
+export type MarathonTeamToday = TeamTodayDto;
 
 export type MarathonScreenData = {
   csrfToken: string;
@@ -58,7 +39,7 @@ export async function loadMarathonScreen(): Promise<MarathonScreenData> {
   const current = await apiRequest<MarathonCurrent>('/marathons/current');
   const [report, team, consent] = await Promise.all([
     apiRequest<WellnessReport>(`/marathon-wellness-reports/${current.reportDate}`),
-    apiRequest<MarathonTeamToday>('/marathon-teams/current/today'),
+    apiRequest<TeamTodayDto>('/marathon-teams/current/today'),
     loadProviderConsent(),
   ]);
   return { csrfToken: onboarding.csrfToken, current, report, team, consent };
@@ -98,10 +79,11 @@ export function completeCaptainTask(input: {
   csrfToken: string;
   idempotencyKey: string;
 }) {
-  return apiRequest(`/marathon-captain-tasks/${input.taskId}/completion`, {
+  const payload: TaskCompletionDto = { completed: true };
+  return apiRequest<TaskCompletionResponseDto>(`/marathon-captain-tasks/${input.taskId}/completion`, {
     method: 'PUT',
     headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
-    body: JSON.stringify({ completed: true }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -112,16 +94,10 @@ export function saveCaptainTask(input: {
   csrfToken: string;
   idempotencyKey: string;
 }) {
-  return apiRequest<{
-    id: string;
-    teamId: string;
-    taskDate: string;
-    title: string;
-    description: string;
-    updatedAt: string;
-  }>(`/marathon-captain-tasks/${input.taskDate}`, {
+  const payload: CaptainTaskDto = { title: input.title, description: input.description };
+  return apiRequest<CaptainTaskResponseDto>(`/marathon-captain-tasks/${input.taskDate}`, {
     method: 'PUT',
     headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
-    body: JSON.stringify({ title: input.title, description: input.description }),
+    body: JSON.stringify(payload),
   });
 }
