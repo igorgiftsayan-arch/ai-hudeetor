@@ -15,6 +15,7 @@
 - GERBI-MARATHON-PILOT runtime checkpoint: isolated shared browser confirmed mobile daily podiums, consent-gated GenAPI flow, two completed real-provider actions and stale-task recovery; evidence excludes credentials and AI contents.
 - GERBI-MARATHON-PILOT: the external GenAPI consent UI now clearly states that messages and necessary context are sent to GenAPI; it no longer calls the real-provider mode a test AI.
 - GERBI-MARATHON-PILOT: `outcomeUnknown` chat coverage explicitly guards against a refund promise or automatic resend while reconciliation is pending.
+- GERBI-MARATHON-PILOT status: real GenAPI surfaced an `outcomeUnknown` recovery blocker; the isolated marathon checkpoint remains tested, while backend diagnosis/recovery is pending and overall real-AI completion is not claimed.
 - AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
 - AI-003 verification: exact-image isolated runtime подтвердил repeatable migration, concurrent lazy initialization, timezone/ownership/idempotency/rollback, полный HTTP state flow, отсутствие daily context в логах/outbox и regression 76 API + 32 worker tests без изменения `main` или stable.
 - AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.
