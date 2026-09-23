@@ -142,6 +142,32 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
       service.join(other, randomUUID(), created.joinCode),
     ).rejects.toMatchObject({ code: 'MARATHON_TIMEZONE_MISMATCH' });
   });
+
+  it('keeps owner reads available and accepts the last report on the following morning', async () => {
+    const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
+    const yesterday = previousCalendarDate(today);
+    const created = await service.createMarathon(captainId, randomUUID(), {
+      ...request(),
+      startsOn: yesterday,
+      endsOn: yesterday,
+    });
+    await service.join(participantId, randomUUID(), created.joinCode);
+    await expect(
+      service.getReport(participantId, yesterday),
+    ).resolves.toMatchObject({ status: 'unknown' });
+    await expect(
+      service.saveReport(participantId, randomUUID(), yesterday, {
+        morningShake: true,
+        physicalActivity: true,
+        waterTarget: true,
+        secondShake: true,
+        healthyDinner: true,
+        goodSleep: true,
+        noJunkFood: true,
+        noSmoking: true,
+      }),
+    ).resolves.toMatchObject({ status: 'reported', markedCount: 8 });
+  });
 });
 function request() {
   const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
