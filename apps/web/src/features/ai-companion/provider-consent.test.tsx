@@ -9,7 +9,7 @@ describe('ProviderConsentNotice', () => {
     const user = userEvent.setup();
     const onAccepted = vi.fn();
     let calls = 0;
-    const fetchMock = vi.fn(() => {
+    const fetchMock = vi.fn<typeof fetch>(() => {
       calls += 1;
       if (calls === 1) return Promise.resolve(json({ error: { message: 'Временная ошибка.' } }, 500));
       return Promise.resolve(json({ accepted: true, documentVersion: 'v2', acceptedAt: '2026-09-24T00:00:00.000Z' }));
