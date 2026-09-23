@@ -11,7 +11,7 @@ PostgreSQL — источник бизнес-истины по [ADR-005](archite
 - Economy: token_wallets, token_transactions, ai_action_prices, payments, payment_events.
 - Referrals/content: referrals, referral_progress, referral_rewards, content_items, notification_preferences.
 - Platform: admin_audit_log, outbox_messages, job_executions, analytics_events.
-- Marathon pilot: marathons, marathon_teams, marathon_memberships, marathon_wellness_reports, marathon_captain_tasks, marathon_task_completions. Одна membership пользователя на marathon, один captain на team, один wellness report на membership/date, одно задание на team/date и один completion на membership/task защищены PostgreSQL constraints. Baseline фиксируется в membership один раз по первой актуальной дневной записи внутри периода марафона. Дневной процент использует только точные current weight rows вчера/сегодня; podium группирует равные значения без сохранения отдельной накопленной таблицы.
+- Marathon pilot: marathons, marathon_teams, marathon_memberships, marathon_wellness_reports, marathon_captain_tasks, marathon_task_completions. Одна membership пользователя на marathon, один captain на team, один wellness report на membership/date, одно задание на team/date и один completion на membership/task защищены PostgreSQL constraints. Additive migration `0013` атомарно фиксирует baseline в membership при первой записи веса внутри периода либо при вступлении с уже существующей записью; обычный daily upsert его не меняет. Дневной процент использует только точные current weight rows вчера/сегодня; podium группирует равные значения без сохранения отдельной накопленной таблицы.
 
 ## Критические связи и индексы
 
