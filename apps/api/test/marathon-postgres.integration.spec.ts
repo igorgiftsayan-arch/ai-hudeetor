@@ -168,6 +168,24 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
       }),
     ).resolves.toMatchObject({ status: 'reported', markedCount: 8 });
   });
+
+  it('returns notApplicable instead of failing on the first marathon day', async () => {
+    const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
+    const created = await service.createMarathon(
+      captainId,
+      randomUUID(),
+      request(),
+    );
+    await service.join(participantId, randomUUID(), created.joinCode);
+    const reportDate = previousCalendarDate(today);
+    await expect(service.getReport(participantId, reportDate)).resolves.toEqual(
+      {
+        status: 'notApplicable',
+        reportDate,
+        report: null,
+      },
+    );
+  });
 });
 function request() {
   const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
