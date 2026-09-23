@@ -266,7 +266,12 @@ export class MarathonService {
   async getReport(token: string, date: string) {
     const user = await this.user(token),
       m = await this.membership(user.userId);
-    this.assertReportDate(m, date);
+    if (date < m.starts_on || date > m.ends_on)
+      throw new IdentityError(
+        'MARATHON_REPORT_DATE_INVALID',
+        409,
+        'The report date is outside the marathon period',
+      );
     const r = await this.db.query(
       `select morning_shake "morningShake",physical_activity "physicalActivity",water_target "waterTarget",second_shake "secondShake",healthy_dinner "healthyDinner",good_sleep "goodSleep",no_junk_food "noJunkFood",no_smoking "noSmoking",updated_at "updatedAt" from marathon_wellness_reports where membership_id=$1 and report_date=$2`,
       [m.id, date],
@@ -276,11 +281,10 @@ export class MarathonService {
       : { status: 'unknown', reportDate: date, report: null };
   }
   private assertReportDate(m: Membership, date: string) {
-    this.assertActive(m);
     const expected = previousCalendarDate(
       calendarDateInTimezone(new Date(), m.timezone),
     );
-    if (date !== expected)
+    if (date !== expected || date < m.starts_on || date > m.ends_on)
       throw new IdentityError(
         'MARATHON_REPORT_DATE_INVALID',
         409,
@@ -338,6 +342,7 @@ export class MarathonService {
   ) {
     const user = await this.user(token),
       m = await this.membership(user.userId);
+    this.assertActive(m);
     if (m.role !== 'captain')
       throw new IdentityError(
         'MARATHON_CAPTAIN_REQUIRED',

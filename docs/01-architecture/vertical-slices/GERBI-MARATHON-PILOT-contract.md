@@ -51,8 +51,10 @@ Response `201`:
 ```
 
 Реальный вызов не выполняется, пока владелец не даст даты и капитана.
-Daily reports и captain tasks принимаются только когда marathon-local today
-лежит внутри `startsOn..endsOn`; иначе возвращается `409 MARATHON_NOT_ACTIVE`.
+Captain tasks принимаются только когда marathon-local today лежит внутри
+`startsOn..endsOn`. Отчёт принимается утром за вчера, если сам `reportDate`
+лежит внутри диапазона; поэтому отчёт за `endsOn` допустим утром `endsOn + 1`.
+Owner/team reads остаются доступны после периода.
 
 ### `POST /marathon-team-memberships`
 
