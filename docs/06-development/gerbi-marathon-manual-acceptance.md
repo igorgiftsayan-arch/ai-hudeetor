@@ -18,9 +18,10 @@
 5. Participant читает отчёт за вчера как `unknown`, сохраняет восемь отметок и после reload получает `reported` с тем же `markedCount`.
 6. В первый день марафона отчёт за вчера возвращает `notApplicable`; отчёт за последний день допускается следующим утром.
 7. Captain создаёт дневное задание. Participant отмечает выполнение и после reload видит `completed`.
-8. Проверить team today: только участники своей команды, nullable display name, дневные safe statuses; отсутствуют raw weight, chat, memory и cumulative totals.
-9. Проверить, что `dailyPercent` и все podiums равны `null`, пока формулы и tie rules не утверждены.
-10. Повторить mutation requests с тем же key/payload и затем с тем же key/другим payload: business effect не дублируется, изменённый payload получает `409`.
+8. Добавить точные дневные веса вчера/сегодня: `dailyPercent` равен `(вчера − сегодня) / вчера × 100%`; при отсутствии любой даты остаётся `unknown`, более старая запись не используется.
+9. Проверить team today: только участники своей команды, nullable display name, wellness `0..8`, self-reported task completion и до трёх podium groups. Равные результаты находятся в одной группе общего места; отсутствуют raw weight, chat, memory и cumulative totals.
+10. Проверить, что baseline равен первой записи внутри периода марафона и не меняется после обычного исправления веса за этот день.
+11. Повторить mutation requests с тем же key/payload и затем с тем же key/другим payload: business effect не дублируется, изменённый payload получает `409`.
 
 ## Real-provider сценарий
 

@@ -2519,7 +2519,8 @@
           "status": {
             "type": "string",
             "enum": [
-              "unknown"
+              "unknown",
+              "reported"
             ]
           },
           "dailyPercent": {
@@ -2609,23 +2610,105 @@
           "captainTask"
         ]
       },
+      "PodiumMemberDto": {
+        "type": "object",
+        "properties": {
+          "membershipId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "captain",
+              "participant"
+            ]
+          },
+          "isCurrentUser": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "membershipId",
+          "displayName",
+          "role",
+          "isCurrentUser"
+        ]
+      },
+      "NumericPodiumPlaceDto": {
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "value": {
+            "type": "number"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PodiumMemberDto"
+            }
+          }
+        },
+        "required": [
+          "place",
+          "value",
+          "members"
+        ]
+      },
+      "TaskPodiumPlaceDto": {
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1
+          },
+          "value": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PodiumMemberDto"
+            }
+          }
+        },
+        "required": [
+          "place",
+          "value",
+          "members"
+        ]
+      },
       "PodiumsDto": {
         "type": "object",
         "properties": {
           "weight": {
-            "type": "object",
-            "nullable": true,
-            "example": null
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NumericPodiumPlaceDto"
+            }
           },
           "wellness": {
-            "type": "object",
-            "nullable": true,
-            "example": null
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NumericPodiumPlaceDto"
+            }
           },
           "captainTask": {
-            "type": "object",
-            "nullable": true,
-            "example": null
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskPodiumPlaceDto"
+            }
           }
         },
         "required": [

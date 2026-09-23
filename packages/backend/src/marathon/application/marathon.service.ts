@@ -45,7 +45,30 @@ type TeamMemberTodayRow = {
   wellnessStatus: 'unknown' | 'reported';
   markedCount: number | null;
   taskStatus: 'notAssigned' | 'unknown' | 'completed' | 'notCompleted';
+  dailyPercent: number | null;
 };
+type PodiumMember = Pick<
+  TeamMemberTodayRow,
+  'membershipId' | 'displayName' | 'role' | 'isCurrentUser'
+>;
+type RankedMember<T extends number | boolean> = PodiumMember & { value: T };
+
+function podium<T extends number | boolean>(members: RankedMember<T>[]) {
+  const groups = new Map<T, PodiumMember[]>();
+  for (const { value, ...member } of members) {
+    const group = groups.get(value) ?? [];
+    group.push(member);
+    groups.set(value, group);
+  }
+  return [...groups.entries()]
+    .sort(([left], [right]) => Number(right) - Number(left))
+    .slice(0, 3)
+    .map(([value, group], index) => ({
+      place: index + 1,
+      value,
+      members: group,
+    }));
+}
 
 export class MarathonService {
   constructor(
@@ -427,6 +450,25 @@ export class MarathonService {
       m = await this.membership(user.userId),
       displayDate = calendarDateInTimezone(new Date(), m.timezone),
       reportDate = previousCalendarDate(displayDate);
+    await this.db.query(
+      `update marathon_memberships mm
+       set baseline_weight_kg=we.weight_kg,
+           baseline_weight_entry_id=we.id,
+           baseline_captured_at=now()
+       from weight_entries we
+       where mm.team_id=$1
+         and mm.baseline_weight_entry_id is null
+         and we.id=(
+           select candidate.id
+           from weight_entries candidate
+           where candidate.user_id=mm.user_id
+             and candidate.is_current
+             and candidate.local_date between $2 and $3
+           order by candidate.local_date,candidate.recorded_at,candidate.id
+           limit 1
+         )`,
+      [m.team_id, m.starts_on, displayDate],
+    );
     const task = (
       await this.db.query<CaptainTaskRow>(
         `select t.id,t.task_date::text "taskDate",t.title,t.description,c.completed,c.updated_at "completionUpdatedAt" from marathon_captain_tasks t left join marathon_task_completions c on c.task_id=t.id and c.membership_id=$1 where t.team_id=$2 and t.task_date=$3`,
@@ -434,9 +476,28 @@ export class MarathonService {
       )
     ).rows[0];
     const members = await this.db.query<TeamMemberTodayRow>(
-      `select mm.id "membershipId",up.display_name "displayName",mm.role,mm.user_id=$1 "isCurrentUser",case when wr.id is null then 'unknown' else 'reported' end "wellnessStatus",case when wr.id is null then null else (wr.morning_shake::int+wr.physical_activity::int+wr.water_target::int+wr.second_shake::int+wr.healthy_dinner::int+wr.good_sleep::int+wr.no_junk_food::int+wr.no_smoking::int) end "markedCount",case when $4::uuid is null then 'notAssigned' when tc.id is null then 'unknown' when tc.completed then 'completed' else 'notCompleted' end "taskStatus" from marathon_memberships mm left join user_profiles up on up.user_id=mm.user_id left join marathon_wellness_reports wr on wr.membership_id=mm.id and wr.report_date=$3::date-1 left join marathon_task_completions tc on tc.membership_id=mm.id and tc.task_id=$4 where mm.team_id=$2 order by mm.created_at`,
+      `select mm.id "membershipId",up.display_name "displayName",mm.role,mm.user_id=$1 "isCurrentUser",
+        case when wr.id is null then 'unknown' else 'reported' end "wellnessStatus",
+        case when wr.id is null then null else (wr.morning_shake::int+wr.physical_activity::int+wr.water_target::int+wr.second_shake::int+wr.healthy_dinner::int+wr.good_sleep::int+wr.no_junk_food::int+wr.no_smoking::int) end "markedCount",
+        case when $4::uuid is null then 'notAssigned' when tc.id is null then 'unknown' when tc.completed then 'completed' else 'notCompleted' end "taskStatus",
+        case when yesterday_weight.id is null or today_weight.id is null then null
+          else round(((yesterday_weight.weight_kg-today_weight.weight_kg)/yesterday_weight.weight_kg*100)::numeric,2)::float8
+        end "dailyPercent"
+       from marathon_memberships mm
+       left join user_profiles up on up.user_id=mm.user_id
+       left join marathon_wellness_reports wr on wr.membership_id=mm.id and wr.report_date=$3::date-1
+       left join marathon_task_completions tc on tc.membership_id=mm.id and tc.task_id=$4
+       left join weight_entries yesterday_weight on yesterday_weight.user_id=mm.user_id and yesterday_weight.local_date=$3::date-1 and yesterday_weight.is_current
+       left join weight_entries today_weight on today_weight.user_id=mm.user_id and today_weight.local_date=$3 and today_weight.is_current
+       where mm.team_id=$2 order by mm.created_at`,
       [user.userId, m.team_id, displayDate, task?.id ?? null],
     );
+    const safeMembers = members.rows.map((x) => ({
+      membershipId: x.membershipId,
+      displayName: x.displayName,
+      role: x.role,
+      isCurrentUser: x.isCurrentUser,
+    }));
     return {
       displayDate,
       reportDate,
@@ -460,15 +521,48 @@ export class MarathonService {
           }
         : null,
       members: members.rows.map((x) => ({
-        membershipId: x.membershipId,
-        displayName: x.displayName,
-        role: x.role,
-        isCurrentUser: x.isCurrentUser,
-        weight: { status: 'unknown', dailyPercent: null },
+        ...safeMembers.find(
+          (member) => member.membershipId === x.membershipId,
+        )!,
+        weight:
+          x.dailyPercent == null
+            ? { status: 'unknown' as const, dailyPercent: null }
+            : { status: 'reported' as const, dailyPercent: x.dailyPercent },
         wellness: { status: x.wellnessStatus, markedCount: x.markedCount },
         captainTask: { status: x.taskStatus },
       })),
-      podiums: { weight: null, wellness: null, captainTask: null },
+      podiums: {
+        weight: podium(
+          members.rows
+            .filter((member) => member.dailyPercent != null)
+            .map((member) => ({
+              ...safeMembers.find(
+                (safe) => safe.membershipId === member.membershipId,
+              )!,
+              value: member.dailyPercent!,
+            })),
+        ),
+        wellness: podium(
+          members.rows
+            .filter((member) => member.markedCount != null)
+            .map((member) => ({
+              ...safeMembers.find(
+                (safe) => safe.membershipId === member.membershipId,
+              )!,
+              value: member.markedCount!,
+            })),
+        ),
+        captainTask: podium(
+          members.rows
+            .filter((member) => member.taskStatus === 'completed')
+            .map((member) => ({
+              ...safeMembers.find(
+                (safe) => safe.membershipId === member.membershipId,
+              )!,
+              value: true,
+            })),
+        ),
+      },
     };
   }
   async consentMetadata(token: string) {
