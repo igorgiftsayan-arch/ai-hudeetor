@@ -362,6 +362,25 @@ button:disabled {
   font-size: 0.65rem;
 }
 
+.marathon-podium-members {
+  display: grid;
+  min-width: 0;
+  gap: 0.38rem;
+}
+
+.marathon-podium-member {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.marathon-podium-member .marathon-entry-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .marathon-rank {
   color: #70816e;
   font-size: 0.75rem;

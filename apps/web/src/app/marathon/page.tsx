@@ -201,37 +201,46 @@ export default function MarathonPage() {
             {
               id: 'weight',
               label: 'Отвес, %',
-              legend: 'Дневная формула пока не утверждена.',
+              legend: 'Разница между вчерашним и сегодняшним весом.',
               kind: 'numeric',
-              entries: data.team.members.map((member) => ({
-                id: member.membershipId,
-                name: member.displayName ?? 'Участник',
-                value: member.weight.dailyPercent == null ? null : formatPercent(member.weight.dailyPercent),
-                isCurrentUser: member.isCurrentUser,
+              podiums: data.team.podiums.weight.map((podium) => ({
+                place: podium.place,
+                value: formatPercent(podium.value),
+                members: podium.members.map((member) => ({
+                  id: member.membershipId,
+                  name: member.displayName ?? 'Участник',
+                  isCurrentUser: member.isCurrentUser,
+                })),
               })),
             },
             {
               id: 'wellness',
               label: 'Веллнес',
-              legend: 'Количество отметок в отчёте за вчера.',
+              legend: 'Отметки из вчерашнего отчёта: до 8.',
               kind: 'numeric',
-              entries: data.team.members.map((member) => ({
-                id: member.membershipId,
-                name: member.displayName ?? 'Участник',
-                value: member.wellness.markedCount == null ? null : String(member.wellness.markedCount),
-                isCurrentUser: member.isCurrentUser,
+              podiums: data.team.podiums.wellness.map((podium) => ({
+                place: podium.place,
+                value: String(podium.value),
+                members: podium.members.map((member) => ({
+                  id: member.membershipId,
+                  name: member.displayName ?? 'Участник',
+                  isCurrentUser: member.isCurrentUser,
+                })),
               })),
             },
             {
               id: 'tasks',
               label: 'Задания',
-              legend: 'Отметки выполнения задания на сегодня.',
+              legend: 'Кто выполнил сегодняшнее задание капитана.',
               kind: 'binary',
-              entries: data.team.members.map((member) => ({
-                id: member.membershipId,
-                name: member.displayName ?? 'Участник',
-                status: member.captainTask.status,
-                isCurrentUser: member.isCurrentUser,
+              podiums: data.team.podiums.captainTask.map((podium) => ({
+                place: podium.place,
+                value: 'Выполнено' as const,
+                members: podium.members.map((member) => ({
+                  id: member.membershipId,
+                  name: member.displayName ?? 'Участник',
+                  isCurrentUser: member.isCurrentUser,
+                })),
               })),
             },
           ]}

@@ -2,19 +2,22 @@
 
 import { useState } from 'react';
 
-export type MarathonNumericEntry = {
+export type MarathonPodiumMember = {
   id: string;
   name: string;
-  value: string | null;
-  place?: number;
   isCurrentUser?: boolean;
 };
 
-export type MarathonTaskEntry = {
-  id: string;
-  name: string;
-  status: 'notAssigned' | 'unknown' | 'completed' | 'notCompleted';
-  isCurrentUser?: boolean;
+export type MarathonNumericPodium = {
+  place: number;
+  value: string;
+  members: MarathonPodiumMember[];
+};
+
+export type MarathonTaskPodium = {
+  place: number;
+  value: 'Выполнено';
+  members: MarathonPodiumMember[];
 };
 
 export type MarathonMetric =
@@ -23,14 +26,14 @@ export type MarathonMetric =
       label: string;
       legend: string;
       kind: 'numeric';
-      entries: MarathonNumericEntry[];
+      podiums: MarathonNumericPodium[];
     }
   | {
       id: string;
       label: string;
       legend: string;
       kind: 'binary';
-      entries: MarathonTaskEntry[];
+      podiums: MarathonTaskPodium[];
     };
 
 export type CaptainTask = {
@@ -59,18 +62,6 @@ export function TeamLeaderboard({
     metrics.find((metric) => metric.id === activeMetricId) ?? metrics[0];
 
   if (!activeMetric) return null;
-
-  const numericEntries =
-    activeMetric.kind === 'numeric' ? activeMetric.entries : [];
-  const podium = numericEntries.filter(
-    (entry): entry is MarathonNumericEntry & { place: 1 | 2 | 3 } =>
-      entry.place === 1 || entry.place === 2 || entry.place === 3,
-  );
-  const podiumByPlace = new Map(podium.map((entry) => [entry.place, entry]));
-  const hasPodium =
-    activeMetric.kind === 'numeric' &&
-    podium.length === 3 &&
-    podiumByPlace.size === 3;
 
   return (
     <section className="marathon-team" aria-labelledby="marathon-team-title">
@@ -122,13 +113,12 @@ export function TeamLeaderboard({
       >
         {activeMetric.kind === 'numeric' && (
           <NumericLeaders
-            entries={numericEntries}
-            hasPodium={hasPodium}
-            podiumByPlace={podiumByPlace}
+            label={activeMetric.label}
+            podiums={activeMetric.podiums}
           />
         )}
         {activeMetric.kind === 'binary' && (
-          <TaskLeaders entries={activeMetric.entries} />
+          <TaskLeaders label={activeMetric.label} podiums={activeMetric.podiums} />
         )}
       </div>
 
@@ -145,94 +135,77 @@ export function TeamLeaderboard({
   );
 }
 
-function NumericLeaders({
-  entries,
-  hasPodium,
-  podiumByPlace,
-}: {
-  entries: MarathonNumericEntry[];
-  hasPodium: boolean;
-  podiumByPlace: Map<1 | 2 | 3, MarathonNumericEntry>;
-}) {
-  if (entries.length === 0) return <EmptyDailyResults />;
+function NumericLeaders({ label, podiums }: { label: string; podiums: MarathonNumericPodium[] }) {
+  if (podiums.length === 0) return <EmptyDailyResults />;
 
-  const remaining = hasPodium
-    ? entries.filter((entry) => entry.place === undefined || entry.place > 3)
-    : entries;
+  const podiumByPlace = new Map(podiums.map((podium) => [podium.place, podium]));
+  const isClassicPodium =
+    podiums.length === 3 &&
+    ([1, 2, 3] as const).every(
+      (place) => podiumByPlace.get(place)?.members.length === 1,
+    );
+
+  if (!isClassicPodium) {
+    return <PodiumGroups ariaLabel={`Лидеры дня: ${label}`} podiums={podiums} />;
+  }
 
   return (
-    <>
-      {hasPodium && (
-        <ol className="marathon-podium" aria-label="Три лидера дня">
-          {([2, 1, 3] as const).map((place) => {
-            const entry = podiumByPlace.get(place)!;
+    <ol className="marathon-podium" aria-label="Три лидера дня">
+      {([2, 1, 3] as const).map((place) => {
+            const podium = podiumByPlace.get(place)!;
+            const member = podium.members[0]!;
             return (
               <li
-                key={entry.id}
+                key={member.id}
                 className={`marathon-podium-place place-${place}`}
                 data-testid="marathon-podium-place"
               >
                 {place === 1 && <span className="marathon-crown">♛</span>}
-                <Initials name={entry.name} />
-                <strong>{entry.name}</strong>
-                <span className="marathon-entry-value">{entry.value}</span>
+                <Initials name={member.name} />
+                <strong>{member.name}</strong>
+                <span className="marathon-entry-value">{podium.value}</span>
                 <span className="marathon-step">{place}</span>
               </li>
             );
           })}
-        </ol>
-      )}
-      <LeaderList entries={remaining} />
-    </>
-  );
-}
-
-function TaskLeaders({ entries }: { entries: MarathonTaskEntry[] }) {
-  if (entries.length === 0) return <EmptyDailyResults />;
-
-  return (
-    <ol className="marathon-leader-list" aria-label="Отметки заданий команды">
-      {entries.map((entry) => (
-        <li key={entry.id}>
-          <Initials name={entry.name} />
-          <span className="marathon-entry-name">
-            {entry.name}
-            {entry.isCurrentUser && <small>вы</small>}
-          </span>
-          <strong className="marathon-task-state">
-            {taskStatusLabel(entry.status)}
-          </strong>
-        </li>
-      ))}
     </ol>
   );
 }
 
-function LeaderList({ entries }: { entries: MarathonNumericEntry[] }) {
-  if (entries.length === 0) return null;
+function TaskLeaders({ label, podiums }: { label: string; podiums: MarathonTaskPodium[] }) {
+  return <PodiumGroups ariaLabel={`Лидеры дня: ${label}`} podiums={podiums} />;
+}
+
+function PodiumGroups({
+  ariaLabel,
+  podiums,
+}: {
+  ariaLabel: string;
+  podiums: Array<MarathonNumericPodium | MarathonTaskPodium>;
+}) {
+  if (podiums.length === 0) return <EmptyDailyResults />;
 
   return (
-    <ol className="marathon-leader-list" aria-label="Остальные участники">
-      {entries.map((entry) => (
-        <li key={entry.id}>
-          <span className="marathon-rank">{entry.place ?? '—'}</span>
-          <Initials name={entry.name} />
-          <span className="marathon-entry-name">
-            {entry.name}
-            {entry.isCurrentUser && <small>вы</small>}
+    <ol className="marathon-leader-list" aria-label={ariaLabel}>
+      {podiums.map((podium) => (
+        <li key={podium.place}>
+          <span className="marathon-rank">{podium.place}</span>
+          <span className="marathon-podium-members">
+            {podium.members.map((member) => (
+              <span className="marathon-podium-member" key={member.id}>
+                <Initials name={member.name} />
+                <span className="marathon-entry-name">
+                  {member.name}
+                  {member.isCurrentUser && <small>вы</small>}
+                </span>
+              </span>
+            ))}
           </span>
-          <strong className="marathon-entry-value">{entry.value ?? '—'}</strong>
+          <strong className="marathon-entry-value">{podium.value}</strong>
         </li>
       ))}
     </ol>
   );
-}
-
-function taskStatusLabel(status: MarathonTaskEntry['status']) {
-  if (status === 'completed') return 'Выполнено';
-  if (status === 'notCompleted') return 'Не выполнено';
-  if (status === 'notAssigned') return 'Нет задания';
-  return 'Пока нет отметки';
 }
 
 function CaptainTaskCard({ task }: { task: CaptainTask }) {

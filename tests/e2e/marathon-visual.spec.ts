@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use({ serviceWorkers: 'block' });
+
 for (const width of [320, 390]) {
   test(`marathon fixture renders at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });
@@ -36,7 +38,7 @@ for (const width of [320, 390]) {
             { membershipId: 'fixture-membership', displayName: 'Игорь', role: 'participant', isCurrentUser: true, weight: { status: 'unknown', dailyPercent: null }, wellness: { status: 'unknown', markedCount: null }, captainTask: { status: 'unknown' } },
             { membershipId: 'second-member', displayName: 'Антонина', role: 'captain', isCurrentUser: false, weight: { status: 'unknown', dailyPercent: null }, wellness: { status: 'reported', markedCount: 5 }, captainTask: { status: 'completed' } },
           ],
-          podiums: { weight: null, wellness: null, captainTask: null },
+          podiums: { weight: [], wellness: [], captainTask: [] },
         });
       }
       if (url.pathname === '/api/v1/users/me/ai-provider-consent') {

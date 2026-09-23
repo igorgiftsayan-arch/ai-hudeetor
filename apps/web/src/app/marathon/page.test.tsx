@@ -13,14 +13,16 @@ describe('marathon page', () => {
   beforeEach(() => replaceMock.mockReset());
   afterEach(() => vi.unstubAllGlobals());
 
-  it('loads the server daily model without deriving a podium or wellness report', async () => {
+  it('renders server-provided daily podium groups without deriving ranks in the client', async () => {
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => responseFor(input)));
 
     render(<MarathonPage />);
 
     expect(await screen.findByText('Команда Антонины')).toBeInTheDocument();
     expect(screen.getByText('Пока нет отчёта за вчера.')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Три лидера дня')).not.toBeInTheDocument();
+    const leaders = screen.getByLabelText('Лидеры дня: Отвес, %');
+    expect(leaders).toHaveTextContent('Игорь');
+    expect(leaders).toHaveTextContent('1 %');
     expect(screen.getByRole('link', { name: 'Поговорить с AI' })).toHaveAttribute(
       'href',
       '/quick-reply',
@@ -207,12 +209,29 @@ function team() {
         displayName: 'Игорь',
         isCurrentUser: true,
         role: 'participant',
-        weight: { status: 'unknown', dailyPercent: null },
-        wellness: { status: 'unknown', markedCount: null },
+        weight: { status: 'reported', dailyPercent: 1 },
+        wellness: { status: 'reported', markedCount: 3 },
         captainTask: { status: 'notAssigned' },
       },
     ],
-    podiums: { weight: null, wellness: null, captainTask: null },
+    podiums: {
+      weight: [
+        {
+          place: 1,
+          value: 1,
+          members: [
+            {
+              membershipId: 'membership-1',
+              displayName: 'Игорь',
+              role: 'participant',
+              isCurrentUser: true,
+            },
+          ],
+        },
+      ],
+      wellness: [],
+      captainTask: [],
+    },
   };
 }
 

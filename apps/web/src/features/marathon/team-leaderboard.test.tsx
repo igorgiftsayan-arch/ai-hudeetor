@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TeamLeaderboard } from './team-leaderboard';
+import { TeamLeaderboard, type MarathonMetric } from './team-leaderboard';
 
 describe('TeamLeaderboard', () => {
   it('renders server-provided daily leaders in the visual 2–1–3 podium order', () => {
@@ -30,7 +30,7 @@ describe('TeamLeaderboard', () => {
 
     expect(screen.queryByLabelText('Три лидера дня')).not.toBeInTheDocument();
     expect(screen.getByText('Выполнено')).toBeInTheDocument();
-    expect(screen.getByText('Пока нет отметки')).toBeInTheDocument();
+    expect(screen.queryByText('Пока нет отметки')).not.toBeInTheDocument();
   });
 
   it('keeps every participant visible when the server reports tied places', () => {
@@ -43,11 +43,25 @@ describe('TeamLeaderboard', () => {
             label: 'Отвес, %',
             legend: 'Результаты дня',
             kind: 'numeric',
-            entries: [
-              { id: 'one', name: 'Иван', value: '0,61 %', place: 1 },
-              { id: 'two', name: 'Олег', value: '0,61 %', place: 1 },
-              { id: 'three', name: 'Игорь', value: '0,36 %', place: 2 },
-              { id: 'four', name: 'Антонина', value: '0,32 %', place: 3 },
+            podiums: [
+              {
+                place: 1,
+                value: '0,61 %',
+                members: [
+                  { id: 'one', name: 'Иван' },
+                  { id: 'two', name: 'Олег' },
+                ],
+              },
+              {
+                place: 2,
+                value: '0,36 %',
+                members: [{ id: 'three', name: 'Игорь' }],
+              },
+              {
+                place: 3,
+                value: '0,32 %',
+                members: [{ id: 'four', name: 'Антонина' }],
+              },
             ],
           },
         ]}
@@ -58,6 +72,45 @@ describe('TeamLeaderboard', () => {
     for (const name of ['Иван', 'Олег', 'Игорь', 'Антонина']) {
       expect(screen.getByText(name)).toBeInTheDocument();
     }
+  });
+
+  it('renders a server-provided shared podium place without choosing one winner', () => {
+    render(
+      <TeamLeaderboard
+        teamName="Команда Антонины"
+        metrics={[
+          {
+            id: 'weight',
+            label: 'Отвес, %',
+            legend: 'Разница между вчерашним и сегодняшним весом.',
+            kind: 'numeric',
+            podiums: [
+              {
+                place: 1,
+                value: '1 %',
+                members: [
+                  { id: 'one', name: 'Иван' },
+                  { id: 'two', name: 'Олег', isCurrentUser: true },
+                ],
+              },
+              {
+                place: 2,
+                value: '0 %',
+                members: [{ id: 'three', name: 'Антонина' }],
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    const leaders = screen.getByLabelText('Лидеры дня: Отвес, %');
+    expect(within(leaders).getByText('Иван')).toBeInTheDocument();
+    expect(within(leaders).getByText('Олег')).toBeInTheDocument();
+    expect(within(leaders).getByText('Антонина')).toBeInTheDocument();
+    expect(within(leaders).getByText('1')).toBeInTheDocument();
+    expect(within(leaders).getByText('2')).toBeInTheDocument();
+    expect(within(leaders).getByText('1 %')).toBeInTheDocument();
   });
 
   it('forwards captain task completion without claiming that it was saved', async () => {
@@ -83,18 +136,17 @@ describe('TeamLeaderboard', () => {
   });
 });
 
-function metrics() {
+function metrics(): MarathonMetric[] {
   return [
     {
       id: 'weight' as const,
       label: 'Отвес, %',
       legend: 'Результаты дня',
       kind: 'numeric' as const,
-      entries: [
-        { id: 'one', name: 'Иван', value: '0,61 %', place: 1 },
-        { id: 'two', name: 'Игорь', value: '0,36 %', place: 2 },
-        { id: 'three', name: 'Антонина', value: '0,32 %', place: 3 },
-        { id: 'four', name: 'Даша', value: '0,29 %', place: 4 },
+      podiums: [
+        { place: 1, value: '0,61 %', members: [{ id: 'one', name: 'Иван' }] },
+        { place: 2, value: '0,36 %', members: [{ id: 'two', name: 'Игорь' }] },
+        { place: 3, value: '0,32 %', members: [{ id: 'three', name: 'Антонина' }] },
       ],
     },
     {
@@ -102,16 +154,19 @@ function metrics() {
       label: 'Веллнес',
       legend: 'Веллнес индекс в сегодняшнем отчёте',
       kind: 'numeric' as const,
-      entries: [],
+      podiums: [],
     },
     {
       id: 'tasks' as const,
       label: 'Задания',
       legend: 'Сегодня: выполнено или пока нет отметки',
       kind: 'binary' as const,
-      entries: [
-        { id: 'one', name: 'Иван', status: 'completed' as const },
-        { id: 'two', name: 'Игорь', status: 'unknown' as const },
+      podiums: [
+        {
+          place: 1,
+          value: 'Выполнено' as const,
+          members: [{ id: 'one', name: 'Иван' }],
+        },
       ],
     },
   ];
