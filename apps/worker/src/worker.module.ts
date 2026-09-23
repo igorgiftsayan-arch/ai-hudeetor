@@ -110,7 +110,28 @@ const redisUrl = new URL(config.REDIS_URL);
             })
           : new FakeAiProviderAdapter(config.AI_FAKE_MODE),
     },
-    AiOperationProcessor,
+    {
+      provide: AiOperationProcessor,
+      useFactory: (
+        database: DatabaseService,
+        adapter: AiProviderAdapter,
+        memoryContext: MemoryContextBuilder,
+        memoryExtraction: MemoryExtractionProcessor,
+      ) =>
+        new AiOperationProcessor(
+          database,
+          adapter,
+          memoryContext,
+          memoryExtraction,
+          config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+        ),
+      inject: [
+        DatabaseService,
+        AiProviderAdapter,
+        MemoryContextBuilder,
+        MemoryExtractionProcessor,
+      ],
+    },
     MemoryExtractionProcessor,
     OutboxPublisherService,
   ],

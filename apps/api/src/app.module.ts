@@ -11,6 +11,7 @@ import {
   TokenEconomyModule,
   TechnicalInfrastructureModule,
   TrackingModule,
+  MarathonModule,
 } from '@atlas/backend';
 import { loadApiConfig } from './config/load-config';
 import { HealthController } from './health/health.controller';
@@ -44,12 +45,22 @@ const config = loadApiConfig();
       loginMaxAttempts: config.IDENTITY_LOGIN_MAX_ATTEMPTS,
       loginWindowMs: config.IDENTITY_LOGIN_WINDOW_SECONDS * 1_000,
     }),
-    AiCompanionModule.forRoot(),
+    AiCompanionModule.forRoot({
+      providerMode: config.AI_PROVIDER,
+      consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+    }),
     ProfilesModule.forRoot({
       aiWellnessNoticeVersion: config.IDENTITY_AI_WELLNESS_NOTICE_VERSION,
     }),
     TokenEconomyModule.forRoot(),
     TrackingModule.forRoot(),
+    MarathonModule.forRoot({
+      bootstrapEnabled: config.MARATHON_BOOTSTRAP_ENABLED,
+      bootstrapUserIds: config.MARATHON_BOOTSTRAP_USER_IDS,
+      providerMode: config.AI_PROVIDER,
+      consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+      consentDisclosure: config.IDENTITY_AI_PROVIDER_DISCLOSURE,
+    }),
   ],
   controllers: [HealthController],
 })

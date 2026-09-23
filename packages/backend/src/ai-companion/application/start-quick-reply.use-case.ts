@@ -12,6 +12,10 @@ export class StartQuickReplyUseCase {
     private readonly database: Pick<DatabaseService, 'transaction'>,
     private readonly currentUser: GetCurrentUserUseCase,
     private readonly repository: AiCompanionRepository,
+    private readonly providerConsent?: {
+      required: boolean;
+      documentVersion: string;
+    },
   ) {}
 
   async execute(
@@ -25,11 +29,23 @@ export class StartQuickReplyUseCase {
         'The quick reply content is invalid',
       );
     const user = await this.currentUser.execute(input.accessToken);
-    return this.database.transaction((client) =>
-      this.repository.startQuickReply(client, {
+    return this.database.transaction(async (client) => {
+      if (this.providerConsent?.required) {
+        const consent = await client.query(
+          `select 1 from user_consents where user_id=$1 and consent_type='aiProviderProcessing' and document_version=$2 limit 1`,
+          [user.userId, this.providerConsent.documentVersion],
+        );
+        if (!consent.rows[0])
+          throw new IdentityError(
+            'AI_PROVIDER_CONSENT_REQUIRED',
+            409,
+            'Current external AI provider consent is required',
+          );
+      }
+      return this.repository.startQuickReply(client, {
         ...input,
         userId: user.userId,
-      }),
-    );
+      });
+    });
   }
 }

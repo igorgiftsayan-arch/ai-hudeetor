@@ -11,11 +11,18 @@
 
 - В ветке `docs/project-vision` добавлен корневой `PROJECT-VISION.md` и обязательное чтение в `AGENTS.md`. Это документальная работа, без изменения приложения, миграций и окружений.
 - Локально проверено: `main`/`origin/main` указывают на `ac398f20e49e6c45696022928f21b32688e55607`; AI-001 (`4f823f8`), AI-002 (`4f169b1`) и AI-003 (`d5a4e0a`) остаются отдельными ветками. Статус работающего сервера в этой задаче не проверялся.
+- Следующие строки этого файла описывают исторические результаты отдельных задач. Указание ниже, что UI-ветка ожидает merge, относится к более раннему срезу и не является текущим статусом `main`.
+
+- Дата рабочего backend-среза: 2026-09-24.
+- AI-003: Daily Coach backend реализует и изолированно проверяет одну timezone-aware state row на локальную дату, state machine `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API в отдельной ветке; migration repeatability, 76 API и 32 worker tests подтверждены, `main` и stable не изменены; frontend, scheduling, prompts и Character не входят.
+- AI-002: structured companion memory, nullable profile context, migration `0010`, owner list/delete API, deterministic worker extraction и bounded memory context реализованы и проверены в отдельной ветке; `main` не изменён.
+- AI-001: GenAPI adapter реализован и проверен в отдельной ветке на synthetic test-пользователях; `main` и stable остаются на fake до приёмки и merge.
+
+### Исторический срез 2026-07-28
+
 - В feature ancestry текущей UI-ветки присутствуют AI-001/002/003, однако `main` не меняется: он остаётся на fake AI. GenAPI выбран и реализован в AI-001, но обычным пользователям доступен только после отдельного consent-flow и решения о включении.
 - AI-003: Daily Coach backend изолированно проверяет timezone-aware state row на локальную дату, переходы `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API; frontend, scheduling, prompts и Character в AI-003 не входят.
 - Следующие строки — исторические результаты отдельных задач. Упоминание UI-ветки, ожидающей merge, относится к срезу 2026-07-28 и не является текущим статусом `main`.
-
-- Дата: 2026-07-28
 - Текущая задача: UI-005/BACK-UI-001 объединены и проверены в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось, результат ожидает ручной приёмки.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса с графиком, daily upsert и persisted fake-runtime AI chat.
 - Реальный AI provider остаётся только в несмёрженной AI-001 базе; платежи, рефералы, memory frontend и feedback отсутствуют.

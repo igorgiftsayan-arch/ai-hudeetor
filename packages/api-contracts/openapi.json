@@ -754,6 +754,330 @@
           "tracking"
         ]
       }
+    },
+    "/api/v1/marathons": {
+      "post": {
+        "operationId": "MarathonController_create_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMarathonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathon-team-memberships": {
+      "post": {
+        "operationId": "MarathonController_join_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinMarathonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathons/current": {
+      "get": {
+        "operationId": "MarathonController_current_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentMarathonDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathon-wellness-reports/{reportDate}": {
+      "get": {
+        "operationId": "MarathonController_report_api/v1",
+        "parameters": [
+          {
+            "name": "reportDate",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WellnessReportReadDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      },
+      "put": {
+        "operationId": "MarathonController_saveReport_api/v1",
+        "parameters": [
+          {
+            "name": "reportDate",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WellnessReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WellnessReportSavedDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathon-captain-tasks/{taskDate}": {
+      "put": {
+        "operationId": "MarathonController_task_api/v1",
+        "parameters": [
+          {
+            "name": "taskDate",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptainTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathon-captain-tasks/{taskId}/completion": {
+      "put": {
+        "operationId": "MarathonController_completion_api/v1",
+        "parameters": [
+          {
+            "name": "taskId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCompletionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathon-teams/current/today": {
+      "get": {
+        "operationId": "MarathonController_today_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamTodayDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/users/me/ai-provider-consent": {
+      "get": {
+        "operationId": "MarathonController_consent_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderConsentMetadataDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      },
+      "put": {
+        "operationId": "MarathonController_accept_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderConsentMetadataDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
     }
   },
   "info": {
@@ -1746,6 +2070,577 @@
         "required": [
           "items",
           "nextCursor"
+        ]
+      },
+      "CreateMarathonDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "startsOn": {
+            "type": "string"
+          },
+          "endsOn": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "teamName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "startsOn",
+          "endsOn",
+          "timezone",
+          "teamName"
+        ]
+      },
+      "JoinMarathonDto": {
+        "type": "object",
+        "properties": {
+          "joinCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "joinCode"
+        ]
+      },
+      "MarathonSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "startsOn": {
+            "type": "string"
+          },
+          "endsOn": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "startsOn",
+          "endsOn",
+          "timezone"
+        ]
+      },
+      "TeamSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MembershipSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "captain",
+              "participant"
+            ]
+          },
+          "isCurrentUser": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "isCurrentUser"
+        ]
+      },
+      "CurrentMarathonDto": {
+        "type": "object",
+        "properties": {
+          "marathon": {
+            "$ref": "#/components/schemas/MarathonSummaryDto"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamSummaryDto"
+          },
+          "membership": {
+            "$ref": "#/components/schemas/MembershipSummaryDto"
+          },
+          "displayDate": {
+            "type": "string"
+          },
+          "reportDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "marathon",
+          "team",
+          "membership",
+          "displayDate",
+          "reportDate"
+        ]
+      },
+      "WellnessReportValuesDto": {
+        "type": "object",
+        "properties": {
+          "morningShake": {
+            "type": "boolean"
+          },
+          "physicalActivity": {
+            "type": "boolean"
+          },
+          "waterTarget": {
+            "type": "boolean"
+          },
+          "secondShake": {
+            "type": "boolean"
+          },
+          "healthyDinner": {
+            "type": "boolean"
+          },
+          "goodSleep": {
+            "type": "boolean"
+          },
+          "noJunkFood": {
+            "type": "boolean"
+          },
+          "noSmoking": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "morningShake",
+          "physicalActivity",
+          "waterTarget",
+          "secondShake",
+          "healthyDinner",
+          "goodSleep",
+          "noJunkFood",
+          "noSmoking",
+          "updatedAt"
+        ]
+      },
+      "WellnessReportReadDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "reported"
+            ]
+          },
+          "reportDate": {
+            "type": "string"
+          },
+          "report": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WellnessReportValuesDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "reportDate"
+        ]
+      },
+      "WellnessReportDto": {
+        "type": "object",
+        "properties": {
+          "morningShake": {
+            "type": "boolean"
+          },
+          "physicalActivity": {
+            "type": "boolean"
+          },
+          "waterTarget": {
+            "type": "boolean"
+          },
+          "secondShake": {
+            "type": "boolean"
+          },
+          "healthyDinner": {
+            "type": "boolean"
+          },
+          "goodSleep": {
+            "type": "boolean"
+          },
+          "noJunkFood": {
+            "type": "boolean"
+          },
+          "noSmoking": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "morningShake",
+          "physicalActivity",
+          "waterTarget",
+          "secondShake",
+          "healthyDinner",
+          "goodSleep",
+          "noJunkFood",
+          "noSmoking"
+        ]
+      },
+      "WellnessReportSavedDto": {
+        "type": "object",
+        "properties": {
+          "morningShake": {
+            "type": "boolean"
+          },
+          "physicalActivity": {
+            "type": "boolean"
+          },
+          "waterTarget": {
+            "type": "boolean"
+          },
+          "secondShake": {
+            "type": "boolean"
+          },
+          "healthyDinner": {
+            "type": "boolean"
+          },
+          "goodSleep": {
+            "type": "boolean"
+          },
+          "noJunkFood": {
+            "type": "boolean"
+          },
+          "noSmoking": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "reported"
+            ]
+          },
+          "reportDate": {
+            "type": "string"
+          },
+          "markedCount": {
+            "type": "number"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "morningShake",
+          "physicalActivity",
+          "waterTarget",
+          "secondShake",
+          "healthyDinner",
+          "goodSleep",
+          "noJunkFood",
+          "noSmoking",
+          "status",
+          "reportDate",
+          "markedCount",
+          "updatedAt"
+        ]
+      },
+      "CaptainTaskDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description"
+        ]
+      },
+      "TaskCompletionDto": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "completed"
+        ]
+      },
+      "CaptainTaskReadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "taskDate": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "currentUserCompletion": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "completed",
+              "notCompleted"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "taskDate",
+          "title",
+          "description",
+          "currentUserCompletion"
+        ]
+      },
+      "MetricStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unknown"
+            ]
+          },
+          "dailyPercent": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "dailyPercent"
+        ]
+      },
+      "WellnessStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "reported"
+            ]
+          },
+          "markedCount": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "markedCount"
+        ]
+      },
+      "TaskStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "notAssigned",
+              "unknown",
+              "completed",
+              "notCompleted"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "TeamMemberTodayDto": {
+        "type": "object",
+        "properties": {
+          "membershipId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "captain",
+              "participant"
+            ]
+          },
+          "isCurrentUser": {
+            "type": "boolean"
+          },
+          "weight": {
+            "$ref": "#/components/schemas/MetricStatusDto"
+          },
+          "wellness": {
+            "$ref": "#/components/schemas/WellnessStatusDto"
+          },
+          "captainTask": {
+            "$ref": "#/components/schemas/TaskStatusDto"
+          }
+        },
+        "required": [
+          "membershipId",
+          "displayName",
+          "role",
+          "isCurrentUser",
+          "weight",
+          "wellness",
+          "captainTask"
+        ]
+      },
+      "PodiumsDto": {
+        "type": "object",
+        "properties": {
+          "weight": {
+            "type": "object",
+            "nullable": true,
+            "example": null
+          },
+          "wellness": {
+            "type": "object",
+            "nullable": true,
+            "example": null
+          },
+          "captainTask": {
+            "type": "object",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "weight",
+          "wellness",
+          "captainTask"
+        ]
+      },
+      "TeamTodayDto": {
+        "type": "object",
+        "properties": {
+          "displayDate": {
+            "type": "string"
+          },
+          "reportDate": {
+            "type": "string"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamSummaryDto"
+          },
+          "currentMembership": {
+            "$ref": "#/components/schemas/MembershipSummaryDto"
+          },
+          "captainTask": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CaptainTaskReadDto"
+              }
+            ]
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamMemberTodayDto"
+            }
+          },
+          "podiums": {
+            "$ref": "#/components/schemas/PodiumsDto"
+          }
+        },
+        "required": [
+          "displayDate",
+          "reportDate",
+          "team",
+          "currentMembership",
+          "members",
+          "podiums"
+        ]
+      },
+      "ProviderConsentMetadataDto": {
+        "type": "object",
+        "properties": {
+          "providerMode": {
+            "type": "string",
+            "enum": [
+              "fake",
+              "genapi"
+            ]
+          },
+          "externalProviderEnabled": {
+            "type": "boolean"
+          },
+          "documentVersion": {
+            "type": "string"
+          },
+          "disclosure": {
+            "type": "string"
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "providerMode",
+          "externalProviderEnabled",
+          "documentVersion",
+          "disclosure",
+          "accepted",
+          "acceptedAt"
+        ]
+      },
+      "ProviderConsentDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "documentVersion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accepted",
+          "documentVersion"
         ]
       }
     }

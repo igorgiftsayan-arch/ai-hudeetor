@@ -22,6 +22,7 @@ export class AiOperationProcessor extends WorkerHost {
     private readonly memoryContext: MemoryContextBuilder,
     @Inject(MemoryExtractionProcessor)
     private readonly memoryExtraction: MemoryExtractionProcessor,
+    private readonly consentVersion: string = 'v1',
   ) {
     super();
   }
@@ -60,9 +61,9 @@ export class AiOperationProcessor extends WorkerHost {
         (
           await this.database.query(
             `select 1 from user_consents
-              where user_id=$1 and consent_type='aiProviderProcessing'
+              where user_id=$1 and consent_type='aiProviderProcessing' and document_version=$2
               limit 1`,
-            [claimed.user_id],
+            [claimed.user_id, this.consentVersion],
           )
         ).rows[0],
       );
@@ -79,7 +80,7 @@ export class AiOperationProcessor extends WorkerHost {
       ? await this.adapter.execute({
           operationId,
           promptVersion: 'quick-reply-v1',
-        personaId: claimed.persona_id,
+          personaId: claimed.persona_id,
           memoryContext: await this.memoryContext.build(
             claimed.user_id,
             history.rows.at(-1)?.content ?? '',

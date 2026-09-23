@@ -113,3 +113,9 @@ export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-p
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';
 export { SaveProfileSetupUseCase } from './profiles/application/save-profile-setup.use-case';
 export { SavePersonaPreferenceUseCase } from './profiles/application/save-persona-preference.use-case';
+export { MarathonModule } from './marathon/transport/marathon.module';
+export { MarathonService } from './marathon/application/marathon.service';
+export {
+  calendarDateInTimezone,
+  previousCalendarDate,
+} from './marathon/domain/marathon-date';
