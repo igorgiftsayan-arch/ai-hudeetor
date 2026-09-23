@@ -31,6 +31,25 @@ export const apiConfigSchema = baseSchema
     IDENTITY_TERMS_VERSION: z.string().min(1),
     IDENTITY_PRIVACY_VERSION: z.string().min(1),
     IDENTITY_AI_WELLNESS_NOTICE_VERSION: z.string().min(1),
+    AI_PROVIDER: z.enum(['fake', 'genapi']).default('fake'),
+    IDENTITY_AI_PROVIDER_PROCESSING_VERSION: z.string().min(1).default('v1'),
+    IDENTITY_AI_PROVIDER_DISCLOSURE: z
+      .string()
+      .min(1)
+      .default('Сообщения будут обработаны внешним AI-провайдером.'),
+    MARATHON_BOOTSTRAP_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
+    MARATHON_BOOTSTRAP_USER_IDS: z
+      .string()
+      .default('')
+      .transform((v) =>
+        v
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean),
+      ),
     IDENTITY_LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     IDENTITY_LOGIN_WINDOW_SECONDS: z.coerce
       .number()
@@ -54,6 +73,7 @@ export const workerConfigSchema = baseSchema
       .enum(['success', 'technicalError', 'outcomeUnknown'])
       .default('success'),
     AI_PROVIDER: z.enum(['fake', 'genapi']),
+    IDENTITY_AI_PROVIDER_PROCESSING_VERSION: z.string().min(1).default('v1'),
     GENAPI_API_KEY: z.string().min(1).optional(),
     GENAPI_BASE_URL: z.url().optional(),
     GENAPI_MODEL: z.string().min(1).optional(),

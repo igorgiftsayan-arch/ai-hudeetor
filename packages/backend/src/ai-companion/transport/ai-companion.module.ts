@@ -23,7 +23,9 @@ import { GetCompanionWeightContextUseCase } from '../../tracking/application/get
 
 @Module({})
 export class AiCompanionModule {
-  static forRoot(): DynamicModule {
+  static forRoot(
+    options: { providerMode?: 'fake' | 'genapi'; consentVersion?: string } = {},
+  ): DynamicModule {
     return {
       module: AiCompanionModule,
       controllers: [AiCompanionController],
@@ -145,7 +147,11 @@ export class AiCompanionModule {
             database: DatabaseService,
             currentUser: GetCurrentUserUseCase,
             repository: AiCompanionRepository,
-          ) => new StartQuickReplyUseCase(database, currentUser, repository),
+          ) =>
+            new StartQuickReplyUseCase(database, currentUser, repository, {
+              required: options.providerMode === 'genapi',
+              documentVersion: options.consentVersion ?? 'v1',
+            }),
           inject: [
             DatabaseService,
             GetCurrentUserUseCase,

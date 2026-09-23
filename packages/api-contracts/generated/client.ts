@@ -555,6 +555,257 @@ export interface WeightEntryPageDto {
   nextCursor: WeightEntryPageDtoNextCursor;
 }
 
+export interface CreateMarathonDto {
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  timezone: string;
+  teamName: string;
+}
+
+export interface JoinMarathonDto {
+  joinCode: string;
+}
+
+export interface MarathonSummaryDto {
+  id: string;
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  timezone: string;
+}
+
+export interface TeamSummaryDto {
+  id: string;
+  name: string;
+}
+
+export type MembershipSummaryDtoRole = typeof MembershipSummaryDtoRole[keyof typeof MembershipSummaryDtoRole];
+
+
+export const MembershipSummaryDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface MembershipSummaryDto {
+  id: string;
+  role: MembershipSummaryDtoRole;
+  isCurrentUser: boolean;
+}
+
+export interface CurrentMarathonDto {
+  marathon: MarathonSummaryDto;
+  team: TeamSummaryDto;
+  membership: MembershipSummaryDto;
+  displayDate: string;
+  reportDate: string;
+}
+
+export interface WellnessReportValuesDto {
+  morningShake: boolean;
+  physicalActivity: boolean;
+  waterTarget: boolean;
+  secondShake: boolean;
+  healthyDinner: boolean;
+  goodSleep: boolean;
+  noJunkFood: boolean;
+  noSmoking: boolean;
+  updatedAt: string;
+}
+
+export type WellnessReportReadDtoStatus = typeof WellnessReportReadDtoStatus[keyof typeof WellnessReportReadDtoStatus];
+
+
+export const WellnessReportReadDtoStatus = {
+  unknown: 'unknown',
+  reported: 'reported',
+} as const;
+
+export interface WellnessReportReadDto {
+  status: WellnessReportReadDtoStatus;
+  reportDate: string;
+  /** @nullable */
+  report?: WellnessReportValuesDto | null;
+}
+
+export interface WellnessReportDto {
+  morningShake: boolean;
+  physicalActivity: boolean;
+  waterTarget: boolean;
+  secondShake: boolean;
+  healthyDinner: boolean;
+  goodSleep: boolean;
+  noJunkFood: boolean;
+  noSmoking: boolean;
+}
+
+export type WellnessReportSavedDtoStatus = typeof WellnessReportSavedDtoStatus[keyof typeof WellnessReportSavedDtoStatus];
+
+
+export const WellnessReportSavedDtoStatus = {
+  reported: 'reported',
+} as const;
+
+export interface WellnessReportSavedDto {
+  morningShake: boolean;
+  physicalActivity: boolean;
+  waterTarget: boolean;
+  secondShake: boolean;
+  healthyDinner: boolean;
+  goodSleep: boolean;
+  noJunkFood: boolean;
+  noSmoking: boolean;
+  status: WellnessReportSavedDtoStatus;
+  reportDate: string;
+  markedCount: number;
+  updatedAt: string;
+}
+
+export interface CaptainTaskDto {
+  title: string;
+  description: string;
+}
+
+export interface TaskCompletionDto {
+  completed: boolean;
+}
+
+export type CaptainTaskReadDtoCurrentUserCompletion = typeof CaptainTaskReadDtoCurrentUserCompletion[keyof typeof CaptainTaskReadDtoCurrentUserCompletion];
+
+
+export const CaptainTaskReadDtoCurrentUserCompletion = {
+  unknown: 'unknown',
+  completed: 'completed',
+  notCompleted: 'notCompleted',
+} as const;
+
+export interface CaptainTaskReadDto {
+  id: string;
+  taskDate: string;
+  title: string;
+  description: string;
+  currentUserCompletion: CaptainTaskReadDtoCurrentUserCompletion;
+}
+
+export type MetricStatusDtoStatus = typeof MetricStatusDtoStatus[keyof typeof MetricStatusDtoStatus];
+
+
+export const MetricStatusDtoStatus = {
+  unknown: 'unknown',
+} as const;
+
+export interface MetricStatusDto {
+  status: MetricStatusDtoStatus;
+  /** @nullable */
+  dailyPercent: number | null;
+}
+
+export type WellnessStatusDtoStatus = typeof WellnessStatusDtoStatus[keyof typeof WellnessStatusDtoStatus];
+
+
+export const WellnessStatusDtoStatus = {
+  unknown: 'unknown',
+  reported: 'reported',
+} as const;
+
+export interface WellnessStatusDto {
+  status: WellnessStatusDtoStatus;
+  /** @nullable */
+  markedCount: number | null;
+}
+
+export type TaskStatusDtoStatus = typeof TaskStatusDtoStatus[keyof typeof TaskStatusDtoStatus];
+
+
+export const TaskStatusDtoStatus = {
+  notAssigned: 'notAssigned',
+  unknown: 'unknown',
+  completed: 'completed',
+  notCompleted: 'notCompleted',
+} as const;
+
+export interface TaskStatusDto {
+  status: TaskStatusDtoStatus;
+}
+
+export type TeamMemberTodayDtoRole = typeof TeamMemberTodayDtoRole[keyof typeof TeamMemberTodayDtoRole];
+
+
+export const TeamMemberTodayDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface TeamMemberTodayDto {
+  membershipId: string;
+  /** @nullable */
+  displayName: string | null;
+  role: TeamMemberTodayDtoRole;
+  isCurrentUser: boolean;
+  weight: MetricStatusDto;
+  wellness: WellnessStatusDto;
+  captainTask: TaskStatusDto;
+}
+
+/**
+ * @nullable
+ */
+export type PodiumsDtoWeight = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type PodiumsDtoWellness = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type PodiumsDtoCaptainTask = { [key: string]: unknown } | null;
+
+export interface PodiumsDto {
+  /** @nullable */
+  weight: PodiumsDtoWeight;
+  /** @nullable */
+  wellness: PodiumsDtoWellness;
+  /** @nullable */
+  captainTask: PodiumsDtoCaptainTask;
+}
+
+export interface TeamTodayDto {
+  displayDate: string;
+  reportDate: string;
+  team: TeamSummaryDto;
+  currentMembership: MembershipSummaryDto;
+  /** @nullable */
+  captainTask?: CaptainTaskReadDto | null;
+  members: TeamMemberTodayDto[];
+  podiums: PodiumsDto;
+}
+
+export type ProviderConsentMetadataDtoProviderMode = typeof ProviderConsentMetadataDtoProviderMode[keyof typeof ProviderConsentMetadataDtoProviderMode];
+
+
+export const ProviderConsentMetadataDtoProviderMode = {
+  fake: 'fake',
+  genapi: 'genapi',
+} as const;
+
+export interface ProviderConsentMetadataDto {
+  providerMode: ProviderConsentMetadataDtoProviderMode;
+  externalProviderEnabled: boolean;
+  documentVersion: string;
+  disclosure: string;
+  accepted: boolean;
+  /** @nullable */
+  acceptedAt: string | null;
+}
+
+export interface ProviderConsentDto {
+  accepted: boolean;
+  documentVersion: string;
+}
+
 export type healthControllerLivenessApiV1Response200 = {
   data: void
   status: 200
@@ -1518,4 +1769,407 @@ export const trackingControllerEntriesApiV1 = async ( options?: RequestInit): Pr
 
   const data: trackingControllerEntriesApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as trackingControllerEntriesApiV1Response
+}
+
+
+
+export type marathonControllerCreateApiV1Response201 = {
+  data: void
+  status: 201
+}
+
+export type marathonControllerCreateApiV1ResponseSuccess = (marathonControllerCreateApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerCreateApiV1Response = (marathonControllerCreateApiV1ResponseSuccess)
+
+export const getMarathonControllerCreateApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathons`
+}
+
+export const marathonControllerCreateApiV1 = async (createMarathonDto: CreateMarathonDto, options?: RequestInit): Promise<marathonControllerCreateApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerCreateApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createMarathonDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerCreateApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as marathonControllerCreateApiV1Response
+}
+
+
+
+export type marathonControllerJoinApiV1Response201 = {
+  data: void
+  status: 201
+}
+
+export type marathonControllerJoinApiV1ResponseSuccess = (marathonControllerJoinApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerJoinApiV1Response = (marathonControllerJoinApiV1ResponseSuccess)
+
+export const getMarathonControllerJoinApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathon-team-memberships`
+}
+
+export const marathonControllerJoinApiV1 = async (joinMarathonDto: JoinMarathonDto, options?: RequestInit): Promise<marathonControllerJoinApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerJoinApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(joinMarathonDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerJoinApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as marathonControllerJoinApiV1Response
+}
+
+
+
+export type marathonControllerCurrentApiV1Response200 = {
+  data: CurrentMarathonDto
+  status: 200
+}
+
+export type marathonControllerCurrentApiV1ResponseSuccess = (marathonControllerCurrentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerCurrentApiV1Response = (marathonControllerCurrentApiV1ResponseSuccess)
+
+export const getMarathonControllerCurrentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathons/current`
+}
+
+export const marathonControllerCurrentApiV1 = async ( options?: RequestInit): Promise<marathonControllerCurrentApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerCurrentApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerCurrentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerCurrentApiV1Response
+}
+
+
+
+export type marathonControllerReportApiV1Response200 = {
+  data: WellnessReportReadDto
+  status: 200
+}
+
+export type marathonControllerReportApiV1ResponseSuccess = (marathonControllerReportApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerReportApiV1Response = (marathonControllerReportApiV1ResponseSuccess)
+
+export const getMarathonControllerReportApiV1Url = (reportDate: string,) => {
+
+
+
+
+  return `/api/v1/marathon-wellness-reports/${reportDate}`
+}
+
+export const marathonControllerReportApiV1 = async (reportDate: string, options?: RequestInit): Promise<marathonControllerReportApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerReportApiV1Url(reportDate),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerReportApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerReportApiV1Response
+}
+
+
+
+export type marathonControllerSaveReportApiV1Response200 = {
+  data: WellnessReportSavedDto
+  status: 200
+}
+
+export type marathonControllerSaveReportApiV1ResponseSuccess = (marathonControllerSaveReportApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerSaveReportApiV1Response = (marathonControllerSaveReportApiV1ResponseSuccess)
+
+export const getMarathonControllerSaveReportApiV1Url = (reportDate: string,) => {
+
+
+
+
+  return `/api/v1/marathon-wellness-reports/${reportDate}`
+}
+
+export const marathonControllerSaveReportApiV1 = async (reportDate: string,
+    wellnessReportDto: WellnessReportDto, options?: RequestInit): Promise<marathonControllerSaveReportApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerSaveReportApiV1Url(reportDate),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(wellnessReportDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerSaveReportApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerSaveReportApiV1Response
+}
+
+
+
+export type marathonControllerTaskApiV1Response200 = {
+  data: void
+  status: 200
+}
+
+export type marathonControllerTaskApiV1ResponseSuccess = (marathonControllerTaskApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerTaskApiV1Response = (marathonControllerTaskApiV1ResponseSuccess)
+
+export const getMarathonControllerTaskApiV1Url = (taskDate: string,) => {
+
+
+
+
+  return `/api/v1/marathon-captain-tasks/${taskDate}`
+}
+
+export const marathonControllerTaskApiV1 = async (taskDate: string,
+    captainTaskDto: CaptainTaskDto, options?: RequestInit): Promise<marathonControllerTaskApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerTaskApiV1Url(taskDate),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(captainTaskDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerTaskApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as marathonControllerTaskApiV1Response
+}
+
+
+
+export type marathonControllerCompletionApiV1Response200 = {
+  data: void
+  status: 200
+}
+
+export type marathonControllerCompletionApiV1ResponseSuccess = (marathonControllerCompletionApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerCompletionApiV1Response = (marathonControllerCompletionApiV1ResponseSuccess)
+
+export const getMarathonControllerCompletionApiV1Url = (taskId: string,) => {
+
+
+
+
+  return `/api/v1/marathon-captain-tasks/${taskId}/completion`
+}
+
+export const marathonControllerCompletionApiV1 = async (taskId: string,
+    taskCompletionDto: TaskCompletionDto, options?: RequestInit): Promise<marathonControllerCompletionApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerCompletionApiV1Url(taskId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(taskCompletionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerCompletionApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as marathonControllerCompletionApiV1Response
+}
+
+
+
+export type marathonControllerTodayApiV1Response200 = {
+  data: TeamTodayDto
+  status: 200
+}
+
+export type marathonControllerTodayApiV1ResponseSuccess = (marathonControllerTodayApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerTodayApiV1Response = (marathonControllerTodayApiV1ResponseSuccess)
+
+export const getMarathonControllerTodayApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathon-teams/current/today`
+}
+
+export const marathonControllerTodayApiV1 = async ( options?: RequestInit): Promise<marathonControllerTodayApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerTodayApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerTodayApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerTodayApiV1Response
+}
+
+
+
+export type marathonControllerConsentApiV1Response200 = {
+  data: ProviderConsentMetadataDto
+  status: 200
+}
+
+export type marathonControllerConsentApiV1ResponseSuccess = (marathonControllerConsentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerConsentApiV1Response = (marathonControllerConsentApiV1ResponseSuccess)
+
+export const getMarathonControllerConsentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/ai-provider-consent`
+}
+
+export const marathonControllerConsentApiV1 = async ( options?: RequestInit): Promise<marathonControllerConsentApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerConsentApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerConsentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerConsentApiV1Response
+}
+
+
+
+export type marathonControllerAcceptApiV1Response200 = {
+  data: ProviderConsentMetadataDto
+  status: 200
+}
+
+export type marathonControllerAcceptApiV1ResponseSuccess = (marathonControllerAcceptApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerAcceptApiV1Response = (marathonControllerAcceptApiV1ResponseSuccess)
+
+export const getMarathonControllerAcceptApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/ai-provider-consent`
+}
+
+export const marathonControllerAcceptApiV1 = async (providerConsentDto: ProviderConsentDto, options?: RequestInit): Promise<marathonControllerAcceptApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerAcceptApiV1Url(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(providerConsentDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerAcceptApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerAcceptApiV1Response
 }
