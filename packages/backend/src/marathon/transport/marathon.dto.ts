@@ -100,8 +100,8 @@ export class WellnessReportValuesDto extends WellnessReportDto {
   @ApiProperty() updatedAt!: string;
 }
 export class WellnessReportReadDto {
-  @ApiProperty({ enum: ['unknown', 'reported'] }) status!:
-    'unknown' | 'reported';
+  @ApiProperty({ enum: ['notApplicable', 'unknown', 'reported'] }) status!:
+    'notApplicable' | 'unknown' | 'reported';
   @ApiProperty() reportDate!: string;
   @ApiPropertyOptional({ type: WellnessReportValuesDto, nullable: true })
   report!: WellnessReportValuesDto | null;

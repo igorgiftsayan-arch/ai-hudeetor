@@ -109,7 +109,9 @@ Response `200`:
 Owner-scoped read для восстановления формы после reload. При наличии отчёта
 возвращает `status: "reported"`, `reportDate`, восемь boolean и `updatedAt`.
 При отсутствии row возвращает `status: "unknown"`, `reportDate` и `report:
-null`; отсутствующий отчёт не материализуется как восемь `false`.
+null`; отсутствующий отчёт не материализуется как восемь `false`. Если
+`reportDate` вне периода (в частности, «вчера» в первый день), read возвращает
+`status: "notApplicable"` и `report: null`, а не ошибку экрана.
 
 ### `PUT /marathon-wellness-reports/{reportDate}`
 

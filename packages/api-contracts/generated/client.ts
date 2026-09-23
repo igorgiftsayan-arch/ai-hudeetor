@@ -618,6 +618,7 @@ export type WellnessReportReadDtoStatus = typeof WellnessReportReadDtoStatus[key
 
 
 export const WellnessReportReadDtoStatus = {
+  notApplicable: 'notApplicable',
   unknown: 'unknown',
   reported: 'reported',
 } as const;
