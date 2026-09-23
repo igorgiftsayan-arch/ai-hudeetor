@@ -133,6 +133,319 @@ button:disabled {
   color: #8a1b1b;
 }
 
+.marathon-team {
+  width: min(100%, 38rem);
+  color: #133f36;
+}
+
+.marathon-team-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0 1.55rem;
+}
+
+.marathon-kicker {
+  margin: 0;
+  color: #6d776d;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.marathon-team h1,
+.marathon-team h2 {
+  margin: 0;
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.marathon-team h1 {
+  max-width: 8ch;
+  margin-top: 0.9rem;
+  font-size: clamp(2.5rem, 12vw, 4.25rem);
+  line-height: 0.95;
+}
+
+.marathon-team-subtitle {
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.marathon-day-label {
+  flex: none;
+  padding: 0.42rem 0.56rem;
+  border-radius: 0.45rem;
+  background: #e3e9d8;
+  color: #48634f;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.marathon-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.marathon-section-heading h2 {
+  font-size: clamp(1.7rem, 7vw, 2.25rem);
+}
+
+.marathon-section-heading span {
+  color: #0d6c50;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.marathon-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.2rem;
+  margin-top: 1.1rem;
+  padding: 0.26rem;
+  border-radius: 0.72rem;
+  background: #e3e8d9;
+}
+
+.marathon-tabs button {
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 0.52rem;
+  background: transparent;
+  color: #637260;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.marathon-tabs button[aria-selected='true'] {
+  background: #126247;
+  color: #fffdf7;
+}
+
+.marathon-legend {
+  margin: 0.8rem 0 0;
+  color: #6d776d;
+  font-size: 0.72rem;
+}
+
+.marathon-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.55rem;
+  margin: 1.65rem 0 1.15rem;
+  padding: 0;
+  list-style: none;
+}
+
+.marathon-podium-place {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.marathon-avatar {
+  display: grid;
+  width: 3.9rem;
+  height: 3.9rem;
+  place-items: center;
+  border: 0.18rem solid var(--paper);
+  border-radius: 50%;
+  background: #cbdcc1;
+  box-shadow: 0 0 0 1px #9eb69e;
+  color: #214b3d;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.place-1 .marathon-avatar {
+  width: 5rem;
+  height: 5rem;
+  border-color: #fffdf7;
+  box-shadow: 0 0 0 0.18rem #dfbd37;
+}
+
+.marathon-podium-place > strong {
+  width: 100%;
+  margin-top: 0.62rem;
+  overflow: hidden;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marathon-entry-value {
+  color: #124536;
+  font-size: 1.08rem;
+  letter-spacing: -0.04em;
+}
+
+.marathon-podium-place .marathon-entry-value {
+  margin: 0.34rem 0 0.65rem;
+  font-size: clamp(1.15rem, 5vw, 1.55rem);
+}
+
+.marathon-step {
+  display: grid;
+  width: 100%;
+  min-height: 4.4rem;
+  place-items: center;
+  border-radius: 0.75rem 0.75rem 0.15rem 0.15rem;
+  background: #e2e9d6;
+  color: #557c5c;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+
+.place-1 .marathon-step {
+  min-height: 6.4rem;
+  background: #ebce53;
+  color: #624f16;
+  font-size: 3rem;
+}
+
+.place-3 .marathon-step {
+  min-height: 3.45rem;
+  background: #e8dcc8;
+  color: #9a7246;
+}
+
+.marathon-crown {
+  position: absolute;
+  top: -1.55rem;
+  color: #b68b17;
+  font-size: 1.3rem;
+}
+
+.marathon-leader-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marathon-leader-list li {
+  display: grid;
+  grid-template-columns: 1.2rem 2.45rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 4.35rem;
+  border-bottom: 1px solid #dddccb;
+}
+
+.marathon-leader-list .marathon-avatar {
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 0.65rem;
+}
+
+.marathon-rank {
+  color: #70816e;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.marathon-entry-name {
+  min-width: 0;
+  color: #21483b;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.marathon-entry-name small {
+  display: block;
+  color: #778277;
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+.marathon-task-state {
+  color: #4d6c52;
+  font-size: 0.7rem;
+  text-align: right;
+}
+
+.marathon-empty-results {
+  margin: 1.2rem 0;
+  padding: 1rem;
+  border: 1px dashed #b8c8b5;
+  border-radius: 0.8rem;
+  color: #68766a;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.marathon-mystery {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1.3rem;
+  padding: 1rem;
+  border-radius: 0.85rem;
+  background: repeating-linear-gradient(130deg, #163f35, #163f35 0.8rem, #1a493b 0.8rem, #1a493b 0.87rem);
+  color: #f0edce;
+}
+
+.marathon-mystery > span {
+  color: #ead162;
+  font: 800 2rem Georgia, serif;
+}
+
+.marathon-mystery strong {
+  font-size: 0.82rem;
+}
+
+.marathon-mystery p {
+  margin: 0.24rem 0 0;
+  color: #d1d9c8;
+  font-size: 0.72rem;
+}
+
+.marathon-captain-task {
+  margin-top: 1.2rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: #eee6cf;
+}
+
+.marathon-captain-task h2 {
+  margin-top: 0.6rem;
+  font-size: 1.55rem;
+}
+
+.marathon-captain-task > p:not(.marathon-kicker) {
+  color: #656555;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.marathon-captain-task button {
+  width: 100%;
+  min-height: 3rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: #164737;
+  color: #fffdf7;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.marathon-task-error {
+  color: #8a1b1b !important;
+}
+
 .app-shell {
   min-height: 100dvh;
   display: flex;
