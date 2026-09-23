@@ -151,7 +151,10 @@ Response `200`: task ID, team ID, taskDate, title, description, updatedAt.
 Request: `{ "completed": true }`.
 
 Response `200`: taskId, membershipId, completed, updatedAt. Один completion на
-membership/task; повтор обновляет row без дубля.
+membership/task; повтор обновляет row без дубля. Новая команда разрешена только
+для задания текущей marathon-local даты; известный ID вчерашнего задания
+возвращает `409 MARATHON_TASK_DATE_INVALID`. Точный replay ранее успешной
+idempotent-команды возвращает сохранённый response и после смены даты.
 
 ## Team daily read model
 
@@ -256,6 +259,7 @@ stale version не считается согласием. Fake adapter може�
 - `MARATHON_CAPTAIN_REQUIRED` — `403`;
 - `MARATHON_REPORT_DATE_INVALID` — `409`;
 - `MARATHON_NOT_ACTIVE` — `409`;
+- `MARATHON_TASK_DATE_INVALID` — `409`;
 - `MARATHON_ALREADY_JOINED` — `409` для другой membership;
 - `IDEMPOTENCY_KEY_REUSED` — `409`;
 - стандартные `SESSION_INVALID`, `CSRF_VALIDATION_FAILED`, `VALIDATION_ERROR`.

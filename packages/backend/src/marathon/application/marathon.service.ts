@@ -426,12 +426,21 @@ export class MarathonService {
       key,
       { taskId, completed },
       async (c) => {
-        const task = await c.query<{ id: string }>(
-          `select id from marathon_captain_tasks where id=$1 and team_id=$2`,
+        const task = await c.query<{ id: string; task_date: string }>(
+          `select id,task_date::text from marathon_captain_tasks where id=$1 and team_id=$2`,
           [taskId, m.team_id],
         );
         if (!task.rows[0])
           throw new IdentityError('MARATHON_NOT_FOUND', 404, 'Task not found');
+        if (
+          task.rows[0].task_date !==
+          calendarDateInTimezone(new Date(), m.timezone)
+        )
+          throw new IdentityError(
+            'MARATHON_TASK_DATE_INVALID',
+            409,
+            'Only the current marathon task can be completed',
+          );
         const q = await c.query<{ updatedAt: Date }>(
           `insert into marathon_task_completions(id,task_id,membership_id,completed) values($1,$2,$3,$4) on conflict(task_id,membership_id) do update set completed=excluded.completed,updated_at=now() returning updated_at "updatedAt"`,
           [randomUUID(), taskId, m.id, completed],
