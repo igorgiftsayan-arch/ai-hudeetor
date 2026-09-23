@@ -58,14 +58,13 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
     ).toBe(1);
   });
   it('keeps missing wellness unknown and idempotently restores all eight flags', async () => {
-    const created = await service.createMarathon(
-      captainId,
-      randomUUID(),
-      request(),
-    );
-    await service.join(participantId, randomUUID(), created.joinCode);
     const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk'),
       yesterday = previousCalendarDate(today);
+    const created = await service.createMarathon(captainId, randomUUID(), {
+      ...request(),
+      startsOn: yesterday,
+    });
+    await service.join(participantId, randomUUID(), created.joinCode);
     await expect(service.getReport(participantId, yesterday)).resolves.toEqual({
       status: 'unknown',
       reportDate: yesterday,
