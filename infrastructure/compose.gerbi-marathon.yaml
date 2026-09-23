@@ -7,6 +7,7 @@ services:
       IDENTITY_SECURE_COOKIES: 'false'
       MARATHON_BOOTSTRAP_ENABLED: ${MARATHON_BOOTSTRAP_ENABLED:-false}
       MARATHON_BOOTSTRAP_USER_IDS: ${MARATHON_BOOTSTRAP_USER_IDS:-}
+      AI_PROVIDER: ${AI_PROVIDER:-fake}
       IDENTITY_AI_PROVIDER_PROCESSING_VERSION: ${IDENTITY_AI_PROVIDER_PROCESSING_VERSION:-test-v1}
       IDENTITY_AI_PROVIDER_DISCLOSURE: ${IDENTITY_AI_PROVIDER_DISCLOSURE:-AI is running in test mode.}
     ports: !override []
@@ -18,6 +19,11 @@ services:
     environment:
       NEXT_PUBLIC_API_BASE_URL: /api/v1
     ports: !override []
+
+  worker:
+    environment:
+      AI_PROVIDER: ${AI_PROVIDER:-fake}
+      IDENTITY_AI_PROVIDER_PROCESSING_VERSION: ${IDENTITY_AI_PROVIDER_PROCESSING_VERSION:-test-v1}
 
   gateway:
     image: nginx:1.27-alpine

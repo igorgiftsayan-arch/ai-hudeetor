@@ -260,7 +260,7 @@ export default function MarathonPage() {
         )}
 
         <div className="marathon-spacer" />
-        {data.report.status === 'unavailable' ? (
+        {data.report.status === 'notApplicable' ? (
           <section className="marathon-report" aria-label="Отчёт за вчера недоступен">
             <p className="marathon-kicker">Отчёт за вчера</p>
             <h2>Пока недоступен</h2>

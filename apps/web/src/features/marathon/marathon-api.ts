@@ -19,10 +19,6 @@ export type { ProviderConsent } from '../ai-companion/provider-consent';
 
 export type WellnessValues = WellnessReportDto;
 export type WellnessReport = WellnessReportReadDto;
-export type WellnessReportUnavailable = {
-  status: 'unavailable';
-  reportDate: string;
-};
 export type MarathonCurrent = CurrentMarathonDto;
 
 export type MarathonTeamToday = TeamTodayDto;
@@ -30,7 +26,7 @@ export type MarathonTeamToday = TeamTodayDto;
 export type MarathonScreenData = {
   csrfToken: string;
   current: MarathonCurrent;
-  report: WellnessReport | WellnessReportUnavailable;
+  report: WellnessReport;
   team: MarathonTeamToday;
   consent: ProviderConsent;
 };
@@ -41,20 +37,12 @@ export async function loadMarathonScreen(): Promise<MarathonScreenData> {
     throw new ApiError('onboarding', 'Завершите настройку, чтобы открыть марафон.');
   }
   const current = await apiRequest<MarathonCurrent>('/marathons/current');
-  const report = apiRequest<WellnessReport>(
-    `/marathon-wellness-reports/${current.reportDate}`,
-  ).catch((cause): WellnessReport | WellnessReportUnavailable => {
-    if (cause instanceof ApiError && cause.code === 'MARATHON_REPORT_DATE_INVALID') {
-      return { status: 'unavailable', reportDate: current.reportDate };
-    }
-    throw cause;
-  });
-  const [resolvedReport, team, consent] = await Promise.all([
-    report,
+  const [report, team, consent] = await Promise.all([
+    apiRequest<WellnessReport>(`/marathon-wellness-reports/${current.reportDate}`),
     apiRequest<TeamTodayDto>('/marathon-teams/current/today'),
     loadProviderConsent(),
   ]);
-  return { csrfToken: onboarding.csrfToken, current, report: resolvedReport, team, consent };
+  return { csrfToken: onboarding.csrfToken, current, report, team, consent };
 }
 
 export function joinMarathonTeam(input: {

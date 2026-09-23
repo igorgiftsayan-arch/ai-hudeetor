@@ -129,10 +129,10 @@ describe('marathon page', () => {
     expect(screen.queryByText('Не удалось загрузить марафон')).not.toBeInTheDocument();
   });
 
-  it('keeps the team screen when yesterday report is not available on the first day', async () => {
+  it('keeps the team screen when the first-day report is not applicable', async () => {
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       if (String(input) === `${api}/marathon-wellness-reports/2026-09-28`) {
-        return json({ error: { code: 'MARATHON_REPORT_DATE_INVALID', message: 'Дата вне периода.' } }, 409);
+        return json({ status: 'notApplicable', reportDate: '2026-09-28', report: null });
       }
       return responseFor(input, init);
     }));
