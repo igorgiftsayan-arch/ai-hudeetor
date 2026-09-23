@@ -2,7 +2,7 @@
 
 ## Уточнение марафонного пилота 2026-09-24
 
-- В отдельной backend-ветке реализованы marathon/team/membership, отчёт за вчера по восьми отметкам, задание капитана, participant completion, safe daily team read model и current-version provider consent. Migration `0012`, PostgreSQL integration 6/6, API 44/44 и worker 32/32 подтверждены.
+- В отдельной backend-ветке реализованы marathon/team/membership, отчёт за вчера по восьми отметкам, задание капитана, participant completion, safe daily team read model и current-version provider consent. Migration `0012` создаёт marathon schema, `0013` фиксирует immutable baseline; PostgreSQL integration 8/8, API 44/44 и worker 32/32 подтверждены.
 - Shared isolated stand `atlas-gerbi-marathon` проверяет join, wellness, captain task, daily weight и AI boundary без изменения stable. Отдельная synthetic GenAPI acceptance подтвердила consent gate, два последовательных реальных ответа, history и ledger `100 → 98`. Финальный shared browser real-provider gate остаётся `NOT RUN`: во время web rebuild test server перестал отвечать по SSH/HTTP, а provider switch не выполнялся.
 - Командный API не раскрывает raw weight, AI chat/memory или накопленные итоги. `unknown` не заменяется нулём; первый день возвращает `notApplicable`; отчёт за последний день доступен следующим утром.
 - Приняты правила дневных показателей: точный вчера→сегодня процент, immutable first-in-marathon baseline, wellness как сумма восьми boolean, self-reported captain task и общие места при равенстве. Backend/OpenAPI реализация проходит локальные type/lint/unit gates; authoritative PostgreSQL/runtime acceptance фиксируется отдельно. Реальные даты, команды и капитаны остаются входными данными владельца.

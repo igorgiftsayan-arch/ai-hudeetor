@@ -450,25 +450,6 @@ export class MarathonService {
       m = await this.membership(user.userId),
       displayDate = calendarDateInTimezone(new Date(), m.timezone),
       reportDate = previousCalendarDate(displayDate);
-    await this.db.query(
-      `update marathon_memberships mm
-       set baseline_weight_kg=we.weight_kg,
-           baseline_weight_entry_id=we.id,
-           baseline_captured_at=now()
-       from weight_entries we
-       where mm.team_id=$1
-         and mm.baseline_weight_entry_id is null
-         and we.id=(
-           select candidate.id
-           from weight_entries candidate
-           where candidate.user_id=mm.user_id
-             and candidate.is_current
-             and candidate.local_date between $2 and $3
-           order by candidate.local_date,candidate.recorded_at,candidate.id
-           limit 1
-         )`,
-      [m.team_id, m.starts_on, displayDate],
-    );
     const task = (
       await this.db.query<CaptainTaskRow>(
         `select t.id,t.task_date::text "taskDate",t.title,t.description,c.completed,c.updated_at "completionUpdatedAt" from marathon_captain_tasks t left join marathon_task_completions c on c.task_id=t.id and c.membership_id=$1 where t.team_id=$2 and t.task_date=$3`,
