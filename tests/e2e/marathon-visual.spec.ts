@@ -51,6 +51,9 @@ for (const width of [320, 390]) {
     await expect(page.getByRole('link', { name: 'Поговорить с AI' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Отправить отчёт' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Основная навигация' })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
     await page.screenshot({ path: testInfo.outputPath(`marathon-${width}.png`), fullPage: true });
   });
 }

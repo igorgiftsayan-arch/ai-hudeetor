@@ -188,6 +188,17 @@ button:disabled {
   text-transform: uppercase;
 }
 
+@media (max-width: 27rem) {
+  .marathon-team-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marathon-day-label {
+    justify-self: start;
+  }
+}
+
 .marathon-section-heading {
   display: flex;
   align-items: baseline;
