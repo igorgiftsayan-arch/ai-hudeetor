@@ -5,6 +5,24 @@ import { ProviderConsentNotice } from './provider-consent';
 describe('ProviderConsentNotice', () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it('explains the external GenAPI transfer without calling it a test mode', () => {
+    render(
+      <ProviderConsentNotice
+        consent={{ providerMode: 'genapi', externalProviderEnabled: true, documentVersion: 'test-v1', disclosure: 'AI is running in test mode.', accepted: false, acceptedAt: null }}
+        csrfToken="csrf-token"
+        onAccepted={vi.fn()}
+        onSessionExpired={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        'Сообщения и необходимый контекст будут переданы внешнему сервису GenAPI для формирования ответа.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('AI is running in test mode.')).not.toBeInTheDocument();
+  });
+
   it('sends the current disclosure version and reuses its idempotency key on retry', async () => {
     const user = userEvent.setup();
     const onAccepted = vi.fn();

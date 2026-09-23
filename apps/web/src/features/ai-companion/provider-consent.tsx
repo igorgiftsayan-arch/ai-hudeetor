@@ -6,6 +6,9 @@ import type { ProviderConsentMetadataDto } from '@atlas/api-contracts';
 
 export type ProviderConsent = ProviderConsentMetadataDto;
 
+const genapiDisclosure =
+  'Сообщения и необходимый контекст будут переданы внешнему сервису GenAPI для формирования ответа.';
+
 export function loadProviderConsent() {
   return apiRequest<ProviderConsent>('/users/me/ai-provider-consent');
 }
@@ -54,7 +57,7 @@ export function ProviderConsentNotice({
   return (
     <section className="marathon-consent-card">
       <p className="marathon-kicker">Перед внешним AI</p>
-      <p>{consent.disclosure}</p>
+      <p>{consent.providerMode === 'genapi' ? genapiDisclosure : consent.disclosure}</p>
       <button type="button" onClick={() => void accept()} disabled={saving}>
         {saving ? 'Сохраняем…' : 'Разрешить обработку'}
       </button>
