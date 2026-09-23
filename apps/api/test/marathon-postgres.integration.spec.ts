@@ -200,12 +200,12 @@ function request() {
 async function user(db: DatabaseService, email: string, timezone: string) {
   const id = randomUUID();
   await db.query(
-    `insert into users(id,email,status,onboarding_status) values($1,$2,'active','completed')`,
-    [id, `${email}-${id}@example.test`],
+    `insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash) values($1,$2,'active','completed',$3,$4)`,
+    [id, `${email}-${id}@example.test`, randomUUID(), 'request-hash'],
   );
-  await db.query(
-    `insert into user_profiles(id,user_id,timezone,age_confirmed) values($1,$2,$3,true)`,
-    [randomUUID(), id, timezone],
-  );
+  await db.query(`insert into user_profiles(user_id,timezone) values($1,$2)`, [
+    id,
+    timezone,
+  ]);
   return id;
 }
