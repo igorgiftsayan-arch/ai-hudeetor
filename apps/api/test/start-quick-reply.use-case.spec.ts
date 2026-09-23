@@ -73,15 +73,66 @@ describe('StartQuickReplyUseCase', () => {
 
     expect(database.transactionCalls).toBe(0);
   });
+
+  it('denies an external provider before dispatch without current-version consent', async () => {
+    const repository = { startQuickReply: jest.fn() };
+    const database = new TransactionProbe({ rows: [] });
+    const useCase = new StartQuickReplyUseCase(
+      database as never,
+      { execute: jest.fn().mockResolvedValue({ userId: 'user-1' }) } as never,
+      repository as never,
+      { required: true, documentVersion: 'pilot-v2' },
+    );
+    await expect(useCase.execute(command())).rejects.toMatchObject({
+      code: 'AI_PROVIDER_CONSENT_REQUIRED',
+      status: 409,
+    });
+    expect(repository.startQuickReply).not.toHaveBeenCalled();
+  });
+
+  it('dispatches only when consent matches the configured current version', async () => {
+    const repository = {
+      startQuickReply: jest.fn().mockResolvedValue({ status: 'queued' }),
+    };
+    const database = new TransactionProbe({ rows: [{ '?column?': 1 }] });
+    const useCase = new StartQuickReplyUseCase(
+      database as never,
+      { execute: jest.fn().mockResolvedValue({ userId: 'user-1' }) } as never,
+      repository as never,
+      { required: true, documentVersion: 'pilot-v2' },
+    );
+    await expect(useCase.execute(command())).resolves.toMatchObject({
+      status: 'queued',
+    });
+    expect(database.query).toHaveBeenCalledWith(
+      expect.stringContaining('document_version=$2'),
+      ['user-1', 'pilot-v2'],
+    );
+  });
 });
+
+function command() {
+  return {
+    accessToken: 'opaque-access-token',
+    idempotencyKey: 'a-valid-idempotency-key',
+    conversationId: '773a7e6e-cb1a-42f0-9dca-24f94c5cc5af',
+    content: 'Помоги сегодня',
+    expectedPriceTokens: 1,
+    priceVersion: 1,
+  };
+}
 
 class TransactionProbe {
   transactionCalls = 0;
+  query: jest.Mock;
+  constructor(result: { rows: object[] } = { rows: [] }) {
+    this.query = jest.fn().mockResolvedValue(result);
+  }
 
   async transaction<TResult>(
     operation: (client: object) => Promise<TResult>,
   ): Promise<TResult> {
     this.transactionCalls += 1;
-    return operation({});
+    return operation({ query: this.query });
   }
 }

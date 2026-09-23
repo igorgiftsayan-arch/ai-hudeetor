@@ -58,14 +58,13 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
     ).toBe(1);
   });
   it('keeps missing wellness unknown and idempotently restores all eight flags', async () => {
-    const created = await service.createMarathon(
-      captainId,
-      randomUUID(),
-      request(),
-    );
-    await service.join(participantId, randomUUID(), created.joinCode);
     const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk'),
       yesterday = previousCalendarDate(today);
+    const created = await service.createMarathon(captainId, randomUUID(), {
+      ...request(),
+      startsOn: yesterday,
+    });
+    await service.join(participantId, randomUUID(), created.joinCode);
     await expect(service.getReport(participantId, yesterday)).resolves.toEqual({
       status: 'unknown',
       reportDate: yesterday,
@@ -127,9 +126,9 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
     await service.completeTask(participantId, randomUUID(), task.id, true);
     const view = await service.today(participantId);
     expect(view.captainTask?.currentUserCompletion.status).toBe('completed');
-    expect(
-      view.members.find((x: any) => x.isCurrentUser)?.captainTask.status,
-    ).toBe('completed');
+    expect(view.members.find((x) => x.isCurrentUser)?.captainTask.status).toBe(
+      'completed',
+    );
   });
   it('refuses membership when profile and marathon timezones differ', async () => {
     const other = await user(db, 'other', 'UTC');
@@ -186,6 +185,118 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
       },
     );
   });
+
+  it('computes exact daily metrics, captures immutable baseline and groups tied podium places', async () => {
+    const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
+    const yesterday = previousCalendarDate(today);
+    const thirdId = await user(db, 'third', 'Asia/Irkutsk');
+    const created = await service.createMarathon(captainId, randomUUID(), {
+      ...request(),
+      startsOn: yesterday,
+    });
+    await service.join(participantId, randomUUID(), created.joinCode);
+    await service.join(thirdId, randomUUID(), created.joinCode);
+
+    await weight(db, captainId, yesterday, '100.00');
+    await weight(db, captainId, today, '99.00');
+    await weight(db, participantId, yesterday, '80.00');
+    await weight(db, participantId, today, '79.20');
+    await weight(db, thirdId, yesterday, '90.00');
+    await weight(db, thirdId, today, '90.00');
+
+    const fivePoints = {
+      morningShake: true,
+      physicalActivity: true,
+      waterTarget: true,
+      secondShake: true,
+      healthyDinner: true,
+      goodSleep: false,
+      noJunkFood: false,
+      noSmoking: false,
+    };
+    await service.saveReport(captainId, randomUUID(), yesterday, fivePoints);
+    await service.saveReport(
+      participantId,
+      randomUUID(),
+      yesterday,
+      fivePoints,
+    );
+    await service.saveReport(thirdId, randomUUID(), yesterday, {
+      ...fivePoints,
+      goodSleep: true,
+    });
+    const task = await service.saveTask(captainId, randomUUID(), today, {
+      title: 'Шаги',
+      description: 'Прогулка',
+    });
+    await service.completeTask(captainId, randomUUID(), task.id, true);
+    await service.completeTask(participantId, randomUUID(), task.id, true);
+
+    const view = await service.today(participantId);
+    expect(view.members.map((member) => member.weight)).toEqual([
+      { status: 'reported', dailyPercent: 1 },
+      { status: 'reported', dailyPercent: 1 },
+      { status: 'reported', dailyPercent: 0 },
+    ]);
+    expect(view.podiums.weight).toEqual([
+      expect.objectContaining({ place: 1, value: 1 }),
+      expect.objectContaining({ place: 2, value: 0 }),
+    ]);
+    expect(view.podiums.weight[0]?.members).toHaveLength(2);
+    expect(view.podiums.wellness).toEqual([
+      expect.objectContaining({ place: 1, value: 6 }),
+      expect.objectContaining({ place: 2, value: 5 }),
+    ]);
+    expect(view.podiums.wellness[1]?.members).toHaveLength(2);
+    expect(view.podiums.captainTask).toEqual([
+      expect.objectContaining({ place: 1, value: true }),
+    ]);
+    expect(view.podiums.captainTask[0]?.members).toHaveLength(2);
+
+    const baselines = await db.query<{
+      user_id: string;
+      baseline_weight_kg: string;
+    }>(
+      `select user_id,baseline_weight_kg::text from marathon_memberships order by user_id`,
+    );
+    expect(baselines.rows).toEqual(
+      expect.arrayContaining([
+        { user_id: captainId, baseline_weight_kg: '100.00' },
+        { user_id: participantId, baseline_weight_kg: '80.00' },
+        { user_id: thirdId, baseline_weight_kg: '90.00' },
+      ]),
+    );
+
+    await db.query(
+      `update weight_entries set weight_kg=78.50,updated_at=now() where user_id=$1 and local_date=$2 and is_current`,
+      [participantId, yesterday],
+    );
+    await service.today(participantId);
+    const baseline = await db.query<{ baseline_weight_kg: string }>(
+      `select baseline_weight_kg::text from marathon_memberships where user_id=$1`,
+      [participantId],
+    );
+    expect(baseline.rows[0]?.baseline_weight_kg).toBe('80.00');
+  });
+
+  it('keeps daily weight unknown without exact yesterday and today entries', async () => {
+    const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
+    const yesterday = previousCalendarDate(today);
+    const older = previousCalendarDate(yesterday);
+    const created = await service.createMarathon(captainId, randomUUID(), {
+      ...request(),
+      startsOn: older,
+    });
+    await service.join(participantId, randomUUID(), created.joinCode);
+    await weight(db, participantId, older, '82.00');
+    await weight(db, participantId, today, '80.00');
+
+    const view = await service.today(participantId);
+    expect(view.members.find((member) => member.isCurrentUser)?.weight).toEqual(
+      { status: 'unknown', dailyPercent: null },
+    );
+    expect(view.podiums.weight).toEqual([]);
+  });
 });
 function request() {
   const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
@@ -200,12 +311,26 @@ function request() {
 async function user(db: DatabaseService, email: string, timezone: string) {
   const id = randomUUID();
   await db.query(
-    `insert into users(id,email,status,onboarding_status) values($1,$2,'active','completed')`,
-    [id, `${email}-${id}@example.test`],
+    `insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash) values($1,$2,'active','completed',$3,$4)`,
+    [id, `${email}-${id}@example.test`, randomUUID(), 'request-hash'],
   );
+  await db.query(`insert into user_profiles(user_id,timezone) values($1,$2)`, [
+    id,
+    timezone,
+  ]);
+  return id;
+}
+
+async function weight(
+  db: DatabaseService,
+  userId: string,
+  localDate: string,
+  value: string,
+) {
+  const id = randomUUID();
   await db.query(
-    `insert into user_profiles(id,user_id,timezone,age_confirmed) values($1,$2,$3,true)`,
-    [randomUUID(), id, timezone],
+    `insert into weight_entries(id,user_id,weight_kg,recorded_at,local_date,updated_at,is_current) values($1,$2,$3,$4::date + time '08:00',$4,now(),true)`,
+    [id, userId, value, localDate],
   );
   return id;
 }

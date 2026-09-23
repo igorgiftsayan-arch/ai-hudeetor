@@ -1,7 +1,6 @@
 # GERBI-MARATHON-PILOT — backend contract
 
 **Статус:** минимальный контракт для параллельной реализации backend/frontend.
-Формулы, отмеченные `TBD`, не вычисляются до решения владельца.
 
 ## API conventions
 
@@ -179,15 +178,15 @@ Response содержит только сегодняшний read model:
       "displayName": "Игорь",
       "isCurrentUser": true,
       "role": "participant",
-      "weight": { "status": "unknown", "dailyPercent": null },
+      "weight": { "status": "reported", "dailyPercent": 1.25 },
       "wellness": { "status": "reported", "markedCount": 5 },
       "captainTask": { "status": "unknown" }
     }
   ],
   "podiums": {
-    "weight": null,
-    "wellness": null,
-    "captainTask": null
+    "weight": [{ "place": 1, "value": 1.25, "members": [] }],
+    "wellness": [{ "place": 1, "value": 5, "members": [] }],
+    "captainTask": [{ "place": 1, "value": true, "members": [] }]
   }
 }
 ```
@@ -197,9 +196,15 @@ Response содержит только сегодняшний read model:
 completion row — `unknown`, а не `notCompleted`. `isCurrentUser` и
 `currentMembership` позволяют восстановить owner/captain UI после reload.
 
-`unknown` никогда не заменяется нулём. `podiums.*` остаются `null`, пока не
-приняты соответствующая формула и правила равенств. API не содержит cumulative
-fields, raw weights, chat или memory.
+`unknown` никогда не заменяется нулём. Дневной процент вычисляется только как
+`(вес вчера − вес сегодня) / вес вчера × 100%` по точным актуальным записям
+двух соседних локальных дат и округляется до двух знаков; произвольная более
+старая запись не подставляется. Веллнес `value` равен числу выполненных отметок
+`0..8`. В podium входят максимум три группы отличающихся значений: равные
+участники находятся в одном `members` и делят место, следующие отличающиеся
+значения получают следующее место. Для задания podium содержит только
+самостоятельно отметивших `completed=true`. API не содержит cumulative fields,
+raw weights, chat или memory.
 
 ## Existing weight boundary
 
@@ -208,8 +213,9 @@ fields, raw weights, chat или memory.
 - `POST /weight-entries` — daily upsert;
 - `GET /weight-entries` — owner-scoped history.
 
-Исправление текущей записи меняет дневной read model. После фиксации baseline
-оно не изменяет `baselineWeightKg`; способ фиксации baseline пока `TBD`.
+Первая актуальная дневная запись пользователя внутри периода марафона один раз
+фиксируется как `baselineWeightKg`/`baselineWeightEntryId`. Исправление текущей
+записи меняет дневной read model, но после фиксации не изменяет baseline.
 
 ## Consent
 

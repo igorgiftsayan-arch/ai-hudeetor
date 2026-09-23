@@ -716,6 +716,7 @@ export type MetricStatusDtoStatus = typeof MetricStatusDtoStatus[keyof typeof Me
 
 export const MetricStatusDtoStatus = {
   unknown: 'unknown',
+  reported: 'reported',
 } as const;
 
 export interface MetricStatusDto {
@@ -771,28 +772,46 @@ export interface TeamMemberTodayDto {
   captainTask: TaskStatusDto;
 }
 
-/**
- * @nullable
- */
-export type PodiumsDtoWeight = { [key: string]: unknown } | null;
+export type PodiumMemberDtoRole = typeof PodiumMemberDtoRole[keyof typeof PodiumMemberDtoRole];
 
-/**
- * @nullable
- */
-export type PodiumsDtoWellness = { [key: string]: unknown } | null;
 
-/**
- * @nullable
- */
-export type PodiumsDtoCaptainTask = { [key: string]: unknown } | null;
+export const PodiumMemberDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface PodiumMemberDto {
+  membershipId: string;
+  /** @nullable */
+  displayName: string | null;
+  role: PodiumMemberDtoRole;
+  isCurrentUser: boolean;
+}
+
+export interface NumericPodiumPlaceDto {
+  /**
+     * @minimum 1
+     * @maximum 3
+     */
+  place: number;
+  value: number;
+  members: PodiumMemberDto[];
+}
+
+export interface TaskPodiumPlaceDto {
+  /**
+     * @minimum 1
+     * @maximum 1
+     */
+  place: number;
+  value: true;
+  members: PodiumMemberDto[];
+}
 
 export interface PodiumsDto {
-  /** @nullable */
-  weight: PodiumsDtoWeight;
-  /** @nullable */
-  wellness: PodiumsDtoWellness;
-  /** @nullable */
-  captainTask: PodiumsDtoCaptainTask;
+  weight: NumericPodiumPlaceDto[];
+  wellness: NumericPodiumPlaceDto[];
+  captainTask: TaskPodiumPlaceDto[];
 }
 
 export interface TeamTodayDto {

@@ -113,7 +113,8 @@ export class WellnessReportSavedDto extends WellnessReportDto {
   @ApiProperty() updatedAt!: string;
 }
 export class MetricStatusDto {
-  @ApiProperty({ enum: ['unknown'] }) status!: 'unknown';
+  @ApiProperty({ enum: ['unknown', 'reported'] }) status!:
+    'unknown' | 'reported';
   @ApiProperty({ type: Number, nullable: true }) dailyPercent!: number | null;
 }
 export class WellnessStatusDto {
@@ -137,11 +138,30 @@ export class TeamMemberTodayDto {
   @ApiProperty({ type: WellnessStatusDto }) wellness!: WellnessStatusDto;
   @ApiProperty({ type: TaskStatusDto }) captainTask!: TaskStatusDto;
 }
+export class PodiumMemberDto {
+  @ApiProperty() membershipId!: string;
+  @ApiProperty({ type: String, nullable: true }) displayName!: string | null;
+  @ApiProperty({ enum: ['captain', 'participant'] }) role!:
+    'captain' | 'participant';
+  @ApiProperty() isCurrentUser!: boolean;
+}
+export class NumericPodiumPlaceDto {
+  @ApiProperty({ minimum: 1, maximum: 3 }) place!: number;
+  @ApiProperty() value!: number;
+  @ApiProperty({ type: [PodiumMemberDto] }) members!: PodiumMemberDto[];
+}
+export class TaskPodiumPlaceDto {
+  @ApiProperty({ minimum: 1, maximum: 1 }) place!: number;
+  @ApiProperty({ enum: [true] }) value!: true;
+  @ApiProperty({ type: [PodiumMemberDto] }) members!: PodiumMemberDto[];
+}
 export class PodiumsDto {
-  @ApiProperty({ type: Object, nullable: true, example: null }) weight!: null;
-  @ApiProperty({ type: Object, nullable: true, example: null }) wellness!: null;
-  @ApiProperty({ type: Object, nullable: true, example: null })
-  captainTask!: null;
+  @ApiProperty({ type: [NumericPodiumPlaceDto] })
+  weight!: NumericPodiumPlaceDto[];
+  @ApiProperty({ type: [NumericPodiumPlaceDto] })
+  wellness!: NumericPodiumPlaceDto[];
+  @ApiProperty({ type: [TaskPodiumPlaceDto] })
+  captainTask!: TaskPodiumPlaceDto[];
 }
 export class TeamTodayDto {
   @ApiProperty() displayDate!: string;

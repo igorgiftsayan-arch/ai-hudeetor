@@ -2,10 +2,11 @@
 
 ## Уточнение марафонного пилота 2026-09-24
 
-- Командный экран должен показывать результат на сегодня и пьедестал трёх лидеров; накопленные итоги марафона скрыты. Визуальный прототип обновлён отдельно от приложения; расчёт дневного процента и равные места пока TBD.
-- Название пилотного марафона — «Герби-Марафон». Владелец определил три отдельных показателя: отвес в процентах от начального веса, Веллнес индекс и выполнение заданий капитана. Задание капитана не входит в Веллнес индекс; правила агрегирования по команде пока TBD.
-- Владелец обозначил запуск тестирования с понедельника и три рабочих дня подготовки; командная динамика обязательна для пилота.
-- Требования прежнего бота и задание капитана записаны в разделе 0.1 корневого PROJECT-VISION. Формула индекса/командного зачёта и механика задания капитана требуют уточнения. На этом этапе обновлены документы; реализации марафонного сценария нет.
+- В отдельной backend-ветке реализованы marathon/team/membership, отчёт за вчера по восьми отметкам, задание капитана, participant completion, safe daily team read model и current-version provider consent. Migration `0012`, PostgreSQL integration 6/6, API 44/44 и worker 32/32 подтверждены.
+- Shared isolated stand `atlas-gerbi-marathon` проверяет join, wellness, captain task, daily weight и AI boundary без изменения stable. Отдельная synthetic GenAPI acceptance подтвердила consent gate, два последовательных реальных ответа, history и ledger `100 → 98`. Финальный shared browser real-provider gate остаётся `NOT RUN`: во время web rebuild test server перестал отвечать по SSH/HTTP, а provider switch не выполнялся.
+- Командный API не раскрывает raw weight, AI chat/memory или накопленные итоги. `unknown` не заменяется нулём; первый день возвращает `notApplicable`; отчёт за последний день доступен следующим утром.
+- Приняты правила дневных показателей: точный вчера→сегодня процент, immutable first-in-marathon baseline, wellness как сумма восьми boolean, self-reported captain task и общие места при равенстве. Backend/OpenAPI реализация проходит локальные type/lint/unit gates; authoritative PostgreSQL/runtime acceptance фиксируется отдельно. Реальные даты, команды и капитаны остаются входными данными владельца.
+- Food vision сознательно отложен: до реализации нужны private storage/upload, validation/quarantine/lifecycle, vision-provider contract, цена и token/refund semantics, privacy и UX результата.
 
 ## Документальный срез 2026-09-23
 
