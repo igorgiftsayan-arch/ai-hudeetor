@@ -18,7 +18,7 @@ import type { MarathonScreenData, WellnessValues } from '../../features/marathon
 import { ApiError, apiRequest, newIdempotencyKey } from '../../shared/api';
 import type { OnboardingResourceDto } from '@atlas/api-contracts';
 
-type ViewState = 'loading' | 'ready' | 'error' | 'onboarding' | 'notFound';
+type ViewState = 'loading' | 'ready' | 'error' | 'onboarding' | 'notFound' | 'noMembership';
 type Pending = { payload: string; key: string };
 
 const habits: Array<{ id: keyof WellnessValues; label: string }> = [
@@ -54,6 +54,7 @@ export default function MarathonPage() {
       if (cause instanceof ApiError && cause.kind === 'session') replace('/login');
       else if (cause instanceof ApiError && cause.kind === 'onboarding') setViewState('onboarding');
       else if (cause instanceof ApiError && cause.code === 'MARATHON_NOT_FOUND') setViewState('notFound');
+      else if (cause instanceof ApiError && cause.code === 'MARATHON_MEMBERSHIP_REQUIRED') setViewState('noMembership');
       else setViewState('error');
     }
   }, [replace]);
@@ -184,7 +185,7 @@ export default function MarathonPage() {
     return <MarathonBoundary state={viewState === 'ready' ? 'loading' : viewState} onRetry={load} onJoin={joinTeam} />;
   }
 
-  const reportValues = data.report.status === 'reported' ? data.report : undefined;
+  const reportValues = data.report.status === 'reported' ? data.report.report ?? undefined : undefined;
   const captainTask = data.team.captainTask;
   const currentTaskStatus = captainTask?.currentUserCompletion.status;
 
@@ -282,8 +283,9 @@ export default function MarathonPage() {
 
 function MarathonBoundary({ state, onRetry, onJoin }: { state: Exclude<ViewState, 'ready'>; onRetry: () => Promise<void>; onJoin: (joinCode: string) => Promise<void> }) {
   if (state === 'loading') return <main className="app-shell"><div className="app-page loading-state" aria-live="polite"><span className="loading-orbit" aria-hidden="true" /><p>Загружаем марафон…</p></div></main>;
-  const message = state === 'notFound' ? ['Марафон пока не подключён', 'Когда вас добавят в команду, здесь появится дневной маршрут.'] : state === 'onboarding' ? ['Завершите настройку', 'После настройки можно присоединиться к марафону.'] : ['Не удалось загрузить марафон', 'Данные не пропали. Попробуйте ещё раз.'];
-  return <main className="app-shell"><div className="app-page boundary-page"><div className="boundary-message" role={state === 'error' ? 'alert' : undefined}><p className="section-label">Герби-Марафон</p><h1>{message[0]}</h1><p>{message[1]}</p>{state === 'onboarding' ? <a href="/onboarding" className="primary-link">Продолжить настройку</a> : state === 'notFound' ? <JoinMarathon onJoin={onJoin} /> : <button type="button" className="primary-action" onClick={() => void onRetry()}>Попробовать снова</button>}</div></div></main>;
+  const canJoin = state === 'notFound' || state === 'noMembership';
+  const message = canJoin ? ['Присоединитесь к команде', 'Введите код приглашения от капитана.'] : state === 'onboarding' ? ['Завершите настройку', 'После настройки можно присоединиться к марафону.'] : ['Не удалось загрузить марафон', 'Данные не пропали. Попробуйте ещё раз.'];
+  return <main className="app-shell"><div className="app-page boundary-page"><div className="boundary-message" role={state === 'error' ? 'alert' : undefined}><p className="section-label">Герби-Марафон</p><h1>{message[0]}</h1><p>{message[1]}</p>{state === 'onboarding' ? <a href="/onboarding" className="primary-link">Продолжить настройку</a> : canJoin ? <JoinMarathon onJoin={onJoin} /> : <button type="button" className="primary-action" onClick={() => void onRetry()}>Попробовать снова</button>}</div></div></main>;
 }
 
 function JoinMarathon({ onJoin }: { onJoin: (joinCode: string) => Promise<void> }) {
@@ -295,7 +297,7 @@ function JoinMarathon({ onJoin }: { onJoin: (joinCode: string) => Promise<void> 
     setJoining(true);
     setError(undefined);
     try { await onJoin(joinCode.trim()); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось присоединиться к команде.'); }
+    catch (cause) { setError(cause instanceof ApiError && cause.code === 'MARATHON_TIMEZONE_MISMATCH' ? 'Для участия timezone профиля должен совпадать с timezone марафона. Изменение timezone выполняется отдельно в профиле.' : cause instanceof Error ? cause.message : 'Не удалось присоединиться к команде.'); }
     finally { setJoining(false); }
   }
   return <div className="marathon-join"><label>Код приглашения<input value={joinCode} onChange={(event) => setJoinCode(event.target.value)} disabled={joining} /></label><button type="button" className="primary-action" onClick={() => void submit()} disabled={joining}>{joining ? 'Присоединяем…' : 'Присоединиться'}</button>{error && <p role="alert">{error}</p>}</div>;

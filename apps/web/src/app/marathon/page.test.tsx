@@ -86,7 +86,7 @@ describe('marathon page', () => {
     );
   });
 
-  it('lets a participant join the current marathon with a provided code', async () => {
+  it('lets a user without membership join the current marathon with a provided code', async () => {
     const user = userEvent.setup();
     let joined = false;
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -94,7 +94,7 @@ describe('marathon page', () => {
       if (url === `${api}/marathons/current`) {
         return joined
           ? json(current())
-          : json({ error: { code: 'MARATHON_NOT_FOUND', message: 'Не найдено.' } }, 404);
+          : json({ error: { code: 'MARATHON_MEMBERSHIP_REQUIRED', message: 'Нет membership.' } }, 403);
       }
       if (url === `${api}/marathon-team-memberships` && init?.method === 'POST') {
         joined = true;
@@ -105,7 +105,7 @@ describe('marathon page', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(<MarathonPage />);
-    expect(await screen.findByText('Марафон пока не подключён')).toBeInTheDocument();
+    expect(await screen.findByText('Присоединитесь к команде')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Код приглашения'), 'team-code');
     await user.click(screen.getByRole('button', { name: 'Присоединиться' }));
 

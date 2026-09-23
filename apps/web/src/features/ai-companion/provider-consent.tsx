@@ -2,15 +2,9 @@
 
 import { useRef, useState } from 'react';
 import { ApiError, apiRequest, mutationHeaders, newIdempotencyKey } from '../../shared/api';
+import type { ProviderConsentMetadataDto } from '@atlas/api-contracts';
 
-export type ProviderConsent = {
-  providerMode: 'fake' | 'genapi';
-  externalProviderEnabled: boolean;
-  documentVersion: string;
-  disclosure: string;
-  accepted: boolean;
-  acceptedAt: string | null;
-};
+export type ProviderConsent = ProviderConsentMetadataDto;
 
 export function loadProviderConsent() {
   return apiRequest<ProviderConsent>('/users/me/ai-provider-consent');

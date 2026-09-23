@@ -1,37 +1,20 @@
-import type { OnboardingResourceDto } from '@atlas/api-contracts';
+import type {
+  CurrentMarathonDto,
+  JoinMarathonDto,
+  OnboardingResourceDto,
+  WellnessReportDto,
+  WellnessReportReadDto,
+  WellnessReportSavedDto,
+} from '@atlas/api-contracts';
 import { ApiError, apiRequest, mutationHeaders } from '../../shared/api';
 import { loadProviderConsent } from '../ai-companion/provider-consent';
 import type { ProviderConsent } from '../ai-companion/provider-consent';
 
 export type { ProviderConsent } from '../ai-companion/provider-consent';
 
-export type WellnessValues = {
-  morningShake: boolean;
-  physicalActivity: boolean;
-  waterTarget: boolean;
-  secondShake: boolean;
-  healthyDinner: boolean;
-  goodSleep: boolean;
-  noJunkFood: boolean;
-  noSmoking: boolean;
-};
-
-export type WellnessReport =
-  | { status: 'unknown'; reportDate: string; report: null }
-  | ({
-      status: 'reported';
-      reportDate: string;
-      markedCount: number;
-      updatedAt: string;
-    } & WellnessValues);
-
-export type MarathonCurrent = {
-  marathon: { id: string; name: string; startsOn: string; endsOn: string; timezone: string };
-  team: { id: string; name: string };
-  membership: { id: string; role: 'captain' | 'participant'; isCurrentUser: true };
-  displayDate: string;
-  reportDate: string;
-};
+export type WellnessValues = WellnessReportDto;
+export type WellnessReport = WellnessReportReadDto;
+export type MarathonCurrent = CurrentMarathonDto;
 
 type MemberMetric = { status: 'unknown' | 'reported'; dailyPercent?: number | null; markedCount?: number | null };
 
@@ -86,10 +69,11 @@ export function joinMarathonTeam(input: {
   csrfToken: string;
   idempotencyKey: string;
 }) {
+  const payload: JoinMarathonDto = { joinCode: input.joinCode };
   return apiRequest('/marathon-team-memberships', {
     method: 'POST',
     headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
-    body: JSON.stringify({ joinCode: input.joinCode }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -99,7 +83,7 @@ export function saveWellnessReport(input: {
   csrfToken: string;
   idempotencyKey: string;
 }) {
-  return apiRequest<WellnessReport>(
+  return apiRequest<WellnessReportSavedDto>(
     `/marathon-wellness-reports/${input.reportDate}`,
     {
       method: 'PUT',
