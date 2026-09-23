@@ -161,6 +161,15 @@ export default function MarathonPage() {
       await load();
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') replace('/login');
+      else if (
+        cause instanceof ApiError &&
+        cause.code === 'VALIDATION_ERROR' &&
+        cause.message === 'Task date must be the current marathon date'
+      ) {
+        pendingTask.current = undefined;
+        await load();
+        setTaskError('Дата задания изменилась. Экран обновлён — можно продолжить.');
+      }
       else setTaskError(cause instanceof Error ? cause.message : 'Не удалось сохранить задание.');
     } finally {
       setSaving(false);
