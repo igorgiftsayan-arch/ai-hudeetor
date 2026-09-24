@@ -10,6 +10,11 @@ import {
 } from '../../features/tracking/tracking-api';
 import type { WeightEntry } from '../../features/tracking/tracking-api';
 import { WeightChart } from '../../features/tracking/weight-chart';
+import { DailyCoach } from '../../features/ai-companion/daily-coach';
+import {
+  loadDailyState,
+  type AiDailyState,
+} from '../../features/ai-companion/daily-coach-api';
 import {
   formatDelta,
   formatEntryDate,
@@ -34,15 +39,26 @@ export default function TodayPage() {
   const [saveError, setSaveError] = useState<string>();
   const [saved, setSaved] = useState<string>();
   const [saving, setSaving] = useState(false);
+  const [dailyState, setDailyState] = useState<AiDailyState>();
+  const [dailyStateUnavailable, setDailyStateUnavailable] = useState(false);
   const pendingSubmission = useRef<PendingSubmission | undefined>(undefined);
 
   const load = useCallback(async () => {
     setViewState('loading');
     try {
       const data = await loadTodayData();
+      let nextDailyState: AiDailyState | undefined;
+      try {
+        nextDailyState = await loadDailyState();
+      } catch (cause) {
+        if (cause instanceof ApiError && cause.kind === 'session') throw cause;
+        setDailyStateUnavailable(true);
+      }
       setEntries(newestFirst(data.entries));
       setCsrfToken(data.csrfToken);
       setTimezone(data.timezone);
+      setDailyState(nextDailyState);
+      if (nextDailyState) setDailyStateUnavailable(false);
       const todayEntry = data.entries.find((entry) =>
         isTodayEntry(entry, data.timezone),
       );
@@ -236,6 +252,35 @@ export default function TodayPage() {
             </p>
           )}
         </section>
+
+        {dailyState ? (
+          <DailyCoach
+            state={dailyState}
+            csrfToken={csrfToken}
+            onStateChanged={setDailyState}
+            onSessionExpired={() => replace('/login')}
+            onReload={() => void load()}
+          />
+        ) : dailyStateUnavailable ? (
+          <section className="daily-coach" aria-labelledby="daily-coach-title">
+            <p className="section-label">На сегодня</p>
+            <div className="daily-coach-row">
+              <div>
+                <h2 id="daily-coach-title">Сценарий пока недоступен</h2>
+                <p>
+                  Вес и история остаются доступны. Попробуйте обновить экран.
+                </p>
+              </div>
+              <button
+                className="coach-action"
+                type="button"
+                onClick={() => void load()}
+              >
+                Обновить
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <section className="history-section" aria-labelledby="history-title">
           <div className="history-title-row">

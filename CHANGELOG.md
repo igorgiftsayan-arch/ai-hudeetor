@@ -6,6 +6,13 @@
 
 ### Added
 
+- UI-006: `/today` получает спокойный Daily Coach между фиксацией веса и
+  историей: server-sourced состояния `notStarted`, `inProgress` и `completed`,
+  подтверждённые transitions, disabled/loading, safe retry с тем же
+  `Idempotency-Key`, session redirect и recovery после stale `404/409`.
+- UI-006: отдельная Compose override `atlas-daily-coach` публикует только
+  gateway/web port; manual acceptance покрывает mobile/desktop, daily replay,
+  session expiry и сохранность существующего weight/chat path.
 - AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
 - AI-003 verification: exact-image isolated runtime подтвердил repeatable migration, concurrent lazy initialization, timezone/ownership/idempotency/rollback, полный HTTP state flow, отсутствие daily context в логах/outbox и regression 76 API + 32 worker tests без изменения `main` или stable.
 - AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.

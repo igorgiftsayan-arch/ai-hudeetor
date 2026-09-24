@@ -1,6 +1,11 @@
 # Текущий статус
 
 - Дата: 2026-08-21
+- UI-006: frontend Daily Coach реализуется в отдельной ветке от AI-003: `/today`
+  получает только server-sourced состояния `notStarted → inProgress → completed`,
+  CSRF/idempotent transition retry, loading/error/session-expiry handling и
+  mobile-first presentation. Новых API, AI-текстов, Character, scheduler, push
+  или AI-004 не добавляется; isolated runtime acceptance ещё выполняется.
 - AI-003: Daily Coach backend реализует и изолированно проверяет одну timezone-aware state row на локальную дату, state machine `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API в отдельной ветке; migration repeatability, 76 API и 32 worker tests подтверждены, `main` и stable не изменены; frontend, scheduling, prompts и Character не входят.
 - AI-002: structured companion memory, nullable profile context, migration `0010`, owner list/delete API, deterministic worker extraction и bounded memory context реализованы и проверены в отдельной ветке; `main` не изменён.
 - AI-001: GenAPI adapter реализован и проверен в отдельной ветке на synthetic test-пользователях; `main` и stable остаются на fake до приёмки и merge.

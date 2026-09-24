@@ -235,6 +235,54 @@ button:disabled {
   backdrop-filter: blur(12px);
 }
 
+.daily-coach {
+  margin-top: 1.15rem;
+  padding: 1.25rem 0.15rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.daily-coach-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.daily-coach h2 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.daily-coach p:not(.section-label) {
+  max-width: 25rem;
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.coach-action {
+  flex: 0 0 auto;
+  border: 1px solid var(--forest);
+  border-radius: 999px;
+  padding: 0.62rem 0.85rem;
+  background: transparent;
+  color: var(--forest-deep);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.coach-action:hover:not(:disabled) {
+  background: var(--forest);
+  color: #fff;
+}
+
 .section-heading,
 .history-title-row {
   display: flex;
