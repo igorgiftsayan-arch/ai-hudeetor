@@ -78,6 +78,7 @@ export class MarathonService {
       bootstrapEnabled: boolean;
       bootstrapUserIds: Set<string>;
       providerMode: 'fake' | 'genapi';
+      foodProviderMode?: 'fake' | 'genapi';
       consentVersion: string;
       consentDisclosure: string;
     },
@@ -564,6 +565,8 @@ export class MarathonService {
     return {
       providerMode: this.options.providerMode,
       externalProviderEnabled: this.options.providerMode === 'genapi',
+      foodProviderMode: this.options.foodProviderMode ?? 'fake',
+      foodExternalProviderEnabled: this.options.foodProviderMode === 'genapi',
       documentVersion: this.options.consentVersion,
       disclosure: this.options.consentDisclosure,
       accepted: Boolean(q.rows[0]),

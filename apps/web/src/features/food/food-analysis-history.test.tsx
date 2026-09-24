@@ -39,6 +39,8 @@ function baseResponse(url: string) {
   if (url.endsWith('/users/me/ai-provider-consent'))
     return json({
       providerMode: 'fake',
+      foodProviderMode: 'fake',
+      foodExternalProviderEnabled: false,
       externalProviderEnabled: false,
       accepted: false,
     });

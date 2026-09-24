@@ -7,6 +7,7 @@ export type MarathonOptions = {
   bootstrapEnabled: boolean;
   bootstrapUserIds: string[];
   providerMode: 'fake' | 'genapi';
+  foodProviderMode: 'fake' | 'genapi';
   consentVersion: string;
   consentDisclosure: string;
 };

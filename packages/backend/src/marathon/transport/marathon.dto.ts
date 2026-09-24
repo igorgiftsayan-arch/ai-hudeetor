@@ -177,6 +177,9 @@ export class TeamTodayDto {
 export class ProviderConsentMetadataDto {
   @ApiProperty({ enum: ['fake', 'genapi'] }) providerMode!: 'fake' | 'genapi';
   @ApiProperty() externalProviderEnabled!: boolean;
+  @ApiProperty({ enum: ['fake', 'genapi'] }) foodProviderMode!:
+    'fake' | 'genapi';
+  @ApiProperty() foodExternalProviderEnabled!: boolean;
   @ApiProperty() documentVersion!: string;
   @ApiProperty() disclosure!: string;
   @ApiProperty() accepted!: boolean;

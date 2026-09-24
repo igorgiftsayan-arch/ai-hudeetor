@@ -456,6 +456,7 @@ export default function FoodPage() {
             </div>
             {providerConsent && (
               <ProviderConsentNotice
+                feature="food"
                 consent={providerConsent}
                 csrfToken={data.csrfToken}
                 disclosure="Фото блюда и необходимый контекст будут переданы внешнему сервису GenAPI для разбора."
@@ -678,11 +679,7 @@ function tokenLabel(count: number) {
 
 function canUseFoodAi(consent: ProviderConsent | undefined) {
   if (!consent) return false;
-  return (
-    consent.providerMode === 'fake' ||
-    !consent.externalProviderEnabled ||
-    consent.accepted
-  );
+  return consent.foodExternalProviderEnabled === false || consent.accepted;
 }
 
 function readFoodError(cause: unknown) {

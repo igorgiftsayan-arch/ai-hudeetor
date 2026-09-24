@@ -60,6 +60,7 @@ const config = loadApiConfig();
       bootstrapEnabled: config.MARATHON_BOOTSTRAP_ENABLED,
       bootstrapUserIds: config.MARATHON_BOOTSTRAP_USER_IDS,
       providerMode: config.AI_PROVIDER,
+      foodProviderMode: config.FOOD_VISION_PROVIDER,
       consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
       consentDisclosure: config.IDENTITY_AI_PROVIDER_DISCLOSURE,
     }),
