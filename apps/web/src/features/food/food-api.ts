@@ -2,6 +2,8 @@ import type {
   CreateFoodUploadIntentDtoContentType,
   FoodActionPriceDto,
   FoodAnalysisResourceDto,
+  FoodAnalysisPageDto,
+  FoodAnalysisListItemDto,
   FoodConsumptionPageDto,
   FoodConsumptionResourceDto,
   FoodCorrectionDto,
@@ -229,4 +231,15 @@ export function requestFoodDeletion(input: {
       headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
     },
   );
+}
+
+export type FoodAnalysisListItem = FoodAnalysisListItemDto;
+export type FoodAnalysisPage = FoodAnalysisPageDto;
+export function loadPastFoodAnalyses(cursor?: string) {
+  const query = new URLSearchParams({
+    limit: '20',
+    consumptionStatus: 'notConfirmed',
+  });
+  if (cursor) query.set('cursor', cursor);
+  return apiRequest<FoodAnalysisPage>(`/food-analyses?${query.toString()}`);
 }

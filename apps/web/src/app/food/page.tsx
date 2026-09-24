@@ -7,6 +7,7 @@ import {
   FoodConfirmation,
   type ConfirmedFoodDraft,
 } from '../../features/food/food-confirmation';
+import { FoodAnalysisHistory } from '../../features/food/food-analysis-history';
 import { FoodDeletion } from '../../features/food/food-deletion';
 import { FoodHistoryEntry } from '../../features/food/food-history-entry';
 import { FoodPhotoDraft } from '../../features/food/food-photo-draft';
@@ -591,6 +592,16 @@ export default function FoodPage() {
             </ol>
           )}
         </section>
+        {storageKey.current && (
+          <FoodAnalysisHistory
+            key={storageKey.current}
+            ownerScope={storageKey.current}
+            csrfToken={data.csrfToken}
+            timezone={data.timezone}
+            onSessionExpired={() => replace('/login')}
+            onDeletionStatus={deletionChanged}
+          />
+        )}
       </div>
       <MobileNavigation active="food" />
     </main>
