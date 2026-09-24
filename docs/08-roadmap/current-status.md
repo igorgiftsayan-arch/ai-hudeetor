@@ -1,59 +1,26 @@
 # Текущий статус
 
-## Observed native chat model reconciliation
+## Реальный chat checkpoint — 2026-09-25
 
-One GET of successful existing request54133216 established network `grok-4-5`,
-parameters.model `grok-4.5`, result[0].model `x-ai/grok-4.5`. Reconciliation accepts
-only this exact additional mapping; ID/network/ordered messages/timestamp checks
-remain mandatory. Sanitized regression red→green,9/9 including six correlation
-negatives; worker typecheck/scoped lint PASS. No second provider POST, no rewriting
-of successful or refunded records. A successful chat reply is not a claim that a
-real interrupted chat operation has been recovered.
+Chat и food работают через GenAPI. Один разрешённый реальный chat54133216
+завершён: ответ и reload PASS, одна reservation/confirmation, wallet90→89.
+Предыдущая попытка была отклонена локально до provider POST из-за несовпадения
+consent version; один полный возврат сохранён. bf8d050 выровнял API/worker test-v1,
+текущую проверку согласия не ослабляет.
 
-
-## Chat history recovery — local checkpoint
-
-Conversation input messages now carry their owner-bound operation summary; GET
-operation and history expose ledger-derived refundStatus. A technicalError alone
-never implies a refund. PostgreSQL reload/pending/refund/foreign-owner coverage:
-5/5 PASS; API typecheck, scoped lint, backend build and generated contracts PASS.
-Actual new chat54133216 succeeded after consent alignment, wallet90→89; browser
-reply/reload PASS. Earlier local rejected operation and its refund are preserved.
-History UI deployment and native reconciliation model-alias validation remain pending.
-
-
-## Chat consent runtime correction — 2026-09-25
-
-First synthetic chat was rejected locally before any provider POST: API required
-`test-v1`, worker omitted the variable and required default `v1`. Operation
-`08707198-5a80-4621-b9e4-6e323343d1c7` remains technicalError/safetyRejected,
-no provider ID, exactly one reservation/refund; wallet remains90. Expanded Compose
-now supplies the same configured consent version to API and worker. The current
-consent guard is unchanged. A fresh operation requires separate acceptance; no
-successful real chat or recovery is claimed by this configuration correction.
-
-
-## Native chat transport — локальный checkpoint, 2026-09-25
-
-Подготовлен фикс native GenAPI: network ID `grok-4-5` остаётся в URL, proxy-only
-selector не передаётся в native `model`; используется документированный default.
-Новый receipt сохраняет точный native body до submit, replay использует сохранённые
-messages без пересборки из изменившегося контекста. Старые hashes не переписываются;
-proxy transport сохранён. Parser поддерживает документированные result strings и
-full_response array, не принимает request echo. Строгая reconciliation проверка
-provider ID/network/messages/result metadata сохранена; реальный native chat ещё
-не выполнен и совместимость его результата пока не заявляется.
-
-Проверки: adapter/reconciliation16/16; actual PostgreSQL chat receipt subset5/5
-(5 других cases не запускались); worker typecheck и scoped lint PASS. Ожидается
-независимый review перед переключением API/worker и одним разрешённым quickReply.
-Источники: [native Grok schema](https://gen-api.ru/model/grok-4-5/api),
-[GET result schema](https://gen-api.ru/docs/v1/generations/getting-the-result).
+41b80f6 сохраняет точный native payload до submit (independent16/16 + PG5/5).
+128bccd добавляет owner-bound историю операций и возврат только по ledger
+(independent PG5/5). f952948 поддерживает ровно наблюдаемый alias
+networkgrok-4-5 → parameters.modelgrok-4.5 → result.modelx-ai/grok-4.5:
+independent9/9, сохранённый реальный envelope прошёл production verifier offline.
+Это не доказательство восстановления прерванного реального chat. HTTP/phone
+ограничения ниже сохраняются. Web8694435 прошёл независимые20/20, включая защиту
+от запоздалого ответа прошлого пользователя; финальная browser history проверка после re-login/reload PASS: прежняя ошибка
+с возвратом и реальный ответ сохранены.
 
 ## Runtime checkpoint — 2026-09-25
 
-Один активный expanded стенд на прежнем2GB сервере; main не менялся. Web8a0e72d,
-API backend141b784, worker/base da9e837. Public3114 login/APIready200;7сервисов healthy,
+Один активный expanded стенд на прежнем2GB сервере; main не менялся. API/worker backendf952948, worker composition41b80f6, web8694435. Public3114 login/APIready200;7сервисов healthy,
 resourceOOMfalse, автоматических restarts0. Старые volumes/backup сохранены.
 
 - Два разрешённых full-app food анализа:54129307/54130142, по1reservation(-5) и
@@ -70,7 +37,8 @@ resourceOOMfalse, автоматических restarts0. Старые volumes/b
   preview, checksum signing, corrected display, decimalweight, notifications label.
 
 [Точные версии, hashes, timestamps, доказательства и ограничения](../07-deployment/gerbi-full-food-runtime.md).
-Chat=fake, food=genapi, push=false. PublicHTTP Safari не имеет crypto.subtle: desktop
+Chat=genapi, food=genapi, push=false. One real chat54133216 reply/reload passed;
+prior locally rejected/refunded chat remains separately visible in evidence. PublicHTTP Safari не имеет crypto.subtle: desktop
 food acceptance выполнен через localhostSSH к реальному стеку. Теперь publicorigin
 восстановлен, собственный tunnel закрыт. Реальный HTTPS/телефон/push всё ещё pending;
 этот стенд не объявляется готовым для участников. Pre-ID unknown goodwill/refund

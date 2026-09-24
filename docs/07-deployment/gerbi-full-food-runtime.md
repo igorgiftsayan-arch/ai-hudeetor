@@ -4,8 +4,8 @@
 
 One active stack: atlas-gerbi-expanded on the existing2GB server; old Daily Coach
 containers stopped, all historical volumes preserved. Main unchanged. API and
-worker chat=fake, food=genapi, PUSH_ENABLED=false. Web8a0e72d, API backend141b784;
-worker/base applicationda9e837. See constrained-runtime provenance for dependency
+worker chat=genapi, food=genapi, PUSH_ENABLED=false. API/worker backend f952948;
+worker composition41b80f6, API compositionda9e837. Current web update is recorded below. See constrained-runtime provenance for dependency
 images, private MinIO locally built upstream binaries and resource caps.
 
 Public HTTP Safari lacks crypto.subtle. The failed preflight created no upload,
@@ -119,7 +119,7 @@ production build/typecheck/lint passed. This is truthful unavailability, not del
 - Snapshot availableRAM1024MiB/1967, disk3882MiB; final observed RSS about487MiB.
   Resource caps unchanged. This is bounded acceptance, not a concurrency/load test.
 - Server root-only compose-current.sh preserves base+expanded+artifact, current
-  web-revision/api-revision and disabled bootstrap overlays. It deliberately omits
+  web-revision/api-revision/native-chat-revision and disabled bootstrap overlays. It deliberately omits
   desktop-origin.yaml. Config validates quietly; operators must use current mounts.
   Old artifacts, old stack volumes and backup are preserved; no broad prune/delete.
 
@@ -128,8 +128,59 @@ production build/typecheck/lint passed. This is truthful unavailability, not del
 Public HTTP Safari cannot prepare photoSHA256; the full food desktop proof used
 localhost secure context through the real SSH tunnel. A real HTTPS hostname and
 phone browser acceptance are still required for participant use and Web Push.
-Current chat is fake; current food is realGenAPI. No broad real-model quality claim.
+Current chat and food use real GenAPI; one chat and two food generations are
+observed. No broad real-model quality or interrupted-chat recovery claim.
 Pre-ID unknown/possibly-sent goodwill-refund policy remains owner-dependent; known-
 unsent cancellation is a different approved rule. No automatic refund promise is
 made for ambiguous provider submission. Prior local recovery/cancellation tests
 remain separate from these two observed runtime operations.
+
+## Real chat and recovery metadata — 2026-09-25
+
+Native transport41b80f6 persists exact messages/is_sync body before submission,
+omits proxy-only model selector, retains proxy behavior. Independent16/16 adapter
+and reconciliation tests plus actualPG5/5 receipt subset passed.
+
+- First operation08707198-5a80-4621-b9e4-6e323343d1c7 was rejected locally:
+  safetyRejected, no provider POST or ID. API consent requiredtest-v1 while worker
+  defaultedv1. Its one reservation(-1)/refund(+1) remains unchanged. Configbf8d050
+  now gives API and worker the same explicit version; actualenv bothtest-v1.
+  Rendered default and custom-version equality plus independent review passed.
+- One separately authorized fresh operation10cd223a-d773-47b0-8d37-7be5edd4cd5b
+  succeeded with provider54133216. Receipt completed, hash
+  ccdf9061fb74d235146e7896790b1e74f8012f12019d91bfa38253bac435a69b.
+  One reservation(-1), one confirmation, no refund; wallet90→89. Browser reply
+  and full reload passed. Two user messages (local rejection + real success),
+  one assistant. No further provider POST and no third food generation.
+- One read-only GET of that existing ID saved a root-only600 envelope. Observed
+  networkgrok-4-5, parameters.modelgrok-4.5, result.modelx-ai/grok-4.5. Fixf952948
+  adds only that exact alias; ID/network/ordered messages/time guards retained.
+  Regression red→green9/9 incl six correlation negatives; independent9/9 passed.
+  Saved actual envelope passed the fixed production client offline against the
+  persisted request. Returned usage546input/177output/723total; no monetary cost
+  inference. This is envelope compatibility, not real interrupted-chat recovery.
+- History128bccd exposes owner-bound input-message operation summaries and
+  ledger-derived refundStatus, including GEToperation. ActualPG5/5 independently
+  passed; APItypecheck/build/lint/generatedcontracts passed. No refund inferred
+  merely from technicalError. Final web8694435 re-login/fullreload PASS: first failed/refunded message and
+  second real assistant answer both persist; no new POST.
+
+Backend artifactf952948 SHA256
+70c78bda0f6e5c67d73e8d24f8fab4c3a2bd85c2ccf54c581980047f54469e85
+contains compiled backend only, built locally Node24.18; API/worker mount it
+read-only using previously verified Linux dependencies. Worker composition
+artifact41b80f6 SHA2564e1f5d5024d43b4e52f04656df6c6984e27cfbc7db963e3a17cc2296fa6cb9ac.
+
+Final web8694435 artifact SHA256
+a46f4551f633b8394596124426c9f2b7c1dce41dee9725135ca0e59ac67ebafd,
+BuildIDfbNdEso3sB3cAzUkZZYpG. Superseded e097e2a archive was staged but never
+activated; its stale-context review finding was fixed before deployment.
+After current component updates: exactly7healthy services, OOMfalse/restarts0;
+API256/worker256/web192/Postgres128/Redis64/MinIO256/gateway32MiB caps unchanged.
+Hostavailable972MiB, disk3863MiB; RSS approximately455MiB, MinIO229MiB of256.
+Public login200. Bootstrap remainsfalse, publicorigin retained, no localhosttunnel.
+
+Next bounded gates: focused actualPG chat prepared-context inclusion/exclusion
+for corrected confirmed food; controlled known-unsent API cancellation acceptance
+before worker submission (requires planned pause/readiness). These are not claimed
+as completed by the chat/history checkpoint.

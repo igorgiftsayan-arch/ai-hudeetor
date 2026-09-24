@@ -1,53 +1,33 @@
 # Changelog
 
-## Observed native chat model reconciliation
-
-One GET of successful existing request54133216 established network `grok-4-5`,
-parameters.model `grok-4.5`, result[0].model `x-ai/grok-4.5`. Reconciliation accepts
-only this exact additional mapping; ID/network/ordered messages/timestamp checks
-remain mandatory. Sanitized regression red→green,9/9 including six correlation
-negatives; worker typecheck/scoped lint PASS. No second provider POST, no rewriting
-of successful or refunded records. A successful chat reply is not a claim that a
-real interrupted chat operation has been recovered.
-
-
-## Chat history recovery — local checkpoint
-
-Conversation input messages now carry their owner-bound operation summary; GET
-operation and history expose ledger-derived refundStatus. A technicalError alone
-never implies a refund. PostgreSQL reload/pending/refund/foreign-owner coverage:
-5/5 PASS; API typecheck, scoped lint, backend build and generated contracts PASS.
-Actual new chat54133216 succeeded after consent alignment, wallet90→89; browser
-reply/reload PASS. Earlier local rejected operation and its refund are preserved.
-History UI deployment and native reconciliation model-alias validation remain pending.
-
-
-## Chat consent runtime correction — 2026-09-25
-
-First synthetic chat was rejected locally before any provider POST: API required
-`test-v1`, worker omitted the variable and required default `v1`. Operation
-`08707198-5a80-4621-b9e4-6e323343d1c7` remains technicalError/safetyRejected,
-no provider ID, exactly one reservation/refund; wallet remains90. Expanded Compose
-now supplies the same configured consent version to API and worker. The current
-consent guard is unchanged. A fresh operation requires separate acceptance; no
-successful real chat or recovery is claimed by this configuration correction.
-
-
 Все заметные изменения проекта документируются здесь. Формат основан на Keep a Changelog; версии появятся с релизами.
 
 ## [Unreleased]
+
+### Real chat checkpoint — 2026-09-25
+
+- Actual chat54133216 reply/reload passed, exactly one debit, wallet89. Earlier
+  local consent-version rejection had no provider POST and one full refund.
+  bf8d050 aligns API/worker version without weakening the consent guard.
+- 128bccd restores owner-bound operation history and ledger-derived refundStatus;
+  independent actualPG5/5. Web8694435 adds reload recovery and stale-owner response
+  guards; independent20/20 passed.
+- f952948 accepts only the observed native Grok model alias while retaining all
+  correlation checks; independent9/9 and saved actual envelope offline PASS.
+  No claim of interrupted real-chat recovery; no additional provider generation.
+
 
 - Native chat request now omits the proxy model selector and persists its exact
   wire body before submission; saved receipt replay and reconciliation use that
   snapshot. Documented native result strings/full_response arrays are parsed;
   request echoes are rejected, proxy behavior retained. Targeted16/16 and actual
-  PG chat receipt subset5/5, worker typecheck/scoped lint PASS. Independent review
-  and one real native chat acceptance remain pending; no new provider call yet.
+  PG chat receipt subset5/5, worker typecheck/scoped lint PASS. Independent review and one real native chat acceptance passed.
 
 
 ### Runtime checkpoint — 2026-09-25
 
-- Final current components web8a0e72d/API backend141b784/workerda9e837.
+- Prior food checkpoint components were web8a0e72d/API backend141b784/workerda9e837;
+  superseded by web8694435/API+worker backendf952948/worker composition41b80f6.
   Second food correction/confirm/reload and core weight/wellness/captain checks
   passed through browser+API+PG; owner-negative lists/details do not leak data.
   Public origin restored, owned SSH tunnel closed, bootstrap disabled.
