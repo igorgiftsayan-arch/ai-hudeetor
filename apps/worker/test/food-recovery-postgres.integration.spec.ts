@@ -1,10 +1,11 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { S3Client } from '@aws-sdk/client-s3';
 import { DatabaseService } from '@atlas/backend';
 import { FoodAnalysisProcessor } from '../src/food-analysis.processor';
 import { AutomaticRecoveryService } from '../src/automatic-recovery.service';
+import { AiOperationProcessor } from '../src/ai-operation.processor';
 
 // Explicit opt-in, matching the existing API PostgreSQL integration harness.
 // Uses a fresh schema and real migrations; never truncates shared tables.
@@ -112,6 +113,242 @@ describeWithDatabase(
         await admin.onApplicationShutdown();
       }
     }, 30_000);
+
+    it('resumes the original prepared food snapshot after profile changes without rewriting the receipt', async () => {
+      const fixture = await seed();
+      const first = processor(worker);
+      const tx = worker.transaction.bind(worker);
+      const crash = jest
+        .spyOn(worker, 'transaction')
+        .mockImplementationOnce(async (callback) => {
+          await tx(callback);
+          throw new Error('crash after prepared receipt commit');
+        });
+      await expect(first.process(job(fixture.outboxId))).rejects.toThrow(
+        'crash after prepared',
+      );
+      crash.mockRestore();
+      const before = (
+        await observer.query(
+          'select request_payload,request_hash from food_analysis_request_receipts where food_analysis_id=$1',
+          [fixture.analysisId],
+        )
+      ).rows[0]!;
+      await observer.query(
+        "insert into user_profiles(user_id,timezone,target_weight_kg) values($1,'Europe/Moscow',65)",
+        [fixture.userId],
+      );
+      await observer.query(
+        "update food_analyses set updated_at=now()-interval '3 minutes' where id=$1",
+        [fixture.analysisId],
+      );
+      await new AutomaticRecoveryService(sweeper).sweep();
+      const fetcher = jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(async (_url, init) =>
+          init?.method === 'POST'
+            ? json({ request_id: fixture.providerId })
+            : json({
+                status: 'success',
+                result: [JSON.stringify(successfulResult)],
+              }),
+        );
+      await processor(sweeper).process(job(fixture.outboxId));
+      const posted = JSON.parse(
+        fetcher.mock.calls.find(([, init]) => init?.method === 'POST')![1]!
+          .body as string,
+      );
+      expect(posted.messages[1].content[0].text).toContain(
+        '"targetWeightKg":null',
+      );
+      const after = (
+        await observer.query(
+          'select request_payload,request_hash from food_analysis_request_receipts where food_analysis_id=$1',
+          [fixture.analysisId],
+        )
+      ).rows[0]!;
+      expect(after).toEqual(before);
+      await processor(worker).process(job(fixture.outboxId));
+      expect(
+        fetcher.mock.calls.filter(([, init]) => init?.method === 'POST'),
+      ).toHaveLength(1);
+      await expectOneConfirmation(fixture.analysisId);
+    }, 30000);
+
+    it.each(['submitting', 'ambiguous'])(
+      'never resubmits food receipt %s after restart',
+      async (state) => {
+        const fixture = await seed();
+        const tx = worker.transaction.bind(worker);
+        const crash = jest
+          .spyOn(worker, 'transaction')
+          .mockImplementationOnce(async (callback) => {
+            await tx(callback);
+            throw new Error('prepared crash');
+          });
+        await expect(
+          processor(worker).process(job(fixture.outboxId)),
+        ).rejects.toThrow('prepared crash');
+        crash.mockRestore();
+        await observer.query(
+          'update food_analysis_request_receipts set submission_state=$2 where food_analysis_id=$1',
+          [fixture.analysisId, state],
+        );
+        await observer.query(
+          "update food_analyses set status=$2,updated_at=now()-interval '3 minutes' where id=$1",
+          [
+            fixture.analysisId,
+            state === 'ambiguous' ? 'outcomeUnknown' : 'processing',
+          ],
+        );
+        const fetcher = jest.spyOn(global, 'fetch');
+        await new AutomaticRecoveryService(sweeper).sweep();
+        await processor(worker).process(job(fixture.outboxId));
+        expect(fetcher).not.toHaveBeenCalled();
+        expect(
+          (
+            await observer.query(
+              'select status from food_analyses where id=$1',
+              [fixture.analysisId],
+            )
+          ).rows[0]?.status,
+        ).toBe('outcomeUnknown');
+        expect(
+          (
+            await observer.query(
+              'select entry_type from token_transactions where food_analysis_id=$1',
+              [fixture.analysisId],
+            )
+          ).rows.map((row) => row.entry_type),
+        ).toEqual(['aiReservation']);
+      },
+    );
+
+    it.each([
+      { consented: true, state: 'prepared' },
+      { consented: false, state: 'prepared' },
+      { consented: true, state: 'submitting' },
+      { consented: true, state: 'ambiguous' },
+    ])(
+      'handles chat receipt $state with current consent=$consented without unsafe resubmission',
+      async ({ consented, state }) => {
+        const fixture = await seed();
+        const conversationId = randomUUID(),
+          messageId = randomUUID(),
+          operationId = randomUUID(),
+          eventId = randomUUID();
+        await observer.query(
+          'insert into ai_conversations(id,user_id) values($1,$2)',
+          [conversationId, fixture.userId],
+        );
+        await observer.query(
+          "insert into ai_messages(id,conversation_id,role,content) values($1,$2,'user','original question')",
+          [messageId, conversationId],
+        );
+        await observer.query(
+          "insert into ai_preferences(user_id,persona_id,strictness,response_length) values($1,'strictCoach','high','short')",
+          [fixture.userId],
+        );
+        await observer.query(
+          "insert into ai_operations(id,user_id,conversation_id,input_message_id,status,action_type,price_version,reserved_tokens,runtime_adapter,prompt_version,updated_at) values($1,$2,$3,$4,'processing','quickReply',1,1,'genapi','quick-reply-v1',now()-interval '3 minutes')",
+          [operationId, fixture.userId, conversationId, messageId],
+        );
+        await observer.query(
+          "insert into token_transactions(id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id,operation_id) values($1,$2,$3,'aiReservation',-1,'aiOperation',$4,$4)",
+          [randomUUID(), fixture.walletId, fixture.userId, operationId],
+        );
+        const original = {
+          operationId,
+          promptVersion: 'quick-reply-v1',
+          personaId: 'gentleFriend',
+          memoryContext: 'original weight and profile',
+          messages: [{ role: 'user', content: 'original question' }],
+        };
+        const hash = createHash('sha256')
+          .update(JSON.stringify(original))
+          .digest('hex');
+        await observer.query(
+          "insert into ai_operation_request_receipts(operation_id,user_id,provider,model,prompt_id,prompt_version,request_payload,request_hash,submission_state) values($1,$2,'genapi',$3,'quick-reply','1',$4::jsonb,$5,'prepared')",
+          [
+            operationId,
+            fixture.userId,
+            process.env.GENAPI_MODEL ?? 'genapi',
+            JSON.stringify(original),
+            hash,
+          ],
+        );
+        if (state !== 'prepared') {
+          await observer.query(
+            'update ai_operation_request_receipts set submission_state=$2 where operation_id=$1',
+            [operationId, state],
+          );
+          if (state === 'ambiguous')
+            await observer.query(
+              "update ai_operations set status='outcomeUnknown' where id=$1",
+              [operationId],
+            );
+        }
+        if (consented)
+          await observer.query(
+            "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','web')",
+            [randomUUID(), fixture.userId],
+          );
+        await observer.query(
+          "insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at) values($1,'ai-companion.quick_reply_requested.v1','aiOperation',$2,$3::jsonb,now(),now())",
+          [eventId, operationId, JSON.stringify({ operationId })],
+        );
+        await new AutomaticRecoveryService(sweeper).sweep();
+        const adapter = {
+          providerName: 'genapi',
+          execute: jest
+            .fn()
+            .mockResolvedValue({
+              kind: 'success',
+              text: 'synthetic answer',
+              usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+            }),
+        };
+        const memory = {
+          build: jest.fn().mockResolvedValue('changed weight and profile'),
+        };
+        const restarted = new AiOperationProcessor(
+          worker,
+          adapter as never,
+          memory as never,
+          { process: jest.fn() } as never,
+        );
+        await restarted.process(job(eventId));
+        if (consented && state === 'prepared')
+          expect(adapter.execute.mock.calls[0]?.[0]).toEqual(original);
+        else expect(adapter.execute).not.toHaveBeenCalled();
+        await restarted.process(job(eventId));
+        expect(adapter.execute).toHaveBeenCalledTimes(
+          consented && state === 'prepared' ? 1 : 0,
+        );
+        const receipt = (
+          await observer.query(
+            'select request_payload,request_hash from ai_operation_request_receipts where operation_id=$1',
+            [operationId],
+          )
+        ).rows[0];
+        expect(receipt).toEqual({
+          request_payload: original,
+          request_hash: hash,
+        });
+        const ledger = await observer.query<{ entry_type: string }>(
+          'select entry_type from token_transactions where operation_id=$1 order by entry_type',
+          [operationId],
+        );
+        expect(ledger.rows.map((row) => row.entry_type)).toEqual(
+          state !== 'prepared'
+            ? ['aiReservation']
+            : consented
+              ? ['aiConfirmation', 'aiReservation']
+              : ['aiRefund', 'aiReservation'],
+        );
+      },
+      30000,
+    );
 
     it('serializes actual submission and requeue, never leaving queued plus submitted receipt', async () => {
       const fixture = await seed();
@@ -407,7 +644,13 @@ describeWithDatabase(
         "insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) values($1,'food.analysis_requested.v1','foodAnalysis',$2,$3::jsonb,now(),now(),0)",
         [outboxId, analysisId, JSON.stringify({ analysisId })],
       );
-      return { analysisId, outboxId, providerId: `synthetic-${analysisId}` };
+      return {
+        userId,
+        walletId,
+        analysisId,
+        outboxId,
+        providerId: `synthetic-${analysisId}`,
+      };
     }
   },
 );
