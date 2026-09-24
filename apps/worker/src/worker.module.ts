@@ -149,7 +149,7 @@ const redisUrl = new URL(config.REDIS_URL);
     MemoryExtractionProcessor,
     {
       provide: FoodAnalysisProcessor,
-      useFactory: (database: DatabaseService) => new FoodAnalysisProcessor(database, {provider:config.FOOD_VISION_PROVIDER,fakeMode:config.FOOD_FAKE_MODE,apiKey:config.GENAPI_API_KEY,nativeBaseUrl:config.GENAPI_NATIVE_BASE_URL,model:config.GENAPI_VISION_MODEL,timeoutMs:config.GENAPI_TIMEOUT_MS,s3:{endpoint:config.S3_ENDPOINT,region:config.S3_REGION,bucket:config.S3_BUCKET,accessKeyId:config.S3_ACCESS_KEY_ID,secretAccessKey:config.S3_SECRET_ACCESS_KEY,forcePathStyle:config.S3_FORCE_PATH_STYLE}}),
+      useFactory: (database: DatabaseService) => new FoodAnalysisProcessor(database, {provider:config.FOOD_VISION_PROVIDER,fakeMode:config.FOOD_FAKE_MODE,apiKey:config.GENAPI_API_KEY,nativeBaseUrl:config.GENAPI_NATIVE_BASE_URL,networkId:config.GENAPI_VISION_MODEL,modelVersion:config.GENAPI_VISION_MODEL_VERSION,timeoutMs:config.GENAPI_TIMEOUT_MS,s3:{endpoint:config.S3_ENDPOINT,region:config.S3_REGION,bucket:config.S3_BUCKET,accessKeyId:config.S3_ACCESS_KEY_ID,secretAccessKey:config.S3_SECRET_ACCESS_KEY,forcePathStyle:config.S3_FORCE_PATH_STYLE}}),
       inject: [DatabaseService],
     },
     {

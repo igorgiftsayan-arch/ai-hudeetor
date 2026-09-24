@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createHash, randomUUID } from 'node:crypto';
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -79,7 +80,7 @@ export class FoodService {
     const bytes = await this.storage.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: image.object_key }));
     const body = bytes.Body ? Buffer.from(await bytes.Body.transformToByteArray()) : Buffer.alloc(0);
     const digest = createHash('sha256').update(body).digest('hex');
-    let decoded = false;
+    let decoded: boolean;
     try {
       const metadata = await sharp(body, { limitInputPixels: 40_000_000 }).metadata();
       decoded = Boolean(metadata.width && metadata.height && metadata.format);

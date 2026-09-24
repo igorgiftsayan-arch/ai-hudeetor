@@ -2,7 +2,8 @@ import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Put, Req 
 import { ApiCookieAuth, ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { PushNotificationsService } from '../application/push-notifications.service';
-import { PushPreferenceResourceDto, PushSubscriptionResourceDto, SavePushPreferenceDto, SavePushSubscriptionDto } from './notifications.dto';
+import type { SavePushPreferenceDto, SavePushSubscriptionDto } from './notifications.dto';
+import { PushPreferenceResourceDto, PushSubscriptionResourceDto } from './notifications.dto';
 
 @ApiTags('notifications')
 @ApiCookieAuth()

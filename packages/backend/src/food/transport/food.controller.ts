@@ -3,7 +3,8 @@ import { ApiAcceptedResponse, ApiCookieAuth, ApiCreatedResponse, ApiHeader, ApiO
 import type { Request } from 'express';
 import { IdentityError } from '../../identity/domain/identity-error';
 import { FoodService } from '../application/food.service';
-import { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodCorrectionDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto, UpdateFoodConsumptionDto } from './food.dto';
+import type { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodCorrectionDto, UpdateFoodConsumptionDto } from './food.dto';
+import { FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto } from './food.dto';
 
 @ApiTags('food')
 @ApiCookieAuth()

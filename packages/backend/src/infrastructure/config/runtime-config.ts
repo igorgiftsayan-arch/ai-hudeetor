@@ -82,6 +82,7 @@ export const workerConfigSchema = baseSchema
     FOOD_FAKE_MODE: z.enum(['success', 'technicalError', 'outcomeUnknown']).default('success'),
     FOOD_VISION_PROVIDER: z.enum(['fake','genapi']).default('fake'),
     GENAPI_VISION_MODEL: z.string().min(1).optional(),
+    GENAPI_VISION_MODEL_VERSION: z.string().min(1).default('gpt-4o-2024-08-06'),
     GENAPI_NATIVE_BASE_URL: z.url().default('https://api.gen-api.ru/api/v1'),
     S3_ENDPOINT: z.url().default('http://localhost:9000'),
     S3_REGION: z.string().min(1).default('us-east-1'),

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createHash, randomUUID } from 'node:crypto';
 import type { DatabaseService } from '../../infrastructure/database/database.service';
 import type { GetCurrentUserUseCase } from '../../identity/application/get-current-user.use-case';
