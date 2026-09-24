@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import FoodPage from './page';
 import * as food from '../../features/food/food-api';
@@ -234,4 +235,72 @@ it('does not present saved corrections with the original suitability or start an
   ).toBeInTheDocument();
   expect(food.createFoodAnalysis).not.toHaveBeenCalled();
   expect(food.saveFoodCorrection).not.toHaveBeenCalled();
+});
+
+it.each([
+  ['matches', 'Соответствует'],
+  ['doesNotMatch', 'Не соответствует'],
+  ['mixed', 'Частично соответствует'],
+  ['insufficientData', 'Недостаточно данных'],
+] as const)(
+  'renders API suitability %s and its exact missing-data details',
+  async (status, label) => {
+    saved({ analysisId: 'analysis-1' });
+    const missingData = [
+      'Не указан размер порции.',
+      'Неизвестен состав соуса.',
+    ];
+    vi.mocked(food.loadFoodAnalysis).mockResolvedValue({
+      ...analyzed,
+      suitabilityResult: {
+        status,
+        source: 'profile',
+        observations: ['Распознан рис.'],
+        missingData,
+      },
+    });
+    render(<FoodPage />);
+    await ready();
+    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Оценка основана на сохранённом профиле/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Распознан рис/)).toBeInTheDocument();
+    const list = screen.getByRole('list', {
+      name: 'Недостающие данные для оценки блюда',
+    });
+    expect(
+      within(list)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(missingData);
+    expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+  },
+);
+
+it('hides the previous API status and missing data while editing composition', async () => {
+  saved({ analysisId: 'analysis-1' });
+  vi.mocked(food.loadFoodAnalysis).mockResolvedValue({
+    ...analyzed,
+    suitabilityResult: {
+      status: 'mixed',
+      source: 'profile',
+      observations: [],
+      missingData: ['Неизвестен состав соуса.'],
+    },
+  });
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Исправить состав'));
+  fireEvent.change(screen.getByLabelText('Состав блюда'), {
+    target: { value: 'рыба' },
+  });
+  expect(screen.queryByText('Частично соответствует')).not.toBeInTheDocument();
+  expect(
+    screen.queryByText('Неизвестен состав соуса.'),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByText(/Исправленный состав пока не оценён/),
+  ).toBeInTheDocument();
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
 });

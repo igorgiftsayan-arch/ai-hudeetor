@@ -4,6 +4,42 @@
 
 ## [Unreleased]
 
+### Current checkpoint — 2026-09-24
+
+- Integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
+  included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
+  scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone
+  gates remain pending; full expanded-pilot acceptance is not claimed.
+- Food UI `cd48570`: explicit suitability labels for all four statuses and exact
+  server `missingData` entries; composition edits retain the stale-assessment
+  guard. Food **29/29**, web typecheck and scoped lint PASS. Real-provider and
+  browser/runtime acceptance remains pending.
+- Backend `ca3d612`: fixes the marathon worker's unhandled outbox publication
+  rejection (`EAI_AGAIN postgres`; DNS failure cause not established) and the
+  fake daily-coach worker's rejection of empty optional GenAPI env values.
+  Both diagnosed workers had `OOMKilled=false`. Publisher retries without
+  overlap or premature outbox marking, retains stable job IDs and drains on
+  shutdown. Empty optional chat settings normalize to undefined; independent
+  real food/push configuration remains validated even with fake chat.
+  Worker **52/52** including actual PostgreSQL, backend/worker typecheck and
+  scoped lint PASS. No server restart or image update: the deployed defects
+  remain, remote DNS recovery and user journeys were not rerun.
+- User approved continued local development while server RAM/storage is increased.
+  Latest live host snapshot is 1 CPU / 2 GB RAM; API containers for
+  `atlas-gerbi-marathon` and `atlas-v01` have `State.OOMKilled=true`, and several
+  workers exited 1 (the two diagnosed causes and local fixes are recorded below). Earlier healthy statements
+  below are historical observations, not current health claims.
+- Removed only unused Docker build cache: Docker reported 4.721 GB reclaimed;
+  disk now 4.2 GB free / 85% used. The same 24 containers remained running.
+  Available RAM about 510 MiB; swap about 1.5 GiB used. Disk cleanup does not
+  resolve RAM capacity or prove API/worker recovery. No new remote build/deploy
+  or main change is recorded by this update.
+
+The entries below preserve the sequence of earlier changes and checkpoints.
+Their failures, server-down reports, resource numbers and healthy observations
+apply to those snapshots; current status is the checkpoint above and
+[the status document](docs/08-roadmap/current-status.md).
+
 ### Added
 
 - GERBI review: chat/photo prompts prohibit food-to-weight causal claims and require acknowledging insufficient comparable data; provider-message tests pass 15/15. Expanded Compose uses publicly verified official Quay MinIO/mc releases pinned to Linux amd64 digests; no images pulled, resource gate remains open.

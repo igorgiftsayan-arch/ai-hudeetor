@@ -492,28 +492,20 @@ function analysisToView(analysis: FoodAnalysisResourceDto | undefined) {
   const suitability = analysis.suitabilityResult;
   const assessedItems =
     analysis.recognizedResult?.items.map((item) => item.name) ?? [];
-  if (!suitability || suitability.status === 'insufficientData') {
-    return {
-      items: recognized.items.map((item) => item.name),
-      assessedItems,
-      suitability:
-        'Пока не хватает известных целей или ограничений питания для оценки этого блюда.',
-    };
-  }
   const source =
-    suitability.source === 'profile'
+    suitability?.source === 'profile'
       ? 'Оценка основана на сохранённом профиле.'
-      : '';
+      : suitability?.source === 'gerbiProgram'
+        ? 'Оценка основана на программе «Герби».'
+        : '';
   return {
     items: recognized.items.map((item) => item.name),
     assessedItems,
-    suitability: [
-      source,
-      ...suitability.observations,
-      ...suitability.missingData,
-    ]
-      .filter(Boolean)
-      .join(' '),
+    suitabilityStatus: suitability?.status ?? ('insufficientData' as const),
+    missingData: suitability?.missingData ?? [],
+    suitability: suitability
+      ? [source, ...suitability.observations].filter(Boolean).join(' ')
+      : 'Оценка этого блюда пока недоступна.',
   };
 }
 

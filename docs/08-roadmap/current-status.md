@@ -1,13 +1,71 @@
 # Текущий статус
 
-## Expanded pilot local PostgreSQL checkpoint — 2026-09-24
+## Актуальный срез — локальная разработка продолжается, 2026-09-24
+
+Подтверждённая интеграционная база: `1ffd048`; следующий локальный backend
+checkpoint исправлений worker: `ca3d612`. Пользователь разрешил продолжать
+разработку и проверки локально, пока увеличивает RAM/storage сервера. Расширение
+remote capacity ожидается; новый remote build/deploy не является результатом
+этого документального обновления. Продуктовый scope сохранён, `main` не менялся.
+
+- Локальная база доказательств: API **92/92**, worker **44/44**, включая реальные
+  PostgreSQL lifecycle/concurrency проверки; provider-prompt tests **15/15**.
+  Food UI на `d52eb9f`: **24/24**. Это отдельные зафиксированные наборы, а не
+  заявление о повторном прогоне всех тестов на каждом следующем commit.
+- Последующий Food UI checkpoint `cd48570`: явно показаны четыре статуса
+  suitability (`matches`, `doesNotMatch`, `mixed`, `insufficientData`) и точные
+  элементы server `missingData`. При изменении состава прежняя оценка и список
+  недостающих данных не выдаются за оценку исправленного блюда; stale guard
+  сохранён. Food **29/29**, web typecheck и scoped lint PASS. Это локальная UI
+  проверка, без новой real-provider или browser/runtime приёмки.
+- Submit/acceptance/recovery используют общий operation-row lock; прежняя
+  late-provider/sweep race закрыта локальными PostgreSQL regressions. Food
+  ledger/lifecycle проверены на настоящих миграциях. Старые FAIL/SKIPPED ниже
+  относятся к предыдущим checkpoints и не отменяют этот результат.
+- Последний live осмотр сервера `5.42.126.71`: **1 CPU / 2 GB RAM**. У API
+  `atlas-gerbi-marathon` и `atlas-v01` зафиксировано `State.OOMKilled=true`;
+  для двух worker exit1 установлены отдельные причины: у обоих
+  `OOMKilled=false`. Marathon worker завершился из-за необработанного
+  `EAI_AGAIN postgres` в outbox publisher (причина DNS-сбоя не установлена).
+  Daily-coach с `AI_PROVIDER=fake` не прошёл validation пустых optional GenAPI
+  env, подставленных Compose. Нельзя считать прежние стенды healthy.
+- Локальное исправление `ca3d612`: outbox publisher обрабатывает отказы и
+  повторяет попытку на следующем tick, не допускает overlap, сохраняет durable
+  outbox до приёма очередью, использует стабильный job ID и корректно завершает
+  работу. Только пустые optional chat GenAPI env нормализуются в undefined;
+  непустые некорректные значения и обязательные real GenAPI настройки сохраняют
+  validation. Независимые food/push настройки проверяются даже при fake chat.
+  Worker **52/52** PASS, включая actual PostgreSQL; backend/worker typecheck и
+  scoped lint PASS. Сервер не перезапускали и не обновляли: исправления там
+  ещё не действуют, DNS recovery и пользовательский путь remote не проверены.
+- Root удалил **только неиспользуемый Docker build cache**: Docker сообщил об
+  освобождении **4.721 GB**. После очистки `df`: **4.2 GB свободно, 85% занято**;
+  **24 running контейнера**, их состав не изменён этой очисткой. Доступная RAM
+  около **510 MiB**, swap около **1.5 GiB используется**. Очистка диска не
+  подтверждает достаточность памяти и не означает восстановление API/worker.
+- Real storage round trip, реальный GenAPI food, новый browser/runtime путь и
+  физический phone push остаются **PENDING / NOT ACCEPTED**. Домен/HTTPS и
+  телефонная приёмка также не закрыты. Старые standalone/core-marathon проверки
+  не принимают за них расширенный пилот.
+
+Подробности и границы: [local ledger/recovery checkpoint](../07-deployment/gerbi-local-ledger-recovery-checkpoint.md).
+
+## История checkpoints — не актуальный health/status
+
+Следующие записи сохранены для истории. Их FAIL, пропущенные проверки, SSH без
+banner, старые значения свободного диска и заявления healthy относятся только
+к названным тогда commit и наблюдениям. Для текущих действий использовать срез
+выше; история не доказывает ни сегодняшнюю недоступность всего сервера, ни
+здоровье всех старых стендов.
+
+### Исторический expanded pilot local PostgreSQL checkpoint — 2026-09-24
 
 - Recovery and initial submission now share operation-row locks; a stale sweeper cannot overwrite a newer provider receipt. Real PostgreSQL concurrency regressions pass.
 - Food reservation/confirmation/refund use existing ledger columns; no schema workaround. FoodService create/replay → worker result → correction → explicit consumption/replay → edit/read → delete/replay is verified on actual migrations, with separate technical-error refund and owner-read isolation. PostgreSQL dates remain `YYYY-MM-DD`.
 - Isolated runtime preparation: source `aee4755` transferred; compatible Linux dependencies verified, local Node 24 builds ready. Runtime start blocked by 656MB disk / ~476MB available RAM ; other projects preserved. DockerHub references were corrected to verified public official Quay digests; no owner registry credentials are needed, no images pulled.
 - Local gates and limits: [verification evidence](../07-deployment/gerbi-local-ledger-recovery-checkpoint.md). This is local synthetic/provider-stub evidence; real GenAPI image, physical phone push and isolated runtime acceptance remain pending.
 
-## Расширенный пилот — промежуточная интеграция 2026-09-24
+### Историческая промежуточная интеграция расширенного пилота — 2026-09-24
 
 - Конституция и scope синхронизированы в `e6874de`. Общий backend/UI checkpoint `31fd0c8`: локальные builds/lint/contracts PASS, worker 40/40, API 46/46 и web 94/94 по отчёту исполнителя; 46 PostgreSQL-проверок локально пропущены. Повторный review оставляет late-provider/sweep race незакрытой до следующего исправления. Test server SSH без banner, прежние HTTP-стенды недоступны; причина не подтверждена, owner console запрошена. Runtime и физический phone push НЕ приняты.
 
@@ -18,7 +76,7 @@
 - Фото/разбор не считаются употреблением без подтверждения. Edit/delete подтверждённого питания и push UI завершаются отдельными исполнителями.
 - Phone push acceptance ждёт HTTPS hostname и тестового телефона владельца. Правило возврата при неизвестном результате до provider ID ещё не утверждено. Main/stable и публичный запуск не изменены.
 
-## Уточнение марафонного пилота 2026-09-24
+### Историческое уточнение марафонного пилота — 2026-09-24
 
 - Completion audit на verification commit `629f576` подтвердил PostgreSQL marathon gates `9/9`, calendar boundary `2/2` и GenAPI reconciliation matcher `2/2`: межкомандные read/write запрещены, captain create/edit разрешён, participant write запрещён, safe team DTO не содержит raw weight/chat/memory/baseline/cumulative totals, первый и последний дни/rollover обработаны по контракту. Frontend отдельно подтвердил в браузере видимый восстановленный assistant reply и разблокированный composer без нового платного запроса.
 - Operator tool и [runbook GenAPI reconciliation](../07-deployment/genapi-reconciliation-runbook.md) доступны в изолированном test checkout; строгая сверка fail-closed и safe replay подтверждены. Изолированный synthetic пилот подготовлен к ручной приёмке владельцем, но **не** принят как production или stable release; `main`, stable `atlas-v01`, frontend и runtime images этим audit не менялись.
