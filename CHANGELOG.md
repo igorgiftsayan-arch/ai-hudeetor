@@ -6,6 +6,8 @@
 
 ### Added
 
+- Expanded pilot constitution checkpoint (`e6874de`): PROJECT-VISION, V1 scope, marathon scope и manual acceptance согласованы с обязательными food/push/recovery. Приведены актуальные локальные evidence, отсутствующая runtime/phone приёмка, недоступный test server и нерешённые вопросы владельца; исторический roadmap сохранён.
+
 - GERBI phone push UI (`baccdf5`): `/notifications`, явный opt-in, проверка разрешения/подписки текущего устройства через generated API, отдельное расписание, отключение устройства и защита смены аккаунта. Service worker использует нейтральный текст и deliveryId dedup; есть HTTPS/iOS Home Screen инструкции. Реальная доставка на телефон ещё не проверена.
 - GERBI confirmed food history (`b28b2b3`): исправление состава и удаление записи, сохранение исходного времени/часового пояса, идемпотентный повтор после потери ответа и отдельный повтор чтения истории. Итог исполнителей: web 94/94, typecheck и scoped lint PASS; browser/runtime gate впереди.
 
