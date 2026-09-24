@@ -12,6 +12,12 @@ remote capacity ожидается; новый remote build/deploy не явля
   PostgreSQL lifecycle/concurrency проверки; provider-prompt tests **15/15**.
   Food UI на `d52eb9f`: **24/24**. Это отдельные зафиксированные наборы, а не
   заявление о повторном прогоне всех тестов на каждом следующем commit.
+- Последующий Food UI checkpoint `cd48570`: явно показаны четыре статуса
+  suitability (`matches`, `doesNotMatch`, `mixed`, `insufficientData`) и точные
+  элементы server `missingData`. При изменении состава прежняя оценка и список
+  недостающих данных не выдаются за оценку исправленного блюда; stale guard
+  сохранён. Food **29/29**, web typecheck и scoped lint PASS. Это локальная UI
+  проверка, без новой real-provider или browser/runtime приёмки.
 - Submit/acceptance/recovery используют общий operation-row lock; прежняя
   late-provider/sweep race закрыта локальными PostgreSQL regressions. Food
   ledger/lifecycle проверены на настоящих миграциях. Старые FAIL/SKIPPED ниже

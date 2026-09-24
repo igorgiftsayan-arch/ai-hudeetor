@@ -10,6 +10,10 @@
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
   scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone
   gates remain pending; full expanded-pilot acceptance is not claimed.
+- Food UI `cd48570`: explicit suitability labels for all four statuses and exact
+  server `missingData` entries; composition edits retain the stale-assessment
+  guard. Food **29/29**, web typecheck and scoped lint PASS. Real-provider and
+  browser/runtime acceptance remains pending.
 - Backend `ca3d612`: fixes the marathon worker's unhandled outbox publication
   rejection (`EAI_AGAIN postgres`; DNS failure cause not established) and the
   fake daily-coach worker's rejection of empty optional GenAPI env values.

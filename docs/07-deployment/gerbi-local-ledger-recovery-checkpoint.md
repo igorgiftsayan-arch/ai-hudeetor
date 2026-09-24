@@ -14,6 +14,13 @@ lifecycle/concurrency checks; provider-prompt **15/15**; food UI **24/24** on
 GenAPI food analysis, new browser/runtime journey and physical phone delivery
 remain **PENDING / NOT ACCEPTED**.
 
+Subsequent food UI checkpoint `cd48570` shows `matches`, `doesNotMatch`, `mixed`
+and `insufficientData` explicitly and preserves exact server `missingData`
+entries. When composition changes, the old assessment/missing-data list is
+hidden behind the retained stale-assessment guard. Food **29/29**, web typecheck
+and scoped lint PASS. This updates the earlier 24-test food checkpoint; it does
+not establish real GenAPI output quality or browser/runtime acceptance.
+
 Latest live root inspection of `5.42.126.71`:
 
 - Host: **1 CPU / 2 GB RAM**.
