@@ -63,6 +63,18 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('notifications page', () => {
+  it('shows settled unavailable state without pretending a permission request is running', async () => {
+    mocks.prefs.mockResolvedValue({ available: false, vapidPublicKey: null, enabled: false, localTime: '09:00', timezone: 'Asia/Irkutsk' });
+    const user = userEvent.setup();
+    render(<NotificationsPage />);
+    await screen.findByText('Отправка уведомлений пока не настроена. Попробуйте позже.');
+    expect(screen.queryByText('Запрашиваем…')).not.toBeInTheDocument();
+    const button = screen.getByRole('button', { name: 'Уведомления недоступны' });
+    expect(button).toBeDisabled();
+    await user.click(button);
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
+    expect(mocks.subscribe).not.toHaveBeenCalled();
+  });
   it('does not treat other account devices as browser permission and never prompts on load', async () => {
     vi.stubGlobal('Notification', {
       permission: 'denied',

@@ -11,11 +11,13 @@ export function PushPermissionCard({
   capability,
   permission,
   isRequesting = false,
+  requestUnavailable = false,
   onRequestPermission,
 }: {
   capability: PushCapability;
   permission: PushPermission;
   isRequesting?: boolean;
+  requestUnavailable?: boolean;
   onRequestPermission: () => void;
 }) {
   if (capability === 'unsupported') {
@@ -70,10 +72,10 @@ export function PushPermissionCard({
           <button
             type="button"
             className="food-primary-action"
-            disabled={isRequesting}
+            disabled={isRequesting || requestUnavailable}
             onClick={onRequestPermission}
           >
-            {isRequesting ? 'Запрашиваем…' : 'Разрешить уведомления'}
+            {requestUnavailable ? 'Уведомления недоступны' : isRequesting ? 'Запрашиваем…' : 'Разрешить уведомления'}
           </button>
         </>
       )}
