@@ -182,7 +182,8 @@ export default function NotificationsPage() {
         <PushPermissionCard
           capability={capability}
           permission={permission}
-          isRequesting={busy || !loaded || !publicKey}
+          isRequesting={busy || !loaded}
+          requestUnavailable={loaded && !publicKey}
           onRequestPermission={() => void connect()}
         />
       )}
