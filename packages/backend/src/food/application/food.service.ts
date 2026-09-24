@@ -102,11 +102,16 @@ export class FoodService {
       await this.database.query(`update uploaded_images set status='quarantined' where id=$1 and user_id=$2`, [imageId, user.userId]);
       throw new IdentityError('FOOD_IMAGE_VALIDATION_FAILED', 422, 'Uploaded file is not a supported image');
     }
-    const immutableKey = `food/${user.userId}/${imageId}/${digest}`;
-    await this.storage.send(new PutObjectCommand({ Bucket: this.config.bucket, Key: immutableKey, Body: body, ContentType: image.content_type, ContentLength: body.length, Metadata: { sha256: digest } }));
-    await this.storage.send(new DeleteObjectCommand({ Bucket: this.config.bucket, Key: image.object_key }));
-    await this.database.query(`update uploaded_images set object_key=$1,status='available',uploaded_at=now() where id=$2 and user_id=$3`, [immutableKey,imageId,user.userId]);
-    return { id: imageId, status: 'available' as const };
+    return this.database.transaction(async (client) => {
+      const current = (await client.query<{status:string}>(`select status from uploaded_images where id=$1 and user_id=$2 and deleted_at is null for update`,[imageId,user.userId])).rows[0];
+      if (!current) throw new IdentityError('FOOD_IMAGE_NOT_FOUND',404,'Image not found');
+      if (current.status === 'available') return { id: imageId, status: 'available' as const };
+      const immutableKey = `food/${user.userId}/${imageId}/${digest}`;
+      await this.storage.send(new PutObjectCommand({ Bucket: this.config.bucket, Key: immutableKey, Body: body, ContentType: image.content_type, ContentLength: body.length, Metadata: { sha256: digest } }));
+      await this.storage.send(new DeleteObjectCommand({ Bucket: this.config.bucket, Key: image.object_key }));
+      await client.query(`update uploaded_images set object_key=$1,status='available',uploaded_at=now() where id=$2 and user_id=$3`, [immutableKey,imageId,user.userId]);
+      return { id: imageId, status: 'available' as const };
+    });
   }
 
   async createAnalysis(accessToken: string, idempotencyKey: string, input: { uploadedImageId: string; expectedTokenPrice: number; expectedPriceVersion: number }) {

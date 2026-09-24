@@ -1,3 +1,6 @@
+import { S3Client } from '@aws-sdk/client-s3';
+import { FoodImageRetentionService, S3FoodImageDeletion } from '@atlas/backend';
+import { FoodImageRetentionRunner } from './food-image-retention.runner';
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
@@ -161,6 +164,14 @@ const redisUrl = new URL(config.REDIS_URL);
     {
       provide: PushReminderService,
       useFactory: (database: DatabaseService) => new PushReminderService(database,{enabled:config.PUSH_ENABLED,subject:config.PUSH_VAPID_SUBJECT,publicKey:config.PUSH_VAPID_PUBLIC_KEY,privateKey:config.PUSH_VAPID_PRIVATE_KEY}),
+      inject:[DatabaseService],
+    },
+    {
+      provide: FoodImageRetentionRunner,
+      useFactory: (database: DatabaseService) => new FoodImageRetentionRunner(
+        new FoodImageRetentionService(database,new S3FoodImageDeletion(new S3Client({endpoint:config.S3_ENDPOINT,region:config.S3_REGION,forcePathStyle:config.S3_FORCE_PATH_STYLE,credentials:{accessKeyId:config.S3_ACCESS_KEY_ID,secretAccessKey:config.S3_SECRET_ACCESS_KEY}}),config.S3_BUCKET)),
+        config.S3_ACCESS_KEY_ID !== 'disabled' && config.S3_SECRET_ACCESS_KEY !== 'disabled',
+      ),
       inject:[DatabaseService],
     },
     OutboxPublisherService,

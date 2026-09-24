@@ -127,3 +127,6 @@ export {
   calendarDateInTimezone,
   previousCalendarDate,
 } from './marathon/domain/marathon-date';
+
+export { FoodImageRetentionService, type FoodImageDeletionPort } from './food/application/food-image-retention.service';
+export { S3FoodImageDeletion } from './food/infrastructure/s3-food-image-deletion';
