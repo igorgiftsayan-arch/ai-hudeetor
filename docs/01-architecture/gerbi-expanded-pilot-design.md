@@ -14,6 +14,18 @@ Consumption is created only by an authenticated, CSRF-protected, owner-scoped, i
 
 Only active confirmed consumption may enter food memory/context or a weight-comparison read model. That read model reports observations and `insufficientData`, never causation.
 
+## Owner decision: cancel a definitely unsubmitted paid photo analysis
+
+Confirmed on 2026-09-24: the owner may cancel a paid photo analysis only when
+non-submission to the provider is proven. The full reserved token amount is
+refunded exactly once. Cancellation/refund must be serialized with submission
+so a concurrently submitted operation cannot also receive this cancellation.
+Missing provider ID alone is not proof of non-submission. Possibly submitted,
+accepted and ambiguous/outcomeUnknown cases are excluded. This does not resolve
+the separate pre-ID unknown goodwill/refund policy, which remains TBD.
+Backend/frontend implementation is underway; no code or runtime acceptance is
+claimed by this decision. ADR012 remains owned by the backend implementation.
+
 ## Private file boundary
 
 Objects use random keys in private S3-compatible storage. Upload uses a short-lived signed operation or a backend transfer; permanent public URLs are forbidden. Content type, declared size, SHA-256 and image magic bytes are validated; an object is quarantined until validation completes. The source image follows the existing 30-day retention policy after terminal analysis and owner deletion remains available.

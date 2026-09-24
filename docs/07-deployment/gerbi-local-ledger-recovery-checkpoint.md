@@ -84,8 +84,12 @@ the backend verification directory: `stale-invalid-upload-red.log`,
 `stale-invalid-upload-lint.log`. Counts are scoped, not an aggregate worker run.
 
 Next user-requested terminal photo/analysis deletion is being designed jointly
-by backend/frontend and is **not done**. Pending-operation cancellation semantics
-remain owner **TBD**; this checkpoint introduces no cancellation or refund policy.
+by backend/frontend and is **not accepted**. Owner decision 2026-09-24 permits
+cancellation of a paid photo analysis proven not submitted, with a full reserved
+token refund exactly once. Missing provider ID alone is insufficient proof;
+possibly submitted/accepted/ambiguous states remain excluded. The separate
+pre-ID unknown goodwill/refund policy remains owner TBD. Implementation is in
+progress; this paragraph records policy, not verified delivery.
 Real storage/provider/browser/phone/runtime gates remain pending.
 
 Earlier recorded gates: API **92/92**, worker **44/44**, including actual PostgreSQL

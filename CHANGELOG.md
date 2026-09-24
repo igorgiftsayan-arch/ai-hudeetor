@@ -29,8 +29,11 @@
   independent reviewer **4/4 actual PostgreSQL** PASS. These remain scoped suites,
   not a new full-worker count. Integrated source is `ca24217`; no remote change.
 - User-requested terminal photo/analysis deletion is being designed by backend
-  and frontend, **not implemented**. Pending-operation cancellation semantics
-  remain owner **TBD**; no cancellation/refund policy was introduced.
+  and frontend, **not accepted**. Owner decision 2026-09-24 now allows cancellation
+  of a paid photo analysis proven not submitted, with the full reserve refunded
+  exactly once. Missing provider ID is insufficient proof; possibly submitted
+  states are excluded. Pre-ID unknown goodwill/refund policy remains TBD.
+  Implementation is underway; this entry records the decision, not completion.
 - Earlier integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
   scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone
