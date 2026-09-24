@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError, apiRequest } from '../../shared/api';
+import { clearPushBeforeLogin } from '../../features/notifications/push-browser';
 
 type SessionResource = {
   userId: string;
@@ -27,6 +28,7 @@ export default function LoginPage() {
     setError(undefined);
 
     try {
+      await clearPushBeforeLogin();
       await apiRequest<SessionResource>(
         '/sessions',
         {

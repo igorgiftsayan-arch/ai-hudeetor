@@ -1,10 +1,14 @@
 type MobileNavigationProps = {
-  active: 'today' | 'ai' | 'food' | 'marathon';
+  active: 'today' | 'ai' | 'food' | 'marathon' | 'notifications';
 };
 
 export function MobileNavigation({ active }: MobileNavigationProps) {
   return (
-    <nav className="mobile-navigation" aria-label="Основная навигация">
+    <nav
+      className="mobile-navigation"
+      style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}
+      aria-label="Основная навигация"
+    >
       <a
         href="/today"
         className={active === 'today' ? 'is-active' : undefined}
@@ -44,6 +48,14 @@ export function MobileNavigation({ active }: MobileNavigationProps) {
           ↗
         </span>
         Марафон
+      </a>
+      <a
+        style={{ fontSize: '0.72rem' }}
+        href="/notifications"
+        className={active === 'notifications' ? 'is-active' : undefined}
+        aria-current={active === 'notifications' ? 'page' : undefined}
+      >
+        Напоминания
       </a>
     </nav>
   );
