@@ -1,5 +1,16 @@
 # Changelog
 
+## Chat consent runtime correction — 2026-09-25
+
+First synthetic chat was rejected locally before any provider POST: API required
+`test-v1`, worker omitted the variable and required default `v1`. Operation
+`08707198-5a80-4621-b9e4-6e323343d1c7` remains technicalError/safetyRejected,
+no provider ID, exactly one reservation/refund; wallet remains90. Expanded Compose
+now supplies the same configured consent version to API and worker. The current
+consent guard is unchanged. A fresh operation requires separate acceptance; no
+successful real chat or recovery is claimed by this configuration correction.
+
+
 Все заметные изменения проекта документируются здесь. Формат основан на Keep a Changelog; версии появятся с релизами.
 
 ## [Unreleased]
