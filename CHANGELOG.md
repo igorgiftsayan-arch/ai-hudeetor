@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Runtime checkpoint — 2026-09-25
+
+- One constrained expanded test stack replaces Daily Coach on the existing2GB host.
+  Current compiled artifacts, private MinIO source-build fallback, resource caps,
+  backup/rollback and real signed-upload403/200 checks are recorded in
+  `docs/07-deployment/gerbi-constrained-runtime.md`. Browser/full food acceptance
+  remains pending; no new provider call or phone push claim.
+
+
 ### Current checkpoint — 2026-09-24
 
 - Expanded MinIO initialization now uses same-origin gateway uploads without the

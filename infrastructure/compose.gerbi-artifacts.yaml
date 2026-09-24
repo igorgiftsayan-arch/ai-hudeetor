@@ -1,0 +1,91 @@
+# Optional constrained runtime overlay; use after compose.yaml and compose.gerbi-expanded.yaml.
+# Images are existing verified Linux dependency carriers. Source and artifact hashes are
+# recorded in docs/07-deployment/gerbi-constrained-runtime.md; never substitute Darwin node_modules.
+services:
+  api:
+    image: sha256:f381d484eadbe3f57e0dee60f5daa07b3fb46447f9ab6ea1a610064be6194d02
+    pull_policy: never
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      NODE_OPTIONS: --max-old-space-size=128
+      AI_PROVIDER: fake
+      FOOD_VISION_PROVIDER: genapi
+      GENAPI_API_KEY: ${GENAPI_API_KEY:?GENAPI_API_KEY required}
+      GENAPI_VISION_MODEL: gpt-4o
+      GENAPI_VISION_MODEL_VERSION: gpt-4o-2024-08-06
+      GENAPI_NATIVE_BASE_URL: https://api.gen-api.ru/api/v1
+      PUSH_ENABLED: 'false'
+    command: ['node','/workspace/apps/api/dist/main.js']
+    volumes:
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/apps/api/dist:/workspace/apps/api/dist:ro
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/packages/backend/dist:/workspace/packages/backend/dist:ro
+  worker:
+    image: sha256:f381d484eadbe3f57e0dee60f5daa07b3fb46447f9ab6ea1a610064be6194d02
+    pull_policy: never
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      NODE_OPTIONS: --max-old-space-size=128
+      AI_PROVIDER: fake
+      FOOD_VISION_PROVIDER: genapi
+      GENAPI_VISION_MODEL: gpt-4o
+      GENAPI_VISION_MODEL_VERSION: gpt-4o-2024-08-06
+      PUSH_ENABLED: 'false'
+    command: ['node','/workspace/apps/worker/dist/main.js']
+    volumes:
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/apps/worker/dist:/workspace/apps/worker/dist:ro
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/packages/backend/dist:/workspace/packages/backend/dist:ro
+  web:
+    image: sha256:f381d484eadbe3f57e0dee60f5daa07b3fb46447f9ab6ea1a610064be6194d02
+    pull_policy: never
+    mem_limit: 192m
+    cpus: 0.5
+    environment:
+      NODE_OPTIONS: --max-old-space-size=128
+      NEXT_TELEMETRY_DISABLED: '1'
+    command: ['node','/workspace/apps/web/node_modules/next/dist/bin/next','start','/workspace/apps/web','-H','0.0.0.0','-p','3000']
+    volumes:
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/apps/web/.next:/workspace/apps/web/.next:ro
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/apps/web/public:/workspace/apps/web/public:ro
+  migrate:
+    image: sha256:f381d484eadbe3f57e0dee60f5daa07b3fb46447f9ab6ea1a610064be6194d02
+    pull_policy: never
+    mem_limit: 128m
+    cpus: 0.5
+    environment:
+      NODE_OPTIONS: --max-old-space-size=64
+    volumes:
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/database:/workspace/database:ro
+  postgres:
+    mem_limit: 128m
+    cpus: 0.5
+    command: ['postgres','-c','shared_buffers=32MB','-c','max_connections=40']
+  redis:
+    mem_limit: 64m
+    cpus: 0.25
+    command: ['redis-server','--appendonly','yes','--maxmemory','32mb','--maxmemory-policy','noeviction']
+  minio:
+    image: sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d
+    pull_policy: never
+    entrypoint: ['/usr/local/bin/minio']
+    volumes:
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/bin/minio:/usr/local/bin/minio:ro
+    healthcheck:
+      test: ['CMD','node','-e',"fetch('http://127.0.0.1:9000/minio/health/live').then(r=>{if(!r.ok)process.exit(1)})"]
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      GOMAXPROCS: '1'
+      GOMEMLIMIT: 192MiB
+      MINIO_BROWSER: 'off'
+  minio-init:
+    image: sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d
+    pull_policy: never
+    volumes:
+      - ${GERBI_RUNTIME_RELEASE_DIR:?release required}/bin/mc:/usr/local/bin/mc:ro
+    mem_limit: 64m
+    cpus: 0.25
+  gateway:
+    mem_limit: 32m
+    cpus: 0.25

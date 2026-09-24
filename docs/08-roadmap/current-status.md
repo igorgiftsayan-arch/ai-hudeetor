@@ -1,5 +1,18 @@
 # Текущий статус
 
+## Runtime checkpoint — 2026-09-25
+
+На имеющемся2GB сервере один активный expanded стенд заменил Daily Coach; старые
+volumes и backup сохранены. Source da9e837/web26e6e0a. Миграции и7health checks PASS,
+OOM/restarts0; private storage anonymousGET/PUT403, signedPUT200 и точные bytes PASS.
+Полный browser/paid food путь ещё проверяется; новых AI запросов на этом этапе нет.
+HTTP3114 не подтверждает phone HTTPS/push. Подробности и provenance:
+[Constrained runtime](../07-deployment/gerbi-constrained-runtime.md).
+
+Ниже сохранён предыдущий локальный срез; ожидание расширения ресурсов больше
+не является текущим блокером запуска одного стенда.
+
+
 ## Актуальный срез — локальная разработка продолжается, 2026-09-24
 
 Текущий общий интеграционный checkpoint: `f360290`, включает список `a355311`/`6bc9292`, review-fixes `74a20d7`/`f360290` и backend `b9a60be`/`5a08efb`, policy `e1472a7` и предыдущие `ca24217`/`3531480`/`fa13d8d` (включает предыдущую базу
