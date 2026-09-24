@@ -22,6 +22,8 @@ import { OutboxPublisherService } from './outbox-publisher.service';
 import { MemoryExtractionProcessor } from './memory-extraction.processor';
 import { FoodAnalysisProcessor } from './food-analysis.processor';
 import { PushReminderService } from './push-reminder.service';
+import { AutomaticRecoveryService } from './automatic-recovery.service';
+import { AiOperationReconciliationProcessor } from './ai-operation-reconciliation.processor';
 
 const configModule = ConfigModule.forRoot({
   envFilePath: ['../../.env.local', '../../.env', '.env.local', '.env'],
@@ -127,6 +129,7 @@ const redisUrl = new URL(config.REDIS_URL);
         memoryExtraction: MemoryExtractionProcessor,
         foodAnalysis: FoodAnalysisProcessor,
         pushReminder: PushReminderService,
+        aiReconciliation: AiOperationReconciliationProcessor,
       ) =>
         new AiOperationProcessor(
           database,
@@ -136,6 +139,7 @@ const redisUrl = new URL(config.REDIS_URL);
           config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
           foodAnalysis,
           pushReminder,
+          aiReconciliation,
         ),
       inject: [
         DatabaseService,
@@ -144,6 +148,7 @@ const redisUrl = new URL(config.REDIS_URL);
         MemoryExtractionProcessor,
         FoodAnalysisProcessor,
         PushReminderService,
+        AiOperationReconciliationProcessor,
       ],
     },
     MemoryExtractionProcessor,
@@ -158,6 +163,12 @@ const redisUrl = new URL(config.REDIS_URL);
       inject:[DatabaseService],
     },
     OutboxPublisherService,
+    AutomaticRecoveryService,
+    {
+      provide: AiOperationReconciliationProcessor,
+      useFactory: (database:DatabaseService)=>new AiOperationReconciliationProcessor(database,{provider:config.AI_PROVIDER,apiKey:config.GENAPI_API_KEY,requestApiBaseUrl:config.GENAPI_NATIVE_BASE_URL,model:config.GENAPI_MODEL,timeoutMs:config.GENAPI_TIMEOUT_MS}),
+      inject:[DatabaseService],
+    },
   ],
 })
 export class WorkerModule {}

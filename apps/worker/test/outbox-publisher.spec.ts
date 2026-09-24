@@ -85,4 +85,13 @@ describe('OutboxPublisherService', () => {
       expect.objectContaining({ jobId: 'outbox-food-reconciliation' }),
     );
   });
+
+  it('publishes AI reconciliation with the durable outbox id as the job id', async () => {
+    const database = { query: jest.fn()
+      .mockResolvedValueOnce({rows:[{id:'outbox-ai-reconciliation',event_type:'ai-companion.operation_reconciliation_requested.v1'}]})
+      .mockResolvedValueOnce({rows:[]}) };
+    const queue={add:jest.fn().mockResolvedValue(undefined)};
+    await new OutboxPublisherService(database as never,queue as never).publish();
+    expect(queue.add).toHaveBeenCalledWith('ai-operation-reconciliation',{outboxId:'outbox-ai-reconciliation'},expect.objectContaining({jobId:'outbox-ai-reconciliation'}));
+  });
 });

@@ -11,6 +11,7 @@ export class GenApiOutcomeReconciliationClient {
       apiKey: string;
       requestApiBaseUrl: string;
       model: string;
+      timeoutMs?: number;
     },
     private readonly fetcher: Fetcher = fetch,
   ) {}
@@ -29,6 +30,7 @@ export class GenApiOutcomeReconciliationClient {
           Authorization: `Bearer ${this.config.apiKey}`,
           Accept: 'application/json',
         },
+        signal: AbortSignal.timeout(this.config.timeoutMs ?? 10_000),
       },
     );
     if (!response.ok) throw new Error('GenAPI reconciliation lookup failed');
