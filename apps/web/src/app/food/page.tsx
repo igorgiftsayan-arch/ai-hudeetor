@@ -72,6 +72,7 @@ export default function FoodPage() {
   const recovery = useRef<Recovery>({});
   const busy = useRef(false);
   const generation = useRef(0);
+  const loadSequence = useRef(0);
   const [recoverable, setRecoverable] = useState(false);
   const [pollingPaused, setPollingPaused] = useState(false);
   const [pollRun, setPollRun] = useState(0);
@@ -85,6 +86,7 @@ export default function FoodPage() {
   }
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setViewState('loading');
     setError(undefined);
     try {
@@ -93,10 +95,20 @@ export default function FoodPage() {
         loadProviderConsent(),
         apiRequest<{ userId: string }>('/users/me'),
       ]);
+      if (sequence !== loadSequence.current) return;
       const key = `food-operation:${identity.userId}`;
       if (storageKey.current !== key) {
         generation.current += 1;
         storageKey.current = key;
+        pendingAnalysis.current = undefined;
+        pendingConfirmation.current = undefined;
+        busy.current = false;
+        setSelectedFile(undefined);
+        setRecoverable(false);
+        setStarting(false);
+        setConfirming(false);
+        setPollingPaused(false);
+        setHistoryMessage(undefined);
         setAnalysis(undefined);
         activeAnalysisId.current = undefined;
         const raw = window.sessionStorage.getItem(key);
@@ -105,6 +117,8 @@ export default function FoodPage() {
         if (recovery.current.analysisId) {
           activeAnalysisId.current = recovery.current.analysisId;
           const current = await loadFoodAnalysis(recovery.current.analysisId);
+          if (sequence !== loadSequence.current || storageKey.current !== key)
+            return;
           if (current.consumptionStatus === 'consumed') {
             persist({ analysisId: current.id });
             pendingConfirmation.current = undefined;
@@ -127,6 +141,7 @@ export default function FoodPage() {
       setProviderConsent(consent);
       setViewState('ready');
     } catch (cause) {
+      if (sequence !== loadSequence.current) return;
       // A failed restore must be attempted again by the page retry action.
       storageKey.current = undefined;
       if (cause instanceof ApiError && cause.kind === 'session')
@@ -144,6 +159,7 @@ export default function FoodPage() {
   useEffect(() => {
     return () => {
       generation.current += 1;
+      loadSequence.current += 1;
       activeAnalysisId.current = undefined;
     };
   }, []);
@@ -206,7 +222,7 @@ export default function FoodPage() {
           csrfToken: data.csrfToken,
         });
       }
-      if (!pending.uploadedImageId) return;
+      if (generation.current !== version || !pending.uploadedImageId) return;
       pending.price ??= data.price;
       persist({
         uploadedImageId: pending.uploadedImageId,
@@ -234,12 +250,15 @@ export default function FoodPage() {
       });
       activeAnalysisId.current = queued.id;
     } catch (cause) {
+      if (generation.current !== version) return;
       if (cause instanceof ApiError && cause.kind === 'session')
         replace('/login');
       else setError(readFoodError(cause));
     } finally {
-      busy.current = false;
-      setStarting(false);
+      if (generation.current === version) {
+        busy.current = false;
+        setStarting(false);
+      }
     }
   }
 
@@ -261,6 +280,7 @@ export default function FoodPage() {
 
   async function confirm(draft: ConfirmedFoodDraft) {
     if (!data || !analysis || busy.current) return;
+    const version = generation.current;
     busy.current = true;
     setConfirming(true);
     setError(undefined);
@@ -271,6 +291,7 @@ export default function FoodPage() {
           csrfToken: data.csrfToken,
           correction: { items: draft.items.map((name) => ({ name })) },
         });
+        if (generation.current !== version) return;
         const pending = {
           analysisId: analysis.id,
           idempotencyKey: newIdempotencyKey(),
@@ -285,6 +306,7 @@ export default function FoodPage() {
         ...pending,
         csrfToken: data.csrfToken,
       });
+      if (generation.current !== version) return;
       persist({ analysisId: analysis.id });
       pendingConfirmation.current = undefined;
       setAnalysis((current) =>
@@ -292,12 +314,15 @@ export default function FoodPage() {
       );
       await load();
     } catch (cause) {
+      if (generation.current !== version) return;
       if (cause instanceof ApiError && cause.kind === 'session')
         replace('/login');
       else setError(readFoodError(cause));
     } finally {
-      busy.current = false;
-      setConfirming(false);
+      if (generation.current === version) {
+        busy.current = false;
+        setConfirming(false);
+      }
     }
   }
 

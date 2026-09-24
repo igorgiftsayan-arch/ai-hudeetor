@@ -8,6 +8,7 @@ import {
 } from '@testing-library/react';
 import FoodPage from './page';
 import * as food from '../../features/food/food-api';
+import { loadProviderConsent } from '../../features/ai-companion/provider-consent';
 import type { FoodAnalysisResourceDto } from '@atlas/api-contracts';
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
@@ -21,8 +22,12 @@ vi.mock('../../features/food/food-api', () => ({
   confirmFoodConsumption: vi.fn(),
 }));
 vi.mock('../../features/ai-companion/provider-consent', () => ({
-  loadProviderConsent: async () => ({ providerMode: 'fake' }),
-  ProviderConsentNotice: () => null,
+  loadProviderConsent: vi.fn(),
+  ProviderConsentNotice: ({
+    onAccepted,
+  }: {
+    onAccepted: () => Promise<void>;
+  }) => <button onClick={() => void onAccepted()}>Обновить согласие</button>,
 }));
 vi.mock('../../features/food/food-photo-draft', () => ({
   FoodPhotoDraft: ({ onReady }: { onReady: (file: File) => void }) => (
@@ -60,6 +65,11 @@ async function tick(ms = 1000) {
 beforeEach(() => {
   vi.resetAllMocks();
   sessionStorage.clear();
+  vi.mocked(loadProviderConsent).mockResolvedValue({
+    providerMode: 'fake',
+    externalProviderEnabled: false,
+    accepted: false,
+  } as Awaited<ReturnType<typeof loadProviderConsent>>);
   vi.stubGlobal(
     'fetch',
     vi.fn(
@@ -303,4 +313,114 @@ it('hides the previous API status and missing data while editing composition', a
     screen.getByText(/Исправленный состав пока не оценён/),
   ).toBeInTheDocument();
   expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+});
+
+it('clears a previous account pending submit when consent refresh changes the owner', async () => {
+  vi.mocked(food.createFoodAnalysis).mockRejectedValueOnce(
+    new Error('Ответ потерян'),
+  );
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Выбрать фото'));
+  fireEvent.click(screen.getByText('Начать анализ'));
+  await screen.findByText('Ответ потерян');
+  const originalRecovery = sessionStorage.getItem('food-operation:user-1');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ userId: 'user-2' }), { status: 200 }),
+    ),
+  );
+  fireEvent.click(screen.getByText('Обновить согласие'));
+  await ready();
+  expect(
+    screen.queryByText('Восстановить отправленный разбор'),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText('Начать анализ')).not.toBeInTheDocument();
+  expect(screen.getByText('Выбрать фото')).not.toBeDisabled();
+  expect(food.createFoodAnalysis).toHaveBeenCalledTimes(1);
+  expect(sessionStorage.getItem('food-operation:user-2')).toBeNull();
+  expect(sessionStorage.getItem('food-operation:user-1')).toBe(
+    originalRecovery,
+  );
+});
+
+it('does not submit or persist a previous account upload completing after an owner change', async () => {
+  let finishUpload!: (imageId: string) => void;
+  vi.mocked(food.prepareFoodImage).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishUpload = resolve;
+      }),
+  );
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Выбрать фото'));
+  fireEvent.click(screen.getByText('Начать анализ'));
+  await waitFor(() => expect(food.prepareFoodImage).toHaveBeenCalledTimes(1));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ userId: 'user-2' }), { status: 200 }),
+    ),
+  );
+  fireEvent.click(screen.getByText('Обновить согласие'));
+  await ready();
+  await act(async () => finishUpload('image-owned-by-user-1'));
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+  expect(sessionStorage.getItem('food-operation:user-2')).toBeNull();
+  expect(screen.queryByText('Начать анализ')).not.toBeInTheDocument();
+});
+
+it('requires completed upload after a failed upload retry before sending the paid analysis request', async () => {
+  let finishUpload!: (imageId: string) => void;
+  vi.mocked(food.prepareFoodImage)
+    .mockRejectedValueOnce(new Error('Фото не загружено'))
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishUpload = resolve;
+        }),
+    );
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Выбрать фото'));
+  fireEvent.click(screen.getByText('Начать анализ'));
+  await screen.findByText('Фото не загружено');
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText('Начать анализ'));
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+  await act(async () => finishUpload('completed-image'));
+  expect(food.createFoodAnalysis).toHaveBeenCalledTimes(1);
+  expect(food.createFoodAnalysis).toHaveBeenCalledWith(
+    expect.objectContaining({ uploadedImageId: 'completed-image' }),
+  );
+});
+
+it('waits for accepted external-provider consent and another explicit start before any upload', async () => {
+  const consent = {
+    providerMode: 'genapi',
+    externalProviderEnabled: true,
+    accepted: false,
+  } as Awaited<ReturnType<typeof loadProviderConsent>>;
+  vi.mocked(loadProviderConsent).mockResolvedValue(consent);
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Выбрать фото'));
+  expect(screen.getByText('Начать анализ')).toBeDisabled();
+  fireEvent.click(screen.getByText('Начать анализ'));
+  expect(food.prepareFoodImage).not.toHaveBeenCalled();
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+  vi.mocked(loadProviderConsent).mockResolvedValue({
+    ...consent,
+    accepted: true,
+  });
+  fireEvent.click(screen.getByText('Обновить согласие'));
+  await ready();
+  expect(screen.getByText('Начать анализ')).not.toBeDisabled();
+  expect(food.prepareFoodImage).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText('Начать анализ'));
+  await waitFor(() => expect(food.createFoodAnalysis).toHaveBeenCalledTimes(1));
 });
