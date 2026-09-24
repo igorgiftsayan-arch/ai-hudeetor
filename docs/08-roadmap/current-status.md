@@ -2,6 +2,8 @@
 
 ## Расширенный пилот — промежуточная интеграция 2026-09-24
 
+- UI checkpoints `baccdf5` и `b28b2b3`: настройки телефонных push и edit/delete подтверждённой еды завершены на уровне кода. Исполнители подтвердили web 94/94 (22 файла), typecheck и scoped lint PASS. Backend push lookup `900a25c` интегрирован; активной API-зависимости у push UI нет. Физическая доставка, реальная food vision и сквозная runtime-приёмка ещё не подтверждены.
+
 - Food UI recovery `add1a63` реализован; исполнитель подтвердил 79/79 web tests (включая параллельные push tests) и scoped lint. Полный typecheck на том шаге ожидал завершения notifications WIP. Это не подтверждение runtime готовности.
 - Backend checkpoint `ae0f95f` интегрирован в UI-ветку: browser-reachable private upload, food known-ID reconciliation, DTO validation и runtime push config/per-device revoke. По отчёту бэка: worker 37/37, API regression 44/44 и новые validation 2/2. Сквозной запуск ещё проверяется.
 - Фото/разбор не считаются употреблением без подтверждения. Edit/delete подтверждённого питания и push UI завершаются отдельными исполнителями.
