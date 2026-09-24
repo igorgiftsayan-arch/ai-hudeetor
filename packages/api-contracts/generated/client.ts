@@ -1000,6 +1000,7 @@ export const FoodAnalysisResourceDtoStatus = {
   technicalError: 'technicalError',
   outcomeUnknown: 'outcomeUnknown',
   deleted: 'deleted',
+  cancelled: 'cancelled',
 } as const;
 
 export interface FoodAnalysisResourceDto {
@@ -1015,6 +1016,14 @@ export interface FoodAnalysisResourceDto {
   consumptionStatus: string;
   createdAt: string;
 }
+
+export type FoodDeletionStatusDtoCancellationStatus = typeof FoodDeletionStatusDtoCancellationStatus[keyof typeof FoodDeletionStatusDtoCancellationStatus];
+
+
+export const FoodDeletionStatusDtoCancellationStatus = {
+  notCancelled: 'notCancelled',
+  cancelledRefunded: 'cancelledRefunded',
+} as const;
 
 export type FoodDeletionStatusDtoPhotoStatus = typeof FoodDeletionStatusDtoPhotoStatus[keyof typeof FoodDeletionStatusDtoPhotoStatus];
 
@@ -1035,6 +1044,7 @@ export const FoodDeletionStatusDtoAnalysisStatus = {
 
 export interface FoodDeletionStatusDto {
   analysisId: string;
+  cancellationStatus: FoodDeletionStatusDtoCancellationStatus;
   photoStatus: FoodDeletionStatusDtoPhotoStatus;
   analysisStatus: FoodDeletionStatusDtoAnalysisStatus;
 }

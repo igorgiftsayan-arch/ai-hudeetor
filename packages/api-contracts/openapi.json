@@ -3829,7 +3829,8 @@
               "analyzed",
               "technicalError",
               "outcomeUnknown",
-              "deleted"
+              "deleted",
+              "cancelled"
             ]
           },
           "runtimeAdapter": {
@@ -3870,6 +3871,13 @@
           "analysisId": {
             "type": "string"
           },
+          "cancellationStatus": {
+            "type": "string",
+            "enum": [
+              "notCancelled",
+              "cancelledRefunded"
+            ]
+          },
           "photoStatus": {
             "type": "string",
             "enum": [
@@ -3888,6 +3896,7 @@
         },
         "required": [
           "analysisId",
+          "cancellationStatus",
           "photoStatus",
           "analysisStatus"
         ]

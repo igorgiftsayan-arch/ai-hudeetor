@@ -90,7 +90,7 @@ export class UpdateFoodConsumptionDto extends ConfirmFoodConsumptionDto {
 export class FoodAnalysisResourceDto {
   @ApiProperty() id!: string;
   @ApiProperty() uploadedImageId!: string;
-  @ApiProperty({ enum: ['queued','processing','analyzed','technicalError','outcomeUnknown','deleted'] })
+  @ApiProperty({ enum: ['queued','processing','analyzed','technicalError','outcomeUnknown','deleted','cancelled'] })
   status!: string;
   @ApiProperty() runtimeAdapter!: string;
   @ApiPropertyOptional({ type: FoodRecognizedResultDto }) recognizedResult!: FoodRecognizedResultDto | null;
@@ -116,6 +116,7 @@ export class FoodConsumptionPageDto {
 
 export class FoodDeletionStatusDto {
   @ApiProperty() analysisId!: string;
+  @ApiProperty({enum:['notCancelled','cancelledRefunded']}) cancellationStatus!: 'notCancelled'|'cancelledRefunded';
   @ApiProperty({enum:['available','pending','deleted']}) photoStatus!: 'available'|'pending'|'deleted';
   @ApiProperty({enum:['available','deleted']}) analysisStatus!: 'available'|'deleted';
 }

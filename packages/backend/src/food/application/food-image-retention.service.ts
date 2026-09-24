@@ -33,12 +33,12 @@ export class FoodImageRetentionService {
         and i.created_at <= $1::timestamptz-interval '600 seconds'
         and exists(select 1 from food_analyses a where a.uploaded_image_id=i.id)
         and not exists(select 1 from food_analyses a where a.uploaded_image_id=i.id and
-          (a.status not in ('analyzed','technicalError') or a.terminal_at is null or a.terminal_at > $1::timestamptz-interval '30 days'))
+          (a.status not in ('analyzed','technicalError','cancelled') or a.terminal_at is null or a.terminal_at > $1::timestamptz-interval '30 days'))
       on conflict(image_id) do nothing`,
       [now],
     );
     const skipped = await this.db.query<{ count: number }>(
-      `select count(*)::int count from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.status in ('analyzed','technicalError') and a.terminal_at is null and i.deleted_at is null`,
+      `select count(*)::int count from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.status in ('analyzed','technicalError','cancelled') and a.terminal_at is null and i.deleted_at is null`,
     );
     return {
       enqueued: result.rowCount ?? 0,
@@ -68,7 +68,7 @@ export class FoodImageRetentionService {
         and i.uploaded_at <= $2::timestamptz-interval '600 seconds' and i.created_at <= $2::timestamptz-interval '600 seconds'
         and exists(select 1 from food_analyses a where a.uploaded_image_id=i.id)
         and not exists(select 1 from food_analyses a where a.uploaded_image_id=i.id and
-          (a.status not in ('analyzed','technicalError') or ($3='retention' and (a.terminal_at is null or a.terminal_at > $2::timestamptz-interval '30 days'))))`,
+          (a.status not in ('analyzed','technicalError','cancelled') or ($3='retention' and (a.terminal_at is null or a.terminal_at > $2::timestamptz-interval '30 days'))))`,
         [job.image_id, now, job.reason],
       );
       if (!eligible.rowCount) {
