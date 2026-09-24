@@ -23,3 +23,20 @@ Local raw logs: `work/gerbi-backend-verification/{worker-tests,backend-build,bac
 ## Limits
 
 Local Node is 26.0.0; approved deployment baseline remains Node 24. These gates do not replace verification in the approved runtime. Food lifecycle deliberately uses fake provider and seeded available image; race tests stub provider/S3. Real GenAPI photo analysis, real upload storage round trip, browser reload journey, external HTTPS and physical phone push are **NOT RUN in this checkpoint**. No claim of complete expanded-pilot or release acceptance.
+
+
+## Isolated runtime preparation and blocker
+
+After source commit `aee4755`, `/opt/projects/ai-hudeetor-gerbi-expanded` was fast-forwarded from `56885d2` to `aee4755` using a Git bundle. No expanded project containers were started and no remote build was run.
+
+The existing `atlas-gerbi-expanded-api:latest` image (ID `sha256:f381d484eadbe3f57e0dee60f5daa07b3fb46447f9ab6ea1a610064be6194d02`) contains Linux Node 24.18.0 and dependencies. Its lockfile SHA256 `c4fff4ce645c0e80a33578b83e23d4afd5f674b77b0ca43d639d70371169e372` and backend/web package hashes exactly match current source. Linux `sharp` and `argon2` load successfully. This proves dependency compatibility, not current source deployment. Read-only diagnostic containers exited and were removed.
+
+API/worker/web builds also passed locally using Node 24.19.0 and pnpm 11.19.0 (within repository engine ranges); web uses `/api/v1`. Platform-neutral built JS and `.next` archive is 1.9MB compressed, about 10MB unpacked, excludes local native dependencies. Artifact SHA256: `022aa2a43c8249394109bf44c4827d1a3a27c7e3d44371133e72965307f827ff`. Local path: `work/gerbi-backend-verification/runtime-aee4755-artifacts.tar.gz`.
+
+Runtime remains blocked:
+
+- Server disk: **656MB free / 29GB, 98% used** after Docker unpacked its existing image for inspection. Available RAM about **476MB / 1.97GB**, with **1.37GB swap used**. A safe allowance for isolated PostgreSQL, object storage and application services has not been established. A full build was intentionally not launched. Suggested operational headroom before proceeding: at least 2GB free disk and 1GB available RAM, with compilation kept off-host; these are conservative planning allowances, not measured application minima.
+- Neither pinned MinIO nor mc image is cached. Read-only manifest inspection of `minio/minio:RELEASE.2025-04-22T22-12-26Z` failed with `denied: requested access to the resource is denied / unauthorized: authentication required` using the server's current Docker access. Consequently expanded/unpacked image footprint is unknown. No replacement storage, mock upload, or image-source change was introduced.
+- Other projects were preserved; `atlas-v01` and `atlas-ui-001` remained healthy in the final snapshot. No cache, image or volume pruning was performed.
+
+Raw local evidence: `work/gerbi-backend-verification/runtime-capacity.log` plus `{web,api,worker}-build.log`. Server manifest error: `/opt/projects/ai-hudeetor-gerbi-expanded-runtime/minio-manifest-error.log`. There is no new browser URL or real GenAPI photo acceptance from this checkpoint.
