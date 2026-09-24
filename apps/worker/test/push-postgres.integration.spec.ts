@@ -141,6 +141,31 @@ withDatabase('Push opt-in, scheduling and delivery on real PostgreSQL', () => {
     expect(await events()).toHaveLength(1);
   });
 
+  it('keeps yesterday and today as separate occurrences while midnight catch-up does not duplicate yesterday', async () => {
+    await setup('23:58');
+    // Asia/Irkutsk: Sep 23 23:58 -> Sep 24 00:01 -> Sep 24 23:58.
+    await worker.schedule(new Date('2026-09-23T15:58:00Z'));
+    const yesterday = (await events())[0]!;
+    await worker.process(job(yesterday.id));
+    await worker.schedule(new Date('2026-09-23T16:01:00Z'));
+    expect(await events()).toHaveLength(1);
+    await worker.process(job(yesterday.id));
+    expect(send).toHaveBeenCalledTimes(1);
+    await worker.schedule(new Date('2026-09-24T15:58:00Z'));
+    const occurrences = await events();
+    expect(occurrences).toHaveLength(2);
+    for (const event of occurrences) await worker.process(job(event.id));
+    const deliveries = await db.query<{ scheduled_for: Date; status: string; attempt_count: number }>(
+      'select scheduled_for,status,attempt_count from push_deliveries order by scheduled_for',
+    );
+    expect(deliveries.rows.map(row => ({ scheduledFor: row.scheduled_for.toISOString(), status: row.status, attempts: row.attempt_count }))).toEqual([
+      { scheduledFor: '2026-09-23T15:58:00.000Z', status: 'delivered', attempts: 1 },
+      { scheduledFor: '2026-09-24T15:58:00.000Z', status: 'delivered', attempts: 1 },
+    ]);
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(new Set(send.mock.calls.map(call => JSON.parse(call[1]).deliveryId)).size).toBe(2);
+  });
+
   it.each(['disable', 'revoke'] as const)(
     'does not dispatch a queued reminder after %s',
     async (action) => {
