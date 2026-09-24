@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+- Native chat request now omits the proxy model selector and persists its exact
+  wire body before submission; saved receipt replay and reconciliation use that
+  snapshot. Documented native result strings/full_response arrays are parsed;
+  request echoes are rejected, proxy behavior retained. Targeted16/16 and actual
+  PG chat receipt subset5/5, worker typecheck/scoped lint PASS. Independent review
+  and one real native chat acceptance remain pending; no new provider call yet.
+
+
 ### Runtime checkpoint — 2026-09-25
 
 - Final current components web8a0e72d/API backend141b784/workerda9e837.

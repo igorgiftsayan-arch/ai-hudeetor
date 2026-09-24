@@ -3,6 +3,7 @@ export type AiProviderRequest = {
   promptVersion: 'quick-reply-v1';
   personaId: string;
   memoryContext?: string;
+  nativePayload?: { messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>; is_sync: false };
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
 };
 
@@ -29,5 +30,6 @@ export type AiProviderLifecycle = { onAccepted(providerRequestId:string):Promise
 
 export abstract class AiProviderAdapter {
   abstract readonly providerName: 'fake' | 'genapi';
+  prepareRequest(request: AiProviderRequest): AiProviderRequest { return request; }
   abstract execute(request: AiProviderRequest,lifecycle?:AiProviderLifecycle): Promise<AiProviderResult>;
 }

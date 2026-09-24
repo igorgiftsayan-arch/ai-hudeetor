@@ -225,13 +225,14 @@ describeWithDatabase(
     );
 
     it.each([
-      { consented: true, state: 'prepared' },
-      { consented: false, state: 'prepared' },
-      { consented: true, state: 'submitting' },
-      { consented: true, state: 'ambiguous' },
+      { consented: true, state: 'prepared', native: true },
+      { consented: true, state: 'prepared', native: false },
+      { consented: false, state: 'prepared', native: false },
+      { consented: true, state: 'submitting', native: false },
+      { consented: true, state: 'ambiguous', native: false },
     ])(
       'handles chat receipt $state with current consent=$consented without unsafe resubmission',
-      async ({ consented, state }) => {
+      async ({ consented, state, native = false }) => {
         const fixture = await seed();
         const conversationId = randomUUID(),
           messageId = randomUUID(),
@@ -262,6 +263,7 @@ describeWithDatabase(
           promptVersion: 'quick-reply-v1',
           personaId: 'gentleFriend',
           memoryContext: 'original weight and profile',
+          ...(native ? { nativePayload: { is_sync: false, messages: [{ role: 'system', content: 'original prepared prompt' }, { role: 'user', content: 'original question' }] } } : {}),
           messages: [{ role: 'user', content: 'original question' }],
         };
         const hash = createHash('sha256')
@@ -300,6 +302,7 @@ describeWithDatabase(
         await new AutomaticRecoveryService(sweeper).sweep();
         const adapter = {
           providerName: 'genapi',
+          prepareRequest: jest.fn(() => { throw new Error('must not rebuild saved wire body'); }),
           execute: jest
             .fn()
             .mockResolvedValue({
@@ -318,6 +321,7 @@ describeWithDatabase(
           { process: jest.fn() } as never,
         );
         await restarted.process(job(eventId));
+        expect(adapter.prepareRequest).not.toHaveBeenCalled();
         if (consented && state === 'prepared')
           expect(adapter.execute.mock.calls[0]?.[0]).toEqual(original);
         else expect(adapter.execute).not.toHaveBeenCalled();

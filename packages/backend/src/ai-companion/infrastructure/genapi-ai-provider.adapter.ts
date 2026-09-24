@@ -59,6 +59,16 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
     super();
   }
 
+  override prepareRequest(request: AiProviderRequest): AiProviderRequest {
+    if (!this.config.nativeBaseUrl || request.nativePayload) return request;
+    // Native network IDs and optional provider model versions are different namespaces.
+    // Omit the proxy-only model selector and persist the exact native wire body.
+    return { ...request, nativePayload: {
+      messages: buildGenApiChatPayload(request, this.config.model).messages,
+      is_sync: false,
+    } };
+  }
+
   async execute(request: AiProviderRequest,lifecycle?:AiProviderLifecycle): Promise<AiProviderResult> {
     if(this.config.nativeBaseUrl)return this.executeNative(request,lifecycle);
     const startedAt = Date.now();
@@ -125,7 +135,7 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
   private async executeNative(request:AiProviderRequest,lifecycle?:AiProviderLifecycle):Promise<AiProviderResult>{
     const startedAt=Date.now();const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),this.config.timeoutMs);
     let accepted:Response;
-    try{accepted=await this.fetcher(`${this.config.nativeBaseUrl!.replace(/\/$/,'')}/networks/${encodeURIComponent(this.config.model)}`,{method:'POST',headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json','Accept':'application/json','X-Request-ID':request.operationId},body:JSON.stringify({...buildGenApiChatPayload(request,this.config.model),is_sync:false}),signal:controller.signal});}
+    try{accepted=await this.fetcher(`${this.config.nativeBaseUrl!.replace(/\/$/,'')}/networks/${encodeURIComponent(this.config.model)}`,{method:'POST',headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json','Accept':'application/json','X-Request-ID':request.operationId},body:JSON.stringify(this.prepareRequest(request).nativePayload),signal:controller.signal});}
     catch(error){clearTimeout(timer);const unknown=isAbort(error)||!isConfirmedConnectionFailure(error);this.writeLog(request,startedAt,{status:unknown?'outcomeUnknown':'technicalError',errorCode:unknown?'timeout':'providerUnavailable'});return unknown?{kind:'outcomeUnknown'}:{kind:'technicalError',errorClass:'providerUnavailable'};}
     if(!accepted.ok){clearTimeout(timer);this.writeLog(request,startedAt,{status:'technicalError',errorCode:mapHttpError(accepted.status)});return{kind:'technicalError',errorClass:'providerUnavailable'};}
     const acceptedBody=await safeJson(accepted);const requestId=isRecord(acceptedBody)&&(typeof acceptedBody.request_id==='string'||typeof acceptedBody.request_id==='number')?String(acceptedBody.request_id):null;
@@ -260,10 +270,13 @@ function extractUsage(body: unknown): {
 }
 
 function extractNativeChat(body:Record<string,unknown>):{text:string;responseId:string|null;usage:{inputTokens:number;outputTokens:number;totalTokens:number;cost?:number}}|null{
-  const result=Array.isArray(body.result)&&isRecord(body.result[0])?body.result[0]:isRecord(body.full_response)?body.full_response:null;
-  if(!result)return null;const text=extractText(result);if(!text)return null;const usage=extractUsage(result);
+  const first = Array.isArray(body.result) ? body.result[0] : null;
+  const full = Array.isArray(body.full_response) ? body.full_response[0] : body.full_response;
+  const result = isRecord(first) ? first : isRecord(full) ? full : null;
+  const text = typeof first === 'string' && first.trim() ? first.trim() : extractText(result);
+  if(!text)return null;const usage=extractUsage(result);
   const cost=typeof body.cost==='number'&&body.cost>=0?body.cost:undefined;
-  return{text,responseId:typeof result.id==='string'?result.id:null,usage:{...usage,...(cost!==undefined?{cost}:{})}};
+  return{text,responseId:result && typeof result.id==='string'?result.id:null,usage:{...usage,...(cost!==undefined?{cost}:{})}};
 }
 
 function numberOrZero(value: unknown): number {

@@ -39,7 +39,7 @@ export class GenApiOutcomeReconciliationClient {
       throw new Error('GenAPI request is not successfully completed');
     if (String(body.id) !== input.providerRequestId)
       throw new Error('GenAPI request id mismatch');
-    const expected = buildGenApiChatPayload(input.request, this.config.model);
+    const expected = input.request.nativePayload ?? buildGenApiChatPayload(input.request, this.config.model);
     if (!isRecord(body.parameters) || body.network !== this.config.model)
       throw new Error('GenAPI request model mismatch');
     const expectedMessages = expected.messages;

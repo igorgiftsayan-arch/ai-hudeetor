@@ -1,5 +1,22 @@
 # Текущий статус
 
+## Native chat transport — локальный checkpoint, 2026-09-25
+
+Подготовлен фикс native GenAPI: network ID `grok-4-5` остаётся в URL, proxy-only
+selector не передаётся в native `model`; используется документированный default.
+Новый receipt сохраняет точный native body до submit, replay использует сохранённые
+messages без пересборки из изменившегося контекста. Старые hashes не переписываются;
+proxy transport сохранён. Parser поддерживает документированные result strings и
+full_response array, не принимает request echo. Строгая reconciliation проверка
+provider ID/network/messages/result metadata сохранена; реальный native chat ещё
+не выполнен и совместимость его результата пока не заявляется.
+
+Проверки: adapter/reconciliation16/16; actual PostgreSQL chat receipt subset5/5
+(5 других cases не запускались); worker typecheck и scoped lint PASS. Ожидается
+независимый review перед переключением API/worker и одним разрешённым quickReply.
+Источники: [native Grok schema](https://gen-api.ru/model/grok-4-5/api),
+[GET result schema](https://gen-api.ru/docs/v1/generations/getting-the-result).
+
 ## Runtime checkpoint — 2026-09-25
 
 Один активный expanded стенд на прежнем2GB сервере; main не менялся. Web8a0e72d,

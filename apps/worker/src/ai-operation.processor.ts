@@ -124,6 +124,7 @@ export class AiOperationProcessor extends WorkerHost {
         messages: history.rows,
       };
     }
+    if (!claimed.saved_request) providerRequest = this.adapter.prepareRequest?.(providerRequest) ?? providerRequest;
     const requestPayload = JSON.stringify(providerRequest);
     // Preserve the original hash: JSONB may return keys in a different order.
     const requestHash = claimed.saved_hash ?? createHash('sha256').update(requestPayload).digest('hex');

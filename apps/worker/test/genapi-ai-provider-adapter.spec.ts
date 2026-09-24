@@ -23,6 +23,37 @@ function response(body: unknown, status = 200): Response {
 }
 
 describe('GenApiAiProviderAdapter', () => {
+  it('persists and replays the exact native body without the proxy model selector', async () => {
+    const fetcher = jest.fn()
+      .mockResolvedValueOnce(response({ request_id: 123, status: 'starting' }))
+      .mockResolvedValueOnce(response({ status: 'success', result: ['answer'] }));
+    const adapter = new GenApiAiProviderAdapter({ apiKey: 'synthetic', baseUrl: 'https://proxy.gen-api.ru/v1', nativeBaseUrl: 'https://api.gen-api.ru/api/v1', model: 'grok-4-5', timeoutMs: 1000, pollIntervalMs: 0 }, fetcher);
+    const prepared = adapter.prepareRequest(request);
+    const persisted = JSON.parse(JSON.stringify(prepared));
+    persisted.memoryContext = 'changed after preparation';
+    persisted.personaId = 'analyst';
+    persisted.messages = [{ role: 'user', content: 'changed history' }];
+    await expect(adapter.execute(persisted)).resolves.toMatchObject({ kind: 'success', text: 'answer' });
+    expect(fetcher.mock.calls[0]![0]).toBe('https://api.gen-api.ru/api/v1/networks/grok-4-5');
+    const body = JSON.parse(String(fetcher.mock.calls[0]![1].body));
+    expect(body).toEqual(prepared.nativePayload);
+    expect(body).not.toHaveProperty('model');
+    expect(body.is_sync).toBe(false);
+    expect(body.messages.slice(1)).toEqual(request.messages);
+  });
+
+  it('reads the documented full_response array without accepting request echoes', async () => {
+    for (const [envelope, expectedKind] of [
+      [{ full_response: [{ choices: [{ message: { content: 'answer' } }] }] }, 'success'],
+      [{ input: { messages: [{ content: 'echo' }] }, result: [] }, 'technicalError'],
+    ] as const) {
+      const fetcher = jest.fn().mockResolvedValueOnce(response({ request_id: 123 }))
+        .mockResolvedValueOnce(response({ status: 'success', ...envelope }));
+      const adapter = new GenApiAiProviderAdapter({ apiKey: 'synthetic', baseUrl: 'https://proxy.gen-api.ru/v1', nativeBaseUrl: 'https://api.gen-api.ru/api/v1', model: 'grok-4-5', timeoutMs: 1000, pollIntervalMs: 0 }, fetcher);
+      await expect(adapter.execute(request)).resolves.toMatchObject({ kind: expectedKind });
+    }
+  });
+
   it('persists the native async request id before polling the result', async () => {
     const accepted=jest.fn().mockResolvedValue(undefined);
     const fetcher=jest.fn()
