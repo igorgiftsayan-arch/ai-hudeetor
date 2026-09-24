@@ -74,7 +74,8 @@ export class FoodService {
       [id, user.userId, objectKey, input.contentType, input.sizeBytes, input.sha256],
     );
     const command = new PutObjectCommand({ Bucket: this.config.bucket, Key: objectKey, ContentType: input.contentType, ContentLength: input.sizeBytes, Metadata: { sha256: input.sha256 } });
-    const uploadUrl = await getSignedUrl(this.publicStorage, command, { expiresIn: 600 });
+    // Metadata is sent by the browser as a header and must remain in SignedHeaders.
+    const uploadUrl = await getSignedUrl(this.publicStorage, command, { expiresIn: 600, unhoistableHeaders: new Set(['x-amz-meta-sha256']) });
     return { id, status: 'pendingUpload' as const, uploadUrl, expiresAt: new Date(Date.now() + 600_000).toISOString(), requiredHeaders: { 'content-type': input.contentType, 'x-amz-meta-sha256': input.sha256 } };
   }
 

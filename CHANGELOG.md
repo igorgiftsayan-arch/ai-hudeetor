@@ -6,6 +6,13 @@
 
 ### Runtime checkpoint — 2026-09-25
 
+- Fixed actual browser S3 upload signing: checksum metadata stays in SignedHeaders
+  instead of being hoisted to query while also required as a browser header.
+  Actual full-size synthetic PNG2653194bytes reproduced400 before and passed200
+  after; anonymousGET403 retained. Real SDK regression2red→3/3green includes
+  the10MiB boundary; APItypecheck/scopedlint PASS. Service deployment awaits review.
+
+
 - One constrained expanded test stack replaces Daily Coach on the existing2GB host.
   Current compiled artifacts, private MinIO source-build fallback, resource caps,
   backup/rollback and real signed-upload403/200 checks are recorded in

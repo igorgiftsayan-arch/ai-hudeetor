@@ -2,6 +2,15 @@
 
 ## Runtime checkpoint — 2026-09-25
 
+Browser onboarding fixed1204907 and observed actual completed state, one100-token
+starter grant. Preview fix4a997e2 deployed. PublicHTTP Safari blocks WebCrypto;
+localhost SSH tunnel is used only for desktop acceptance, not phoneHTTPS proof.
+Full-size upload exposed S3metadata signature mismatch (400 unsigned header).
+Minimal fix keeps checksum header signed; direct realMinIO full-size PUT200 /
+anonymousGET403, realSDK3/3 tests and APItypecheck/lint PASS. App deployment awaits
+independent review; no paid food operation or manual ledger mutation yet.
+
+
 На имеющемся2GB сервере один активный expanded стенд заменил Daily Coach; старые
 volumes и backup сохранены. Source da9e837/web26e6e0a. Миграции и7health checks PASS,
 OOM/restarts0; private storage anonymousGET/PUT403, signedPUT200 и точные bytes PASS.
