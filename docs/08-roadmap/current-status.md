@@ -10,9 +10,10 @@
 - Финальный browser checkpoint на isolated checkout `912d000` подтвердил public login/readiness `200`, mobile `390px` без overflow, понятный GenAPI disclosure и безопасное обновление UI после `MARATHON_TASK_DATE_INVALID`. Targeted memory/history gate отдельно подтвердил один active safe fact в bounded context и два prior messages; следующий реальный provider-вызов первоначально получил `outcomeUnknown`, сохранил reservation без terminal effect и заблокировал composer.
 - Audited post-request-ID reconciliation реализована в backend commit `e4b930f` и проверена на provider request `54055527`: строгий request match, `outcomeUnknown → succeeded`, одна confirmation, ноль refunds, одна assistant message, один audit marker и идемпотентный replay без дубликатов. Чистая PostgreSQL integration прошла `1/1`; текущий пользователь больше не заблокирован незавершённой operation. `main`, stable и frontend не изменялись.
 - Read-only provider review подтвердил native async contract Grok 4.5 с `request_id` и polling, но не нашёл документированной идемпотентности initial submit или lookup по client ID. Поэтому post-request-ID recovery подтверждена, а pre-ID timeout остаётся блокером полного real-AI recovery до ответа GenAPI или отдельной принятой policy. Автоматическая reconciliation orchestration и blind resubmit не добавлялись.
+- Точная UI evidence-граница и image digests сохранены в [runtime evidence](../07-deployment/gerbi-marathon-runtime-evidence.md); disclosure прямо называет передачу сообщения и необходимого контекста в GenAPI.
 - Командный API не раскрывает raw weight, AI chat/memory или накопленные итоги. `unknown` не заменяется нулём; первый день возвращает `notApplicable`; отчёт за последний день доступен следующим утром.
 - Приняты и проверены правила дневных показателей: точный вчера→сегодня процент, immutable first-in-marathon baseline, wellness как сумма восьми boolean, self-reported captain task и общие места при равенстве. PostgreSQL suite 8/8 и shared UI runtime подтверждают contract; stale task ID отклоняется `409 MARATHON_TASK_DATE_INVALID`, а точный успешный replay остаётся стабильным. Реальные даты, команды и капитаны остаются входными данными владельца.
-- Food vision сознательно отложен: до реализации нужны private storage/upload, validation/quarantine/lifecycle, vision-provider contract, цена и token/refund semantics, privacy и UX результата.
+- Расширенный обязательный pilot scope теперь включает food photo analysis, phone push reminders и автоматическое AI recovery. Фото сначала анализируется, а употребление фиксируется только отдельным подтверждением «Съели ли вы это?»; только подтверждённые записи входят в дневник и наблюдаемую динамику питания/веса. Push требует отдельного opt-in и browser subscription. Причинные диагнозы и выдуманные профильные данные запрещены.
 
 ## Документальный срез 2026-09-23
 
@@ -24,6 +25,12 @@
 - AI-003: Daily Coach backend реализует и изолированно проверяет одну timezone-aware state row на локальную дату, state machine `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API в отдельной ветке; migration repeatability, 76 API и 32 worker tests подтверждены, `main` и stable не изменены; frontend, scheduling, prompts и Character не входят.
 - AI-002: structured companion memory, nullable profile context, migration `0010`, owner list/delete API, deterministic worker extraction и bounded memory context реализованы и проверены в отдельной ветке; `main` не изменён.
 - AI-001: GenAPI adapter реализован и проверен в отдельной ветке на synthetic test-пользователях; `main` и stable остаются на fake до приёмки и merge.
+
+### Исторический срез 2026-07-28
+
+- В feature ancestry текущей UI-ветки присутствуют AI-001/002/003, однако `main` не меняется: он остаётся на fake AI. GenAPI выбран и реализован в AI-001, но обычным пользователям доступен только после отдельного consent-flow и решения о включении.
+- AI-003: Daily Coach backend изолированно проверяет timezone-aware state row на локальную дату, переходы `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API; frontend, scheduling, prompts и Character в AI-003 не входят.
+- Следующие строки — исторические результаты отдельных задач. Упоминание UI-ветки, ожидающей merge, относится к срезу 2026-07-28 и не является текущим статусом `main`.
 - Текущая задача: UI-005/BACK-UI-001 объединены и проверены в ветке `ui/ui-001-daily-weight`; слияние в `main` не выполнялось, результат ожидает ручной приёмки.
 - Код приложения: scaffold web/API/worker, identity/profiles modules, token-economy completion/wallet, tracking веса с графиком, daily upsert и persisted fake-runtime AI chat.
 - Реальный AI provider остаётся только в несмёрженной AI-001 базе; платежи, рефералы, memory frontend и feedback отсутствуют.

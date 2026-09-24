@@ -19,6 +19,11 @@ import type {
   ChatPrice,
 } from '../../features/ai-companion/chat-api';
 import { ApiError, apiRequest } from '../../shared/api';
+import {
+  ProviderConsentNotice,
+  loadProviderConsent,
+} from '../../features/ai-companion/provider-consent';
+import type { ProviderConsent } from '../../features/ai-companion/provider-consent';
 
 type PendingSubmission = {
   payload: string;
@@ -33,6 +38,7 @@ export default function QuickReplyPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [operation, setOperation] = useState<ChatOperation>();
+  const [providerConsent, setProviderConsent] = useState<ProviderConsent>();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>();
@@ -70,14 +76,16 @@ export default function QuickReplyPage() {
         replace('/onboarding');
         return;
       }
-      const [currentPrice, conversation] = await Promise.all([
+      const [currentPrice, conversation, consent] = await Promise.all([
         loadChatPrice(),
         loadOrCreateConversation(onboarding.csrfToken),
+        loadProviderConsent(),
       ]);
       setCsrfToken(onboarding.csrfToken);
       setPrice(currentPrice);
       setConversationId(conversation.id);
       setMessages(conversation.messages);
+      setProviderConsent(consent);
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') {
         replace('/login');
@@ -101,7 +109,7 @@ export default function QuickReplyPage() {
   async function submit(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     const content = draft.trim();
-    if (!content || !price || !conversationId || !csrfToken) return;
+    if (!content || !price || !conversationId || !csrfToken || !canUseAi(providerConsent)) return;
 
     const next = chatSubmission({ conversationId, content, price });
     if (pendingSubmission.current?.payload !== next.payload) {
@@ -166,7 +174,7 @@ export default function QuickReplyPage() {
 
   const waiting = operation && isActiveOperation(operation.status);
   const submitDisabled =
-    loading || sending || !price || !draft.trim() || Boolean(waiting);
+    loading || sending || !price || !draft.trim() || Boolean(waiting) || !canUseAi(providerConsent);
 
   return (
     <main className="app-shell chat-shell">
@@ -176,7 +184,9 @@ export default function QuickReplyPage() {
             <p className="section-label">Поддержка рядом</p>
             <h1>AI-друг</h1>
           </div>
-          <span className="fake-runtime-badge">тестовый AI</span>
+          <span className="fake-runtime-badge">
+            {providerConsent?.providerMode === 'fake' ? 'тестовый AI' : 'AI'}
+          </span>
         </header>
 
         <section
@@ -222,6 +232,14 @@ export default function QuickReplyPage() {
               )}
             </div>
           )}
+          {providerConsent && (
+            <ProviderConsentNotice
+              consent={providerConsent}
+              csrfToken={csrfToken}
+              onAccepted={loadInitialState}
+              onSessionExpired={() => replace('/login')}
+            />
+          )}
           <div ref={feedEnd} />
         </section>
 
@@ -240,7 +258,7 @@ export default function QuickReplyPage() {
             maxLength={4000}
             rows={2}
             disabled={
-              sending || Boolean(waiting) || Boolean(pendingSubmission.current)
+              sending || Boolean(waiting) || Boolean(pendingSubmission.current) || !canUseAi(providerConsent)
             }
           />
           <div className="chat-send-row">
@@ -274,5 +292,14 @@ function isDefinitiveSubmissionFailure(cause: unknown): boolean {
     cause.kind === 'request' &&
     cause.status !== undefined &&
     cause.status < 500
+  );
+}
+
+function canUseAi(consent: ProviderConsent | undefined): boolean {
+  if (!consent) return false;
+  return (
+    consent.providerMode === 'fake' ||
+    !consent.externalProviderEnabled ||
+    consent.accepted
   );
 }

@@ -6,6 +6,7 @@
 
 ### Added
 
+- GERBI expanded pilot scope: обязательны private food-photo analysis с отдельным consumed confirmation, phone Web Push с opt-in/user schedule и безопасное automatic AI recovery; неподтверждённое фото не считается съеденной едой, причинные выводы о весе запрещены.
 - GERBI-MARATHON-PILOT completion audit (`629f576`): focused PostgreSQL `9/9`, calendar `2/2` and reconciliation matcher `2/2` подтвердили cross-team isolation, captain create/edit vs participant deny, safe team DTO и first-day/last-day/rollover; frontend browser gate отдельно подтвердил восстановленный assistant reply и доступный composer без нового AI-запроса.
 - GERBI-MARATHON-PILOT operator handoff: добавлен fail-closed GenAPI reconciliation runbook с verify-before-write, safe replay и post-write проверками. Изолированный synthetic pilot подготовлен к ручной приёмке владельцем, но не считается production/stable accepted; automatic pre-ID recovery и immutable request snapshot для защиты от context drift остаются открытыми, timeout не менялся.
 - GERBI-MARATHON-PILOT: additive migration `0012`, marathon/team/membership, owner-scoped wellness report, captain daily task/completion, safe daily team read model and explicit current-version provider consent boundary.
@@ -14,6 +15,10 @@
 - GERBI-MARATHON-PILOT daily metrics: exact yesterday-to-today weight percentage, immutable first-in-period baseline, eight-point wellness, self-reported captain task and dense shared-place podium groups without cumulative team totals.
 - GERBI-MARATHON-PILOT migration `0013`: PostgreSQL captures the first in-period weight atomically on membership/weight writes and preserves it across later daily upserts.
 - GERBI-MARATHON-PILOT completion guard: a new command cannot complete a stale task, while an exact successful idempotency replay remains stable across the local-date boundary.
+- GERBI-MARATHON-PILOT runtime checkpoint: isolated shared browser confirmed mobile daily podiums, consent-gated GenAPI flow, two completed real-provider actions and stale-task recovery; evidence excludes credentials and AI contents.
+- GERBI-MARATHON-PILOT: the external GenAPI consent UI now clearly states that messages and necessary context are sent to GenAPI; it no longer calls the real-provider mode a test AI.
+- GERBI-MARATHON-PILOT: `outcomeUnknown` chat coverage explicitly guards against a refund promise or automatic resend while reconciliation is pending.
+- GERBI-MARATHON-PILOT status: real GenAPI surfaced an `outcomeUnknown` recovery blocker; the isolated marathon checkpoint remains tested, while backend diagnosis/recovery is pending and overall real-AI completion is not claimed.
 - GERBI-MARATHON-PILOT final isolated browser checkpoint: code images from `bec79b4` remained healthy behind the public gateway; stale task completion returned `MARATHON_TASK_DATE_INVALID`, refreshed to a calm date-change state and preserved the responsive `390px` layout.
 - GERBI-MARATHON-PILOT targeted AI evidence: one deterministic safe memory fact appeared in the next bounded context together with two prior conversation messages; the provider call ended `outcomeUnknown`, with no automatic refund or reconciliation claim.
 - GERBI-MARATHON-PILOT provider disclosure: the isolated UI now names GenAPI and explains that messages and required context are transferred to form the answer; misleading test-mode wording was removed while pre-consent blocking remained intact.

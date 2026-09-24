@@ -10,6 +10,18 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: replaceMock }),
 }));
 
+vi.mock('../../features/ai-companion/provider-consent', () => ({
+  loadProviderConsent: vi.fn(async () => ({
+    providerMode: 'fake',
+    externalProviderEnabled: false,
+    documentVersion: 'v1',
+    disclosure: 'Тестовый AI.',
+    accepted: false,
+    acceptedAt: null,
+  })),
+  ProviderConsentNotice: () => null,
+}));
+
 describe('AI chat screen', () => {
   beforeEach(() => {
     replaceMock.mockReset();
@@ -373,9 +385,14 @@ describe('AI chat screen', () => {
     });
 
     expect(screen.getByLabelText('Сообщение')).toBeDisabled();
-    expect(screen.getByRole('alert')).toHaveTextContent(
+    const outcomeUnknownAlert = screen.getByRole('alert');
+    expect(outcomeUnknownAlert).toHaveTextContent(
       'Статус ответа уточняется.',
     );
+    expect(outcomeUnknownAlert).not.toHaveTextContent('возвращён');
+    expect(
+      screen.queryByRole('button', { name: 'Повторить отправку' }),
+    ).not.toBeInTheDocument();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_100);
