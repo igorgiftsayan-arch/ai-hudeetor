@@ -34,7 +34,9 @@ Two regressions failed before the fix; processor **5/5** PASS after, worker
 validation helpers ran offline against the complete saved envelope and passed,
 without another provider call. Fixed processor source SHA256:
 `418f4d0ed14fcfda91eef185eb2102574b7563c48c3da178c461e067ce2acd33`.
-Independent parser review is pending.
+Independent review of `befb858` found no concrete P1/P2. The reviewer reran
+5/5 tests and offline malformed-content/request-echo rejection checks. No
+additional HTTP calls or private payload access were used by the reviewer.
 
 Exactly one POST was accepted and its ID durably persisted before polling.
 Six initial GETs hit the probe's1MiB response limit (the envelope includes input).

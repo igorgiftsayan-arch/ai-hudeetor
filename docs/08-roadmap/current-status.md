@@ -19,7 +19,8 @@ remote capacity ожидается; новый remote build/deploy не явля
   содержат массив choice-объектов с `message.content`. Две новые regressions
   сначала FAIL, затем processor **5/5** PASS; worker typecheck/scoped lint PASS.
   Точные production extraction+validation helpers офлайн приняли сохранённый
-  реальный envelope, без нового HTTP. Независимый review этого parser-fix ожидается.
+  реальный envelope, без нового HTTP. Независимый review `befb858` не выявил P1/P2;
+  reviewer повторил 5/5 тестов и офлайн-проверки malformed content/request echoes.
   Всего один POST; шесть первоначальных GET, затем по отдельным разрешениям один
   reconciliation GET и один diagnostic GET того же ID. Первоначальный probe
   упирался в свой лимит ответа1MiB; увеличенное bounded чтение завершило диагностику.

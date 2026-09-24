@@ -15,7 +15,8 @@
   `result[0].message.content` and `full_response[0].message.content`.
   Sanitized regressions first failed2/2; processor tests now **5/5**, worker
   typecheck/scoped lint PASS. Exact production extraction/validation also passed
-  offline against the saved real envelope. Independent parser review pending.
+  offline against the saved real envelope. Independent review passed with no
+  concrete P1/P2; reviewer reran5/5 and malformed-content/request-echo checks.
   One POST only; bounded follow-up GETs reused its ID. Reported raw cost1.0444
   has unverified units; usage unavailable. No full adapter/ledger/storage/browser/
   phone or deployment acceptance is implied.
