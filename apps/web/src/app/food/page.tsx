@@ -490,9 +490,12 @@ function analysisToView(analysis: FoodAnalysisResourceDto | undefined) {
   const recognized = analysis.userCorrection ?? analysis.recognizedResult;
   if (!recognized) return undefined;
   const suitability = analysis.suitabilityResult;
+  const assessedItems =
+    analysis.recognizedResult?.items.map((item) => item.name) ?? [];
   if (!suitability || suitability.status === 'insufficientData') {
     return {
       items: recognized.items.map((item) => item.name),
+      assessedItems,
       suitability:
         'Пока не хватает известных целей или ограничений питания для оценки этого блюда.',
     };
@@ -503,6 +506,7 @@ function analysisToView(analysis: FoodAnalysisResourceDto | undefined) {
       : '';
   return {
     items: recognized.items.map((item) => item.name),
+    assessedItems,
     suitability: [
       source,
       ...suitability.observations,

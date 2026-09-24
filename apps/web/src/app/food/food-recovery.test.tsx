@@ -211,3 +211,27 @@ it('unlocks a consumed analysis recovered after reload without repeating any mut
   expect(food.confirmFoodConsumption).not.toHaveBeenCalled();
   expect(food.saveFoodCorrection).not.toHaveBeenCalled();
 });
+
+it('does not present saved corrections with the original suitability or start another paid analysis', async () => {
+  saved({ analysisId: 'analysis-1' });
+  vi.mocked(food.loadFoodAnalysis).mockResolvedValue({
+    ...analyzed,
+    consumptionStatus: 'consumed',
+    userCorrection: { items: [{ name: 'рыба' }] },
+    suitabilityResult: {
+      status: 'matches',
+      source: 'profile',
+      observations: ['Рис соответствует вашим предпочтениям.'],
+      missingData: [],
+    },
+  });
+  render(<FoodPage />);
+  await ready();
+  expect(screen.getByText('рыба')).toBeInTheDocument();
+  expect(screen.queryByText(/Рис соответствует/)).not.toBeInTheDocument();
+  expect(
+    screen.getByText(/Исправленный состав пока не оценён/),
+  ).toBeInTheDocument();
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+  expect(food.saveFoodCorrection).not.toHaveBeenCalled();
+});
