@@ -1,6 +1,6 @@
 # GERBI local ledger/recovery checkpoint — 2026-09-24
 
-## Current checkpoint: integrated `ea4525f`, retention awaiting review
+## Current checkpoint: integrated `ca24217`, retention locally reviewed
 
 The user approved continuing local development while increasing server RAM and
 storage. Remote capacity is pending. This update changes documentation only;
@@ -25,10 +25,11 @@ real PostgreSQL race regressions also pass.
 These scoped results overlap earlier suites. Do not add their counts to create
 a new full-worker total or claim a new full API/UI/worker run on the merged head.
 Terminal photo retention is now implemented locally in `ea4525f`, as recorded
-below, but awaits independent review and is **not accepted**. Main and remote
+below; review fix `3531480` is locally independently verified. Real S3/runtime
+acceptance is still pending. Main and remote
 remain unchanged.
 
-### Terminal-photo retention — `ea4525f`, awaiting independent review
+### Terminal-photo retention — `ea4525f`, locally reviewed with `3531480`
 
 Migration0015 adds immutable `food_analyses.terminal_at`. New terminal transitions
 capture database time; later edits cannot extend retention. Historical backfill
@@ -58,10 +59,34 @@ Evidence: backend worktree
 `work/gerbi-backend-verification/food-retention-evidence.md`; logs
 `retention-final-tests.log`, `retention-backend-build.log`,
 `retention-worker-typecheck.log`, `retention-lint.log`, `retention-migration.log`,
-`retention-migration-repeat.log` in that directory. Independent review is pending,
-so this is implementation/testing evidence, not acceptance. Voluntary user-requested
+`retention-migration-repeat.log` in that directory. The follow-up below closes the local review finding;
+these results still do not establish real S3/runtime acceptance. Voluntary user-requested
 photo/analysis deletion is still absent; no new retention period was set for
 never-analyzed uploads. Real S3/provider/browser/phone/runtime gates remain pending.
+
+### Closed review finding — `3531480`
+
+P2: stale invalid HEAD metadata/body validation could overwrite a newer
+`available` or retention-`deleted` image with `quarantined`, preventing cleanup.
+Four actual-PG barrier cases reproduced the state corruption on `ea4525f` while
+the previous seven retention cases passed. Both quarantine UPDATEs now require
+`status='pendingUpload' AND deleted_at IS NULL`; PostgreSQL rechecks the predicate
+after concurrent writers. The old request still reports validation failure,
+without overwriting successful completion or a deletion tombstone.
+
+Backend verification: eleven retention plus two existing food lifecycle cases
+**13/13 PASS**, backend typecheck and scoped lint PASS. Independent reviewer
+reran **4/4 actual-PG cases PASS**, closing P2. Tests preserve exact image
+metadata/timestamps and analyzed results and exercise synthetic original/staging
+cleanup after 30 days. No live S3 operation or remote restart occurred. Logs in
+the backend verification directory: `stale-invalid-upload-red.log`,
+`stale-invalid-upload-green.log`, `stale-invalid-upload-typecheck.log`,
+`stale-invalid-upload-lint.log`. Counts are scoped, not an aggregate worker run.
+
+Next user-requested terminal photo/analysis deletion is being designed jointly
+by backend/frontend and is **not done**. Pending-operation cancellation semantics
+remain owner **TBD**; this checkpoint introduces no cancellation or refund policy.
+Real storage/provider/browser/phone/runtime gates remain pending.
 
 Earlier recorded gates: API **92/92**, worker **44/44**, including actual PostgreSQL
 lifecycle/concurrency checks; provider-prompt **15/15**; food UI **24/24** on

@@ -14,8 +14,8 @@
   Prepared replay preserves current consent/attempt locking and never resubmits
   or refunds ambiguous/submitting receipts. Results are scoped per suite and
   must not be summed into a new full-worker count.
-- Terminal photo retention `ea4525f` is **implemented locally, awaiting independent
-  review; not accepted**. Migration0015 captures immutable terminal time; durable
+- Terminal photo retention `ea4525f`, followed by review fix `3531480`, is
+  **locally independently reviewed; real S3/runtime acceptance remains pending**. Migration0015 captures immutable terminal time; durable
   cleanup retries original/staging deletion after 30 days, excludes unresolved
   or unproven terminal state, prevents upload resurrection and preserves ledger,
   receipts, analysis results and confirmed history. Targeted **12/12** PASS
@@ -23,6 +23,14 @@
   worker typecheck/scoped lint and migrate/repeat PASS. S3 transport is stubbed;
   no live deletion occurred. Voluntary photo/analysis deletion remains absent.
   Main/remote unchanged; real storage/GenAPI/browser/phone gates remain pending.
+- Retention review `3531480` closes P2 stale invalid-upload quarantine overwrite:
+  only a still-pending, non-deleted image can become quarantined. Affected
+  retention/lifecycle **13/13** PASS, backend typecheck/scoped lint PASS;
+  independent reviewer **4/4 actual PostgreSQL** PASS. These remain scoped suites,
+  not a new full-worker count. Integrated source is `ca24217`; no remote change.
+- User-requested terminal photo/analysis deletion is being designed by backend
+  and frontend, **not implemented**. Pending-operation cancellation semantics
+  remain owner **TBD**; no cancellation/refund policy was introduced.
 - Earlier integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
   scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone

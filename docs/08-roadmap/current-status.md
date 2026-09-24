@@ -2,7 +2,7 @@
 
 ## Актуальный срез — локальная разработка продолжается, 2026-09-24
 
-Текущий общий интеграционный checkpoint: `ea4525f`, после `fa13d8d` (включает предыдущую базу
+Текущий общий интеграционный checkpoint: `ca24217`, с review-fix `3531480`, после `fa13d8d` (включает предыдущую базу
 `1ffd048` и исправления worker `ca3d612`). Пользователь разрешил продолжать
 разработку и проверки локально, пока увеличивает RAM/storage сервера. Расширение
 remote capacity ожидается; новый remote build/deploy не является результатом
@@ -22,8 +22,8 @@ remote capacity ожидается; новый remote build/deploy не явля
     воспроизводили отказ восстановления.
   Эти результаты не складываются в новый full-worker count и не означают
   повторного полного API/web/worker прогона на общем head.
-- Terminal photo retention `ea4525f` **реализован локально, ожидает независимого
-  review; НЕ принят**. Migration0015 фиксирует неизменяемый terminal timestamp;
+- Terminal photo retention `ea4525f` с исправлением `3531480` **локально
+  проверен независимым review; real S3/runtime acceptance НЕ закрыта**. Migration0015 фиксирует неизменяемый terminal timestamp;
   через 30 дней после завершения/ошибки durable cleanup удаляет original/staging
   с lease/retry, защищает от повторной загрузки и сохраняет ledger, receipt,
   результат анализа и подтверждённую историю. Pending/outcomeUnknown,
@@ -33,6 +33,14 @@ remote capacity ожидается; новый remote build/deploy не явля
   S3 в тестах stubbed; живые объекты не удалялись. Добровольное удаление фото и
   анализа по запросу пользователя всё ещё **отсутствует**. Новый срок хранения
   never-analyzed uploads не вводился.
+  Review закрыл P2: устаревший invalid HEAD/body больше не переводит новое
+  available/deleted изображение в quarantine; UPDATE ограничен pendingUpload
+  без deleted_at. Затронутые retention/lifecycle **13/13** PASS, backend
+  typecheck/scoped lint PASS; независимый reviewer повторил **4/4 actual PG**.
+  Это отдельные наборы, не новый суммарный full-worker count.
+- Следующий пакет удаления terminal фото/анализа по запросу пользователя
+  проектируется backend/frontend и **не готов**. Семантика отмены pending
+  операции остаётся решением владельца **TBD**; отмена и refund не подразумеваются.
 - Предыдущая локальная база доказательств: API **92/92**, worker **44/44**, включая реальные
   PostgreSQL lifecycle/concurrency проверки; provider-prompt tests **15/15**.
   Food UI на `d52eb9f`: **24/24**. Это отдельные зафиксированные наборы, а не
