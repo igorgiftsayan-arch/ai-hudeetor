@@ -39,6 +39,8 @@ export { IdentityModule } from './identity/transport/identity.module';
 export { ProfilesModule } from './profiles/transport/profiles.module';
 export { TokenEconomyModule } from './token-economy/transport/token-economy.module';
 export { TrackingModule } from './tracking/transport/tracking.module';
+export { FoodModule } from './food/transport/food.module';
+export { NotificationsModule } from './notifications/transport/notifications.module';
 export {
   AiCompanionRepository,
   type QueuedAiOperation,

@@ -99,6 +99,13 @@
       "when": 1790211600000,
       "tag": "0013_gerbi_marathon_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790298000000,
+      "tag": "0014_gerbi_expanded_pilot",
+      "breakpoints": true
     }
   ]
 }

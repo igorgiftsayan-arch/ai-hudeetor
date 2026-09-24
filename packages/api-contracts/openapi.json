@@ -1092,6 +1092,456 @@
           "marathon"
         ]
       }
+    },
+    "/api/v1/ai-action-prices/food-photo-analysis": {
+      "get": {
+        "operationId": "FoodController_price_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodActionPriceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-images/upload-intents": {
+      "post": {
+        "operationId": "FoodController_uploadIntent_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFoodUploadIntentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodUploadIntentResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-images/{id}/completions": {
+      "post": {
+        "operationId": "FoodController_completeUpload_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "uuid",
+                    "status": "available"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-analyses": {
+      "post": {
+        "operationId": "FoodController_createAnalysis_api/v1",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFoodAnalysisDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "uuid",
+                    "status": "queued",
+                    "reservedTokens": 5,
+                    "priceVersion": 1,
+                    "pollingUrl": "/api/v1/food-analyses/uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-analyses/{id}": {
+      "get": {
+        "operationId": "FoodController_analysis_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodAnalysisResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-analyses/{id}/correction": {
+      "patch": {
+        "operationId": "FoodController_correction_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FoodCorrectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodAnalysisResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-analyses/{id}/consumption-confirmations": {
+      "post": {
+        "operationId": "FoodController_confirm_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmFoodConsumptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodConsumptionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-consumptions": {
+      "get": {
+        "operationId": "FoodController_consumptions_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodConsumptionPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/notification-preferences/push": {
+      "get": {
+        "operationId": "NotificationsController_get_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPreferenceResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      },
+      "put": {
+        "operationId": "NotificationsController_save_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePushPreferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPreferenceResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notification-preferences/push/subscriptions": {
+      "post": {
+        "operationId": "NotificationsController_subscribe_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePushSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushSubscriptionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notification-preferences/push/subscriptions/{id}": {
+      "delete": {
+        "operationId": "NotificationsController_unsubscribe_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
     }
   },
   "info": {
@@ -2809,6 +3259,429 @@
         "required": [
           "accepted",
           "documentVersion"
+        ]
+      },
+      "FoodActionPriceDto": {
+        "type": "object",
+        "properties": {
+          "actionType": {
+            "type": "string",
+            "enum": [
+              "foodPhotoAnalysis"
+            ]
+          },
+          "tokenPrice": {
+            "type": "number"
+          },
+          "priceVersion": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "actionType",
+          "tokenPrice",
+          "priceVersion"
+        ]
+      },
+      "CreateFoodUploadIntentDto": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ]
+          },
+          "sizeBytes": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "contentType",
+          "sizeBytes",
+          "sha256"
+        ]
+      },
+      "FoodUploadIntentResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pendingUpload"
+            ]
+          },
+          "uploadUrl": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "requiredHeaders": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "uploadUrl",
+          "expiresAt",
+          "requiredHeaders"
+        ]
+      },
+      "CreateFoodAnalysisDto": {
+        "type": "object",
+        "properties": {
+          "uploadedImageId": {
+            "type": "string"
+          },
+          "expectedTokenPrice": {
+            "type": "number"
+          },
+          "expectedPriceVersion": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "uploadedImageId",
+          "expectedTokenPrice",
+          "expectedPriceVersion"
+        ]
+      },
+      "FoodComponentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "FoodRecognizedResultDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "food",
+              "nonFood",
+              "ambiguous"
+            ]
+          },
+          "dishName": {
+            "type": "object"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodComponentDto"
+            }
+          },
+          "uncertaintyNotes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "items",
+          "uncertaintyNotes"
+        ]
+      },
+      "FoodSuitabilityResultDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "matches",
+              "doesNotMatch",
+              "mixed",
+              "insufficientData"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "profile",
+              "gerbiProgram",
+              "none"
+            ]
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "missingData": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "source",
+          "observations",
+          "missingData"
+        ]
+      },
+      "FoodCorrectionDto": {
+        "type": "object",
+        "properties": {
+          "dishName": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodComponentDto"
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "FoodAnalysisResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "uploadedImageId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "analyzed",
+              "technicalError",
+              "outcomeUnknown",
+              "deleted"
+            ]
+          },
+          "runtimeAdapter": {
+            "type": "string"
+          },
+          "recognizedResult": {
+            "$ref": "#/components/schemas/FoodRecognizedResultDto"
+          },
+          "suitabilityResult": {
+            "$ref": "#/components/schemas/FoodSuitabilityResultDto"
+          },
+          "userCorrection": {
+            "$ref": "#/components/schemas/FoodCorrectionDto"
+          },
+          "errorCategory": {
+            "type": "object"
+          },
+          "consumptionStatus": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "uploadedImageId",
+          "status",
+          "runtimeAdapter",
+          "consumptionStatus",
+          "createdAt"
+        ]
+      },
+      "ConfirmFoodConsumptionDto": {
+        "type": "object",
+        "properties": {
+          "consumedAt": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "consumedAt",
+          "timezone"
+        ]
+      },
+      "FoodConsumptionResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "foodAnalysisId": {
+            "type": "string"
+          },
+          "consumedAt": {
+            "type": "string"
+          },
+          "localDate": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "confirmedResult": {
+            "$ref": "#/components/schemas/FoodCorrectionDto"
+          }
+        },
+        "required": [
+          "id",
+          "foodAnalysisId",
+          "consumedAt",
+          "localDate",
+          "timezone",
+          "confirmedResult"
+        ]
+      },
+      "FoodConsumptionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodConsumptionResourceDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PushPreferenceResourceDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "localTime": {
+            "type": "object"
+          },
+          "timezone": {
+            "type": "object"
+          },
+          "permissionState": {
+            "type": "string",
+            "enum": [
+              "granted",
+              "denied",
+              "unsupported",
+              "notRequested"
+            ]
+          },
+          "activeSubscriptionCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "enabled",
+          "permissionState",
+          "activeSubscriptionCount"
+        ]
+      },
+      "SavePushPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "localTime": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Moscow"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "SavePushSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          },
+          "p256dh": {
+            "type": "string"
+          },
+          "auth": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "iosPwa",
+              "androidPwa",
+              "desktopPwa",
+              "unknown"
+            ]
+          },
+          "permissionState": {
+            "type": "string",
+            "enum": [
+              "granted"
+            ]
+          }
+        },
+        "required": [
+          "endpoint",
+          "p256dh",
+          "auth",
+          "platform",
+          "permissionState"
+        ]
+      },
+      "PushSubscriptionResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "platform",
+          "status"
         ]
       }
     }
