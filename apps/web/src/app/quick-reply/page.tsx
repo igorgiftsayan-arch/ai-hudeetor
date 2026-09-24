@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '../mobile-navigation';
@@ -85,6 +85,19 @@ export default function QuickReplyPage() {
       setPrice(currentPrice);
       setConversationId(conversation.id);
       setMessages(conversation.messages);
+      const pending = conversation.messages.find(
+        (message) =>
+          message.operation && isActiveOperation(message.operation.status),
+      );
+      setOperation(
+        pending?.operation
+          ? {
+              ...pending.operation,
+              conversationId: conversation.id,
+              inputMessageId: pending.id,
+            }
+          : undefined,
+      );
       setProviderConsent(consent);
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') {
@@ -109,7 +122,14 @@ export default function QuickReplyPage() {
   async function submit(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     const content = draft.trim();
-    if (!content || !price || !conversationId || !csrfToken || !canUseAi(providerConsent)) return;
+    if (
+      !content ||
+      !price ||
+      !conversationId ||
+      !csrfToken ||
+      !canUseAi(providerConsent)
+    )
+      return;
 
     const next = chatSubmission({ conversationId, content, price });
     if (pendingSubmission.current?.payload !== next.payload) {
@@ -148,13 +168,28 @@ export default function QuickReplyPage() {
     pollInFlight.current = true;
     try {
       const next = await loadChatOperation(operationId);
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === next.inputMessageId
+            ? {
+                ...message,
+                operation: {
+                  id: next.id,
+                  status: next.status,
+                  errorCode: next.errorCode,
+                  refundStatus: next.refundStatus ?? 'notRefunded',
+                },
+              }
+            : message,
+        ),
+      );
       if (next.status === 'succeeded') {
         await refreshConversation(next.conversationId);
         setOperation(next);
         setError(undefined);
       } else if (next.status === 'technicalError') {
         setOperation(next);
-        setError('Ответ не получен. Зарезервированный токен возвращён.');
+        setError(undefined);
       } else if (next.status === 'outcomeUnknown') {
         setOperation(next);
         setError('Статус ответа уточняется. Новое сообщение пока недоступно.');
@@ -174,7 +209,12 @@ export default function QuickReplyPage() {
 
   const waiting = operation && isActiveOperation(operation.status);
   const submitDisabled =
-    loading || sending || !price || !draft.trim() || Boolean(waiting) || !canUseAi(providerConsent);
+    loading ||
+    sending ||
+    !price ||
+    !draft.trim() ||
+    Boolean(waiting) ||
+    !canUseAi(providerConsent);
 
   return (
     <main className="app-shell chat-shell">
@@ -202,14 +242,26 @@ export default function QuickReplyPage() {
               <p>Можно написать о том, что сейчас непросто.</p>
             </div>
           )}
-          {messages.map((message) => (
-            <p
-              key={message.id}
-              className={`chat-message chat-message-${message.role}`}
-            >
-              {message.content}
-            </p>
-          ))}
+          {messages.map((message) => {
+            const current =
+              operation?.inputMessageId === message.id
+                ? operation
+                : message.operation;
+            return (
+              <Fragment key={message.id}>
+                <p className={`chat-message chat-message-${message.role}`}>
+                  {message.content}
+                </p>
+                {current?.status === 'technicalError' && (
+                  <p className="chat-error" role="status">
+                    {current.refundStatus === 'refunded'
+                      ? 'Ответ не получен. Зарезервированный токен возвращён.'
+                      : 'Ответ не получен. Возврат токена пока не подтверждён.'}
+                  </p>
+                )}
+              </Fragment>
+            );
+          })}
           {waiting && (
             <p className="chat-message chat-message-assistant chat-message-pending">
               <span aria-hidden="true" />
@@ -258,7 +310,10 @@ export default function QuickReplyPage() {
             maxLength={4000}
             rows={2}
             disabled={
-              sending || Boolean(waiting) || Boolean(pendingSubmission.current) || !canUseAi(providerConsent)
+              sending ||
+              Boolean(waiting) ||
+              Boolean(pendingSubmission.current) ||
+              !canUseAi(providerConsent)
             }
           />
           <div className="chat-send-row">
