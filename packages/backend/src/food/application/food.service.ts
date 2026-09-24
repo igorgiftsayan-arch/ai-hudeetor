@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
+import type { PoolClient } from 'pg';
 import type { DatabaseService } from '../../infrastructure/database/database.service';
 import type { GetCurrentUserUseCase } from '../../identity/application/get-current-user.use-case';
 import { IdentityError } from '../../identity/domain/identity-error';
@@ -103,6 +104,7 @@ export class FoodService {
       throw new IdentityError('FOOD_IMAGE_VALIDATION_FAILED', 422, 'Uploaded file is not a supported image');
     }
     return this.database.transaction(async (client) => {
+      await lockFoodMutations(client, user.userId);
       const current = (await client.query<{status:string}>(`select status from uploaded_images where id=$1 and user_id=$2 and deleted_at is null for update`,[imageId,user.userId])).rows[0];
       if (!current) throw new IdentityError('FOOD_IMAGE_NOT_FOUND',404,'Image not found');
       if (current.status === 'available') return { id: imageId, status: 'available' as const };
@@ -118,10 +120,11 @@ export class FoodService {
     const user = await this.currentUser.execute(accessToken);
     const hash = createHash('sha256').update(JSON.stringify(input)).digest('hex');
     return this.database.transaction(async (client) => {
+      await lockFoodMutations(client, user.userId);
       await client.query(`insert into idempotency_records (id,user_id,operation_scope,idempotency_key,request_hash,state) values ($1,$2,'foodAnalysisCreate',$3,$4,'processing') on conflict do nothing`, [randomUUID(), user.userId, idempotencyKey, hash]);
       const idem = (await client.query<{ request_hash: string; state: string; response_body: any }>(`select request_hash,state,response_body from idempotency_records where user_id=$1 and operation_scope='foodAnalysisCreate' and idempotency_key=$2 for update`, [user.userId, idempotencyKey])).rows[0]!;
       if (idem.request_hash !== hash) throw new IdentityError('IDEMPOTENCY_KEY_REUSED', 409, 'The idempotency key was used with another request');
-      if (idem.state === 'completed') return idem.response_body;
+      if (idem.state === 'completed') return replayFoodResponse(idem.response_body);
       const price = (await client.query<{ id: string; price_tokens: number; version: number }>(`select id,price_tokens,version from ai_action_prices where action_type='foodPhotoAnalysis' and active=true for share`)).rows[0];
       if (!price || price.price_tokens !== input.expectedTokenPrice || price.version !== input.expectedPriceVersion)
         throw new IdentityError('AI_ACTION_PRICE_CHANGED', 409, 'Food analysis price changed');
@@ -155,6 +158,53 @@ export class FoodService {
     return mapAnalysis(row);
   }
 
+  async deletionStatus(accessToken: string, analysisId: string) {
+    const user = await this.currentUser.execute(accessToken);
+    return readDeletionStatus(this.database, user.userId, analysisId);
+  }
+
+  async deletePhoto(accessToken: string, idempotencyKey: string, analysisId: string) {
+    return this.deleteTerminalContent(accessToken, idempotencyKey, analysisId, 'photo');
+  }
+
+  async deleteAnalysis(accessToken: string, idempotencyKey: string, analysisId: string) {
+    return this.deleteTerminalContent(accessToken, idempotencyKey, analysisId, 'analysis');
+  }
+
+  private async deleteTerminalContent(accessToken: string, key: string, analysisId: string, target: 'photo' | 'analysis') {
+    const user = await this.currentUser.execute(accessToken);
+    const scope = target === 'photo' ? 'foodPhotoDelete' : 'foodAnalysisDelete';
+    const hash = createHash('sha256').update(JSON.stringify({ analysisId, target })).digest('hex');
+    return this.database.transaction(async (client) => {
+      await lockFoodMutations(client, user.userId);
+      await client.query(`insert into idempotency_records(id,user_id,operation_scope,idempotency_key,request_hash,state) values($1,$2,$3,$4,$5,'processing') on conflict do nothing`, [randomUUID(),user.userId,scope,key,hash]);
+      const idem = (await client.query<{request_hash:string}>(`select request_hash from idempotency_records where user_id=$1 and operation_scope=$2 and idempotency_key=$3 for update`,[user.userId,scope,key])).rows[0]!;
+      if (idem.request_hash !== hash) throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request');
+      const found = (await client.query<{status:string;uploaded_image_id:string;object_key:string}>(`select a.status,a.uploaded_image_id,i.object_key from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.id=$1 and a.user_id=$2`,[analysisId,user.userId])).rows[0];
+      if (!found) throw new IdentityError('FOOD_ANALYSIS_NOT_FOUND',404,'Food analysis not found');
+      if (!['analyzed','technicalError'].includes(found.status)) throw new IdentityError('FOOD_ANALYSIS_NOT_TERMINAL',409,'Only terminal analyses can be deleted');
+      if (target === 'photo') {
+        // Match cleanup's job -> image order; preserve any live lease and first deadline.
+        await client.query(`insert into food_image_cleanup_jobs(image_id,original_object_key,staging_object_key,reason,requested_at,deadline_at)
+          values($1,$2,$3,'userRequest',now(),now()+interval '24 hours')
+          on conflict(image_id) do update set reason='userRequest',requested_at=coalesce(food_image_cleanup_jobs.requested_at,now()),deadline_at=coalesce(food_image_cleanup_jobs.deadline_at,now()+interval '24 hours'),available_at=least(food_image_cleanup_jobs.available_at,now())`,[found.uploaded_image_id,found.object_key,`food-staging/${user.userId}/${found.uploaded_image_id}`]);
+        await client.query(`select id from uploaded_images where id=$1 for update`,[found.uploaded_image_id]);
+        const unsafe = await client.query(`select 1 from food_analyses where uploaded_image_id=$1 and status not in ('analyzed','technicalError')`,[found.uploaded_image_id]);
+        if (unsafe.rowCount) throw new IdentityError('FOOD_ANALYSIS_NOT_TERMINAL',409,'Only terminal analyses can be deleted');
+        await client.query(`update uploaded_images set deleted_at=coalesce(deleted_at,now()) where id=$1`,[found.uploaded_image_id]);
+      } else {
+        await client.query(`update food_analyses set deleted_at=coalesce(deleted_at,now()),recognized_result=null,suitability_result=null,user_correction=null,updated_at=now() where id=$1 and user_id=$2 and status in ('analyzed','technicalError')`,[analysisId,user.userId]);
+        await client.query(`update food_analysis_request_receipts set request_payload=null,content_deleted_at=now() where food_analysis_id=$1 and content_deleted_at is null`,[analysisId]);
+        await client.query(`update idempotency_records set response_body='{"contentDeleted":true}'::jsonb where user_id=$1 and
+          ((operation_scope in ('foodConsumptionConfirm','foodConsumptionUpdate') and response_body->>'foodAnalysisId'=$2) or
+           (operation_scope='foodAnalysisCreate' and response_body->>'id'=$2))`,[user.userId,analysisId]);
+      }
+      const response = await readDeletionStatus(client,user.userId,analysisId);
+      await client.query(`update idempotency_records set state='completed',response_status=202,response_body=$1::jsonb,completed_at=coalesce(completed_at,now()) where user_id=$2 and operation_scope=$3 and idempotency_key=$4`,[JSON.stringify(response),user.userId,scope,key]);
+      return response;
+    });
+  }
+
   async correct(accessToken: string, analysisId: string, correctedResult: { dishName?: string; items: Array<{ name: string; confidence?: number }>; note?: string }) {
     const user = await this.currentUser.execute(accessToken);
     const result = await this.database.query(`update food_analyses set user_correction=$1::jsonb,updated_at=now() where id=$2 and user_id=$3 and status='analyzed' and deleted_at is null and not exists(select 1 from food_consumptions where food_analysis_id=$2 and deleted_at is null)`, [JSON.stringify(correctedResult), analysisId, user.userId]);
@@ -170,10 +220,11 @@ export class FoodService {
     const payload = { analysisId, consumedAt: instant.toISOString(), timezone };
     const hash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
     return this.database.transaction(async (client) => {
+      await lockFoodMutations(client, user.userId);
       await client.query(`insert into idempotency_records (id,user_id,operation_scope,idempotency_key,request_hash,state) values ($1,$2,'foodConsumptionConfirm',$3,$4,'processing') on conflict do nothing`, [randomUUID(), user.userId, idempotencyKey, hash]);
       const idem = (await client.query<any>(`select request_hash,state,response_body from idempotency_records where user_id=$1 and operation_scope='foodConsumptionConfirm' and idempotency_key=$2 for update`, [user.userId, idempotencyKey])).rows[0]!;
       if (idem.request_hash !== hash) throw new IdentityError('IDEMPOTENCY_KEY_REUSED', 409, 'The idempotency key was used with another request');
-      if (idem.state === 'completed') return idem.response_body;
+      if (idem.state === 'completed') return replayFoodResponse(idem.response_body);
       const analysis = (await client.query<any>(`select id,coalesce(user_correction,recognized_result) confirmed_result from food_analyses where id=$1 and user_id=$2 and status='analyzed' and deleted_at is null for update`, [analysisId, user.userId])).rows[0];
       if (!analysis) throw new IdentityError('FOOD_ANALYSIS_NOT_CONFIRMABLE', 409, 'Analysis is not ready for confirmation');
       const id = randomUUID();
@@ -194,9 +245,10 @@ export class FoodService {
     const user=await this.currentUser.execute(accessToken); const instant=new Date(input.consumedAt); if(Number.isNaN(instant.valueOf()))throw new IdentityError('VALIDATION_ERROR',422,'consumedAt is invalid'); const localDate=localCalendarDate(instant,input.timezone);
     const hash=createHash('sha256').update(JSON.stringify({id,...input,consumedAt:instant.toISOString()})).digest('hex');
     return this.database.transaction(async(client)=>{
+      await lockFoodMutations(client, user.userId);
       await client.query(`insert into idempotency_records (id,user_id,operation_scope,idempotency_key,request_hash,state) values ($1,$2,'foodConsumptionUpdate',$3,$4,'processing') on conflict do nothing`,[randomUUID(),user.userId,idempotencyKey,hash]);
       const idem=(await client.query<any>(`select request_hash,state,response_body from idempotency_records where user_id=$1 and operation_scope='foodConsumptionUpdate' and idempotency_key=$2 for update`,[user.userId,idempotencyKey])).rows[0]!;
-      if(idem.request_hash!==hash)throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request'); if(idem.state==='completed')return idem.response_body;
+      if(idem.request_hash!==hash)throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request'); if(idem.state==='completed')return replayFoodResponse(idem.response_body);
       const saved=(await client.query<any>(`update food_consumptions set consumed_at=$1,local_date=$2,timezone=$3,confirmed_result=$4::jsonb,updated_at=now() where id=$5 and user_id=$6 and deleted_at is null returning id,food_analysis_id,consumed_at,local_date::text,timezone,confirmed_result`,[instant,localDate,input.timezone,JSON.stringify(input.confirmedResult),id,user.userId])).rows[0];
       if(!saved)throw new IdentityError('FOOD_CONSUMPTION_NOT_FOUND',404,'Food consumption not found'); const response=mapConsumption(saved);
       await client.query(`update idempotency_records set state='completed',response_status=200,response_body=$1::jsonb,completed_at=now() where user_id=$2 and operation_scope='foodConsumptionUpdate' and idempotency_key=$3`,[JSON.stringify(response),user.userId,idempotencyKey]); return response;
@@ -206,6 +258,7 @@ export class FoodService {
   async deleteConsumption(accessToken:string,idempotencyKey:string,id:string){
     const user=await this.currentUser.execute(accessToken); const hash=createHash('sha256').update(JSON.stringify({id})).digest('hex');
     await this.database.transaction(async(client)=>{
+      await lockFoodMutations(client, user.userId);
       await client.query(`insert into idempotency_records (id,user_id,operation_scope,idempotency_key,request_hash,state) values ($1,$2,'foodConsumptionDelete',$3,$4,'processing') on conflict do nothing`,[randomUUID(),user.userId,idempotencyKey,hash]);
       const idem=(await client.query<any>(`select request_hash,state from idempotency_records where user_id=$1 and operation_scope='foodConsumptionDelete' and idempotency_key=$2 for update`,[user.userId,idempotencyKey])).rows[0]!; if(idem.request_hash!==hash)throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request'); if(idem.state==='completed')return;
       const owned=await client.query(`select 1 from food_consumptions where id=$1 and user_id=$2`,[id,user.userId]); if(!owned.rowCount)throw new IdentityError('FOOD_CONSUMPTION_NOT_FOUND',404,'Food consumption not found');
@@ -219,3 +272,16 @@ function mapAnalysis(row: any) { return { id: row.id, uploadedImageId: row.uploa
 function mapConsumption(row: any) { return { id: row.id, foodAnalysisId: row.food_analysis_id, consumedAt: new Date(row.consumed_at).toISOString(), localDate: String(row.local_date), timezone: row.timezone, confirmedResult: row.confirmed_result }; }
 function localCalendarDate(value: Date, timezone: string) { try { const parts = new Intl.DateTimeFormat('en-CA',{ timeZone: timezone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(value); const get=(t:string)=>parts.find((p)=>p.type===t)?.value; return `${get('year')}-${get('month')}-${get('day')}`; } catch { throw new IdentityError('PROFILE_TIMEZONE_INVALID',409,'Timezone is invalid'); } }
 function matchesMagic(body: Buffer, type: string) { if (type === 'image/jpeg') return body[0]===0xff && body[1]===0xd8 && body[2]===0xff; if (type === 'image/png') return body.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])); if (type === 'image/webp') return body.subarray(0,4).toString()==='RIFF' && body.subarray(8,12).toString()==='WEBP'; return false; }
+
+async function lockFoodMutations(client: PoolClient, userId: string) {
+  await client.query("select pg_advisory_xact_lock(hashtextextended('food-content:'||$1::text,0))",[userId]);
+}
+function replayFoodResponse(response: any) {
+  if (response?.contentDeleted === true) throw new IdentityError('FOOD_CONTENT_DELETED',410,'The original food content was deleted');
+  return response;
+}
+async function readDeletionStatus(db: { query(text: string, values: any[]): Promise<{rows: any[]}> }, userId: string, analysisId: string) {
+  const row = (await db.query(`select case when i.status='deleted' then 'deleted' when i.deleted_at is not null then 'pending' else 'available' end photo_status,case when a.deleted_at is null then 'available' else 'deleted' end analysis_status from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.id=$1 and a.user_id=$2`,[analysisId,userId])).rows[0];
+  if (!row) throw new IdentityError('FOOD_ANALYSIS_NOT_FOUND',404,'Food analysis not found');
+  return {analysisId,photoStatus:row.photo_status,analysisStatus:row.analysis_status};
+}

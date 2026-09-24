@@ -8,6 +8,7 @@ export interface FoodImageDeletionPort {
 type Cleanup = {
   id: string;
   image_id: string;
+  reason: string;
   original_object_key: string;
   staging_object_key: string;
 };
@@ -50,7 +51,7 @@ export class FoodImageRetentionService {
     const claimed = await this.db.transaction(async (client) => {
       const job = (
         await client.query<Cleanup>(
-          `select id,image_id,original_object_key,staging_object_key from food_image_cleanup_jobs
+          `select id,image_id,original_object_key,staging_object_key,reason from food_image_cleanup_jobs
         where (status='queued' and available_at <= $1) or (status='processing' and lease_expires_at <= $1)
         order by available_at,id limit 1 for update skip locked`,
           [now],
@@ -67,8 +68,8 @@ export class FoodImageRetentionService {
         and i.uploaded_at <= $2::timestamptz-interval '600 seconds' and i.created_at <= $2::timestamptz-interval '600 seconds'
         and exists(select 1 from food_analyses a where a.uploaded_image_id=i.id)
         and not exists(select 1 from food_analyses a where a.uploaded_image_id=i.id and
-          (a.status not in ('analyzed','technicalError') or a.terminal_at is null or a.terminal_at > $2::timestamptz-interval '30 days'))`,
-        [job.image_id, now],
+          (a.status not in ('analyzed','technicalError') or ($3='retention' and (a.terminal_at is null or a.terminal_at > $2::timestamptz-interval '30 days'))))`,
+        [job.image_id, now, job.reason],
       );
       if (!eligible.rowCount) {
         await client.query(`update food_image_cleanup_jobs set status='queued',available_at=$2::timestamptz+interval '1 minute',lease_expires_at=null where id=$1`, [job.id,now]);

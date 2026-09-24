@@ -1016,6 +1016,29 @@ export interface FoodAnalysisResourceDto {
   createdAt: string;
 }
 
+export type FoodDeletionStatusDtoPhotoStatus = typeof FoodDeletionStatusDtoPhotoStatus[keyof typeof FoodDeletionStatusDtoPhotoStatus];
+
+
+export const FoodDeletionStatusDtoPhotoStatus = {
+  available: 'available',
+  pending: 'pending',
+  deleted: 'deleted',
+} as const;
+
+export type FoodDeletionStatusDtoAnalysisStatus = typeof FoodDeletionStatusDtoAnalysisStatus[keyof typeof FoodDeletionStatusDtoAnalysisStatus];
+
+
+export const FoodDeletionStatusDtoAnalysisStatus = {
+  available: 'available',
+  deleted: 'deleted',
+} as const;
+
+export interface FoodDeletionStatusDto {
+  analysisId: string;
+  photoStatus: FoodDeletionStatusDtoPhotoStatus;
+  analysisStatus: FoodDeletionStatusDtoAnalysisStatus;
+}
+
 export interface ConfirmFoodConsumptionDto {
   consumedAt: string;
   timezone: string;
@@ -2666,6 +2689,126 @@ export const foodControllerAnalysisApiV1 = async (id: string, options?: RequestI
 
   const data: foodControllerAnalysisApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as foodControllerAnalysisApiV1Response
+}
+
+
+
+export type foodControllerDeleteAnalysisApiV1Response202 = {
+  data: FoodDeletionStatusDto
+  status: 202
+}
+
+export type foodControllerDeleteAnalysisApiV1ResponseSuccess = (foodControllerDeleteAnalysisApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerDeleteAnalysisApiV1Response = (foodControllerDeleteAnalysisApiV1ResponseSuccess)
+
+export const getFoodControllerDeleteAnalysisApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}`
+}
+
+export const foodControllerDeleteAnalysisApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerDeleteAnalysisApiV1Response> => {
+
+  const res = await fetch(getFoodControllerDeleteAnalysisApiV1Url(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerDeleteAnalysisApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerDeleteAnalysisApiV1Response
+}
+
+
+
+export type foodControllerDeletionStatusApiV1Response200 = {
+  data: FoodDeletionStatusDto
+  status: 200
+}
+
+export type foodControllerDeletionStatusApiV1ResponseSuccess = (foodControllerDeletionStatusApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerDeletionStatusApiV1Response = (foodControllerDeletionStatusApiV1ResponseSuccess)
+
+export const getFoodControllerDeletionStatusApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}/deletion-status`
+}
+
+export const foodControllerDeletionStatusApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerDeletionStatusApiV1Response> => {
+
+  const res = await fetch(getFoodControllerDeletionStatusApiV1Url(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerDeletionStatusApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerDeletionStatusApiV1Response
+}
+
+
+
+export type foodControllerDeletePhotoApiV1Response202 = {
+  data: FoodDeletionStatusDto
+  status: 202
+}
+
+export type foodControllerDeletePhotoApiV1ResponseSuccess = (foodControllerDeletePhotoApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerDeletePhotoApiV1Response = (foodControllerDeletePhotoApiV1ResponseSuccess)
+
+export const getFoodControllerDeletePhotoApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}/photo`
+}
+
+export const foodControllerDeletePhotoApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerDeletePhotoApiV1Response> => {
+
+  const res = await fetch(getFoodControllerDeletePhotoApiV1Url(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerDeletePhotoApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerDeletePhotoApiV1Response
 }
 
 
