@@ -12,6 +12,8 @@ import {
   MemoryContextBuilder as MemoryContextBuilderToken,
 } from '@atlas/backend';
 import { MemoryExtractionProcessor } from './memory-extraction.processor';
+import { FoodAnalysisProcessor } from './food-analysis.processor';
+import { createHash } from 'node:crypto';
 
 @Processor('atlas-system')
 export class AiOperationProcessor extends WorkerHost {
@@ -23,6 +25,8 @@ export class AiOperationProcessor extends WorkerHost {
     @Inject(MemoryExtractionProcessor)
     private readonly memoryExtraction: MemoryExtractionProcessor,
     private readonly consentVersion: string = 'v1',
+    @Inject(FoodAnalysisProcessor)
+    private readonly foodAnalysis?: FoodAnalysisProcessor,
   ) {
     super();
   }
@@ -30,6 +34,10 @@ export class AiOperationProcessor extends WorkerHost {
   async process(job: Job<{ outboxId: string }>): Promise<void> {
     if (job.name === 'memory-extraction') {
       await this.memoryExtraction.process(job);
+      return;
+    }
+    if (job.name === 'food-analysis') {
+      if (this.foodAnalysis) await this.foodAnalysis.process(job);
       return;
     }
     const event = await this.database.query<{
@@ -75,18 +83,35 @@ export class AiOperationProcessor extends WorkerHost {
         where conversation_id=$1 order by created_at,id`,
       [claimed.conversation_id],
     );
+    const providerRequest = {
+      operationId,
+      promptVersion: 'quick-reply-v1' as const,
+      personaId: claimed.persona_id,
+      memoryContext: await this.memoryContext.build(
+        claimed.user_id,
+        history.rows.at(-1)?.content ?? '',
+      ),
+      messages: history.rows,
+    };
+    const requestPayload = JSON.stringify(providerRequest);
+    const requestHash = createHash('sha256').update(requestPayload).digest('hex');
+    await this.database.transaction(async (client) => {
+      await client.query(
+        `insert into ai_operation_request_receipts
+          (operation_id,user_id,provider,model,prompt_id,prompt_version,request_payload,request_hash,submission_state)
+         values ($1,$2,$3,$4,'quick-reply','1',$5::jsonb,$6,'prepared')
+         on conflict (operation_id) do nothing`,
+        [operationId,claimed.user_id,this.adapter.providerName,process.env.GENAPI_MODEL ?? this.adapter.providerName,requestPayload,requestHash],
+      );
+      const receipt = await client.query<{ request_hash: string; submission_state: string }>(
+        `select request_hash,submission_state from ai_operation_request_receipts where operation_id=$1 for update`,[operationId]);
+      if (receipt.rows[0]?.request_hash !== requestHash) throw new Error('AI request receipt mismatch');
+      if (receipt.rows[0]?.submission_state !== 'prepared') throw new Error('AI request was already submitted');
+      await client.query(`update ai_operation_request_receipts set submission_state='submitting',submitted_at=now(),updated_at=now() where operation_id=$1`,[operationId]);
+    });
     const startedAt = Date.now();
     const result = consent
-      ? await this.adapter.execute({
-          operationId,
-          promptVersion: 'quick-reply-v1',
-          personaId: claimed.persona_id,
-          memoryContext: await this.memoryContext.build(
-            claimed.user_id,
-            history.rows.at(-1)?.content ?? '',
-          ),
-          messages: history.rows,
-        })
+      ? await this.adapter.execute(providerRequest)
       : ({ kind: 'technicalError', errorClass: 'safetyRejected' } as const);
     const latencyMs = Date.now() - startedAt;
     await this.database.transaction(async (client) => {
@@ -100,6 +125,15 @@ export class AiOperationProcessor extends WorkerHost {
       );
       if (!operation.rows[0]) return;
       const row = operation.rows[0];
+      const providerReference = 'providerReference' in result ? result.providerReference ?? null : null;
+      await client.query(
+        `update ai_operation_request_receipts set
+           submission_state=$2,
+           provider_request_id=coalesce($3,provider_request_id),
+           updated_at=now()
+         where operation_id=$1`,
+        [operationId,result.kind === 'outcomeUnknown' ? 'ambiguous' : 'completed',providerReference],
+      );
       const reservation = await client.query<{
         id: string;
         wallet_id: string;

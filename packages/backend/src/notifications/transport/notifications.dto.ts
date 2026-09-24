@@ -9,8 +9,8 @@ export class SavePushPreferenceDto {
 
 export class PushPreferenceResourceDto {
   @ApiProperty() enabled!: boolean;
-  @ApiPropertyOptional() localTime!: string | null;
-  @ApiPropertyOptional() timezone!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) localTime!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) timezone!: string | null;
   @ApiProperty({ enum: ['granted','denied','unsupported','notRequested'] }) permissionState!: string;
   @ApiProperty() activeSubscriptionCount!: number;
 }

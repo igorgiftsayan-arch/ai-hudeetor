@@ -20,6 +20,7 @@ import { loadWorkerConfig } from './config/load-config';
 import { AiOperationProcessor } from './ai-operation.processor';
 import { OutboxPublisherService } from './outbox-publisher.service';
 import { MemoryExtractionProcessor } from './memory-extraction.processor';
+import { FoodAnalysisProcessor } from './food-analysis.processor';
 
 const configModule = ConfigModule.forRoot({
   envFilePath: ['../../.env.local', '../../.env', '.env.local', '.env'],
@@ -117,6 +118,7 @@ const redisUrl = new URL(config.REDIS_URL);
         adapter: AiProviderAdapter,
         memoryContext: MemoryContextBuilder,
         memoryExtraction: MemoryExtractionProcessor,
+        foodAnalysis: FoodAnalysisProcessor,
       ) =>
         new AiOperationProcessor(
           database,
@@ -124,15 +126,22 @@ const redisUrl = new URL(config.REDIS_URL);
           memoryContext,
           memoryExtraction,
           config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+          foodAnalysis,
         ),
       inject: [
         DatabaseService,
         AiProviderAdapter,
         MemoryContextBuilder,
         MemoryExtractionProcessor,
+        FoodAnalysisProcessor,
       ],
     },
     MemoryExtractionProcessor,
+    {
+      provide: FoodAnalysisProcessor,
+      useFactory: (database: DatabaseService) => new FoodAnalysisProcessor(database, config.FOOD_FAKE_MODE),
+      inject: [DatabaseService],
+    },
     OutboxPublisherService,
   ],
 })

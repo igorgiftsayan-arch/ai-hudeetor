@@ -3,7 +3,7 @@ import { ApiAcceptedResponse, ApiCookieAuth, ApiCreatedResponse, ApiHeader, ApiO
 import type { Request } from 'express';
 import { IdentityError } from '../../identity/domain/identity-error';
 import { FoodService } from '../application/food.service';
-import { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodCorrectionDto, FoodUploadIntentResourceDto } from './food.dto';
+import { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodCorrectionDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto } from './food.dto';
 
 @ApiTags('food')
 @ApiCookieAuth()
@@ -20,13 +20,13 @@ export class FoodController {
   uploadIntent(@Body() body: CreateFoodUploadIntentDto, @Req() req: Request) { return this.food.createUploadIntent(token(req), body); }
 
   @Post('food-images/:id/completions')
-  @ApiOkResponse({ schema: { example: { id: 'uuid', status: 'available' } } })
+  @ApiOkResponse({ type: FoodUploadCompletionResourceDto })
   completeUpload(@Param('id') id: string, @Req() req: Request) { return this.food.completeUpload(token(req), id); }
 
   @Post('food-analyses')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiHeader({ name: 'Idempotency-Key', required: true })
-  @ApiAcceptedResponse({ schema: { example: { id: 'uuid', status: 'queued', reservedTokens: 5, priceVersion: 1, pollingUrl: '/api/v1/food-analyses/uuid' } } })
+  @ApiAcceptedResponse({ type: QueuedFoodAnalysisResourceDto })
   createAnalysis(@Body() body: CreateFoodAnalysisDto, @Req() req: Request, @Headers('idempotency-key') key?: string) { return this.food.createAnalysis(token(req), requiredKey(key), body); }
 
   @Get('food-analyses/:id')

@@ -26,6 +26,11 @@ export class FoodUploadIntentResourceDto {
   @ApiProperty({ type: Object }) requiredHeaders!: Record<string, string>;
 }
 
+export class FoodUploadCompletionResourceDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ enum: ['available'] }) status!: 'available';
+}
+
 export class FoodActionPriceDto {
   @ApiProperty({ enum: ['foodPhotoAnalysis'] }) actionType!: 'foodPhotoAnalysis';
   @ApiProperty() tokenPrice!: number;
@@ -38,6 +43,14 @@ export class CreateFoodAnalysisDto {
   @ApiProperty() @IsInt() @Min(1) expectedPriceVersion!: number;
 }
 
+export class QueuedFoodAnalysisResourceDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ enum: ['queued'] }) status!: 'queued';
+  @ApiProperty() reservedTokens!: number;
+  @ApiProperty() priceVersion!: number;
+  @ApiProperty() pollingUrl!: string;
+}
+
 export class FoodComponentDto {
   @ApiProperty() @IsString() @MaxLength(100) name!: string;
   @ApiPropertyOptional({ maximum: 1, minimum: 0 }) @IsOptional() confidence?: number;
@@ -45,7 +58,7 @@ export class FoodComponentDto {
 
 export class FoodRecognizedResultDto {
   @ApiProperty({ enum: ['food','nonFood','ambiguous'] }) kind!: 'food'|'nonFood'|'ambiguous';
-  @ApiPropertyOptional() dishName!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) dishName!: string | null;
   @ApiProperty({ type: [FoodComponentDto] }) items!: FoodComponentDto[];
   @ApiProperty({ type: [String] }) uncertaintyNotes!: string[];
 }
@@ -77,7 +90,7 @@ export class FoodAnalysisResourceDto {
   @ApiPropertyOptional({ type: FoodRecognizedResultDto }) recognizedResult!: FoodRecognizedResultDto | null;
   @ApiPropertyOptional({ type: FoodSuitabilityResultDto }) suitabilityResult!: FoodSuitabilityResultDto | null;
   @ApiPropertyOptional({ type: FoodCorrectionDto }) userCorrection!: FoodCorrectionDto | null;
-  @ApiPropertyOptional() errorCategory!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) errorCategory!: string | null;
   @ApiProperty() consumptionStatus!: 'notConfirmed' | 'consumed';
   @ApiProperty() createdAt!: string;
 }

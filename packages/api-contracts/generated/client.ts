@@ -898,10 +898,37 @@ export interface FoodUploadIntentResourceDto {
   requiredHeaders: FoodUploadIntentResourceDtoRequiredHeaders;
 }
 
+export type FoodUploadCompletionResourceDtoStatus = typeof FoodUploadCompletionResourceDtoStatus[keyof typeof FoodUploadCompletionResourceDtoStatus];
+
+
+export const FoodUploadCompletionResourceDtoStatus = {
+  available: 'available',
+} as const;
+
+export interface FoodUploadCompletionResourceDto {
+  id: string;
+  status: FoodUploadCompletionResourceDtoStatus;
+}
+
 export interface CreateFoodAnalysisDto {
   uploadedImageId: string;
   expectedTokenPrice: number;
   expectedPriceVersion: number;
+}
+
+export type QueuedFoodAnalysisResourceDtoStatus = typeof QueuedFoodAnalysisResourceDtoStatus[keyof typeof QueuedFoodAnalysisResourceDtoStatus];
+
+
+export const QueuedFoodAnalysisResourceDtoStatus = {
+  queued: 'queued',
+} as const;
+
+export interface QueuedFoodAnalysisResourceDto {
+  id: string;
+  status: QueuedFoodAnalysisResourceDtoStatus;
+  reservedTokens: number;
+  priceVersion: number;
+  pollingUrl: string;
 }
 
 export interface FoodComponentDto {
@@ -922,11 +949,10 @@ export const FoodRecognizedResultDtoKind = {
   ambiguous: 'ambiguous',
 } as const;
 
-export type FoodRecognizedResultDtoDishName = { [key: string]: unknown };
-
 export interface FoodRecognizedResultDto {
   kind: FoodRecognizedResultDtoKind;
-  dishName?: FoodRecognizedResultDtoDishName;
+  /** @nullable */
+  dishName?: string | null;
   items: FoodComponentDto[];
   uncertaintyNotes: string[];
 }
@@ -975,8 +1001,6 @@ export const FoodAnalysisResourceDtoStatus = {
   deleted: 'deleted',
 } as const;
 
-export type FoodAnalysisResourceDtoErrorCategory = { [key: string]: unknown };
-
 export interface FoodAnalysisResourceDto {
   id: string;
   uploadedImageId: string;
@@ -985,7 +1009,8 @@ export interface FoodAnalysisResourceDto {
   recognizedResult?: FoodRecognizedResultDto;
   suitabilityResult?: FoodSuitabilityResultDto;
   userCorrection?: FoodCorrectionDto;
-  errorCategory?: FoodAnalysisResourceDtoErrorCategory;
+  /** @nullable */
+  errorCategory?: string | null;
   consumptionStatus: string;
   createdAt: string;
 }
@@ -1008,10 +1033,6 @@ export interface FoodConsumptionPageDto {
   items: FoodConsumptionResourceDto[];
 }
 
-export type PushPreferenceResourceDtoLocalTime = { [key: string]: unknown };
-
-export type PushPreferenceResourceDtoTimezone = { [key: string]: unknown };
-
 export type PushPreferenceResourceDtoPermissionState = typeof PushPreferenceResourceDtoPermissionState[keyof typeof PushPreferenceResourceDtoPermissionState];
 
 
@@ -1024,8 +1045,10 @@ export const PushPreferenceResourceDtoPermissionState = {
 
 export interface PushPreferenceResourceDto {
   enabled: boolean;
-  localTime?: PushPreferenceResourceDtoLocalTime;
-  timezone?: PushPreferenceResourceDtoTimezone;
+  /** @nullable */
+  localTime?: string | null;
+  /** @nullable */
+  timezone?: string | null;
   permissionState: PushPreferenceResourceDtoPermissionState;
   activeSubscriptionCount: number;
 }
@@ -2518,7 +2541,7 @@ export const foodControllerUploadIntentApiV1 = async (createFoodUploadIntentDto:
 
 
 export type foodControllerCompleteUploadApiV1Response200 = {
-  data: unknown
+  data: FoodUploadCompletionResourceDto
   status: 200
 }
 
@@ -2558,7 +2581,7 @@ export const foodControllerCompleteUploadApiV1 = async (id: string, options?: Re
 
 
 export type foodControllerCreateAnalysisApiV1Response202 = {
-  data: unknown
+  data: QueuedFoodAnalysisResourceDto
   status: 202
 }
 
