@@ -6,6 +6,7 @@
 
 ### Added
 
+- GERBI expanded pilot UI foundation: локальные компоненты выбора/preview/валидации food photo, явного analysed-versus-confirmed шага с отдельными датой/временем и capability/permission push UI. Компоненты не делают API-вызовов, не создают запись питания и не вызывают browser permission без явного клика; настоящая интеграция ожидает OpenAPI-контракт.
 - GERBI expanded pilot scope: обязательны private food-photo analysis с отдельным consumed confirmation, phone Web Push с opt-in/user schedule и безопасное automatic AI recovery; неподтверждённое фото не считается съеденной едой, причинные выводы о весе запрещены.
 - GERBI-MARATHON-PILOT completion audit (`629f576`): focused PostgreSQL `9/9`, calendar `2/2` and reconciliation matcher `2/2` подтвердили cross-team isolation, captain create/edit vs participant deny, safe team DTO и first-day/last-day/rollover; frontend browser gate отдельно подтвердил восстановленный assistant reply и доступный composer без нового AI-запроса.
 - GERBI-MARATHON-PILOT operator handoff: добавлен fail-closed GenAPI reconciliation runbook с verify-before-write, safe replay и post-write проверками. Изолированный synthetic pilot подготовлен к ручной приёмке владельцем, но не считается production/stable accepted; automatic pre-ID recovery и immutable request snapshot для защиты от context drift остаются открытыми, timeout не менялся.
