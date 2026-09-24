@@ -83,6 +83,19 @@ describeWithDatabase('Daily weight PostgreSQL integration', () => {
     );
   });
 
+  it('accepts ordinary decimal weights without floating-point multiplication artifacts', async () => {
+    const first = await create.execute(command({ weightKg: 80.5, recordedAt: '2026-01-01T10:30:00.000Z' }));
+    const request = command({ weightKg: 80.4, recordedAt: '2026-01-01T10:31:00.000Z' });
+    const updated = await create.execute(request);
+    expect(updated).toMatchObject({ id: first.id, result: 'updated', weightKg: '80.40' });
+    expect(await create.execute(request)).toEqual(updated);
+    for (const weightKg of [80.401, 80.405, 19.99, 500.01]) {
+      await expect(create.execute(command({ weightKg, recordedAt: '2026-01-01T10:32:00.000Z' }))).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    }
+    const rows = await database.query<{ weight_kg: string }>('select weight_kg::text from weight_entries where user_id=$1 and is_current', [userId]);
+    expect(rows.rows).toEqual([{ weight_kg: '80.40' }]);
+  });
+
   it('creates a new entry after the next local calendar date', async () => {
     await create.execute(
       command({

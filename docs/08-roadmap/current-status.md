@@ -2,6 +2,12 @@
 
 ## Runtime checkpoint — 2026-09-25
 
+Core browser found valid80.4 rejected by binary-float precision check. Minimal
+round-trip validation fix verified on isolated actualPG (same-day replacement,
+replay, >2decimal/range rejection; dailyweight7/7), APItypecheck/lint PASS; awaiting
+independent review/deployment. No food/ledger changes.
+
+
 Один active expanded стенд на прежнем2GB сервере; main не менялся. Web969dd85,
 API backendd9ba57c, workerbase da9e837. Все7сервисов healthy, resource OOM не было.
 Chat=fake, food=genapi, push=false. Старые стенды остановлены, volumes сохранены.

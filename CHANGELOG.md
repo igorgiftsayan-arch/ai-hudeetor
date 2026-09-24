@@ -6,6 +6,11 @@
 
 ### Runtime checkpoint — 2026-09-25
 
+- Fixed valid daily weights such as80.4 rejected by floating-point multiplication.
+  Decimal round-trip preserves strict2decimal precision/ranges. Actual isolatedPG
+  regression red→green; dailyweight7/7, APItypecheck/scopedlint PASS. Deploypendingreview.
+
+
 - Actual full-app food analyses2/2 completed with exactly one reservation and
   confirmation each, no refunds (wallet100→90). Second operation recovered from
   observed known-ID pending worker crash with unchanged providerID/hash. First

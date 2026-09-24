@@ -47,7 +47,7 @@ export class CreateWeightEntryUseCase {
       !Number.isFinite(input.weightKg) ||
       input.weightKg < 20 ||
       input.weightKg > 500 ||
-      Math.round(input.weightKg * 100) !== input.weightKg * 100 ||
+      Number(input.weightKg.toFixed(2)) !== input.weightKg ||
       (requestedRecordedAt && Number.isNaN(requestedRecordedAt.valueOf())) ||
       (requestedRecordedAt &&
         requestedRecordedAt.getTime() > Date.now() + 300000)
