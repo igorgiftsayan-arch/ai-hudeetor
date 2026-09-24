@@ -149,6 +149,59 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
       status: 409,
     });
   });
+
+  it('denies cross-team task reads and writes', async () => {
+    const first = await service.createMarathon(
+      captainId,
+      randomUUID(),
+      request(),
+    );
+    await service.join(participantId, randomUUID(), first.joinCode);
+
+    const otherCaptainId = await user(db, 'other-captain', 'Asia/Irkutsk');
+    const otherService = new MarathonService(
+      db,
+      {
+        execute: jest.fn(async (token: string) => ({
+          userId: token,
+          onboardingStatus: 'completed',
+        })),
+      } as never,
+      {
+        bootstrapEnabled: true,
+        bootstrapUserIds: new Set([otherCaptainId]),
+        providerMode: 'fake',
+        consentVersion: 'pilot-v1',
+        consentDisclosure: 'test disclosure',
+      },
+    );
+    await otherService.createMarathon(otherCaptainId, randomUUID(), request());
+    const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
+    const foreignTask = await otherService.saveTask(
+      otherCaptainId,
+      randomUUID(),
+      today,
+      { title: 'Foreign task', description: 'Must remain private' },
+    );
+
+    const firstTeamView = await service.today(participantId);
+    expect(firstTeamView.team.id).toBe(first.teamId);
+    expect(firstTeamView.captainTask).toBeNull();
+    expect(JSON.stringify(firstTeamView)).not.toContain('Foreign task');
+    expect(JSON.stringify(firstTeamView)).not.toContain('Must remain private');
+
+    await expect(
+      service.completeTask(participantId, randomUUID(), foreignTask.id, true),
+    ).rejects.toMatchObject({ code: 'MARATHON_NOT_FOUND', status: 404 });
+    expect(
+      (
+        await db.query(
+          `select 1 from marathon_task_completions where task_id=$1`,
+          [foreignTask.id],
+        )
+      ).rowCount,
+    ).toBe(0);
+  });
   it('refuses membership when profile and marathon timezones differ', async () => {
     const other = await user(db, 'other', 'UTC');
     const created = await service.createMarathon(
