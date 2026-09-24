@@ -1,6 +1,6 @@
 # GERBI local ledger/recovery checkpoint — 2026-09-24
 
-## Current checkpoint: `1ffd048`
+## Current checkpoint: integrated base `1ffd048`, worker fixes `ca3d612`
 
 The user approved continuing local development while increasing server RAM and
 storage. Remote capacity is pending. This update changes documentation only;
@@ -18,8 +18,8 @@ Latest live root inspection of `5.42.126.71`:
 
 - Host: **1 CPU / 2 GB RAM**.
 - API containers for `atlas-gerbi-marathon` and `atlas-v01` report
-  `State.OOMKilled=true`. Several worker containers exited with code 1; backend
-  is investigating. API OOM evidence alone does not establish the worker cause.
+  `State.OOMKilled=true`. The two diagnosed worker exits have `OOMKilled=false`
+  and distinct causes documented below; they must not be attributed to API OOM.
 - Only **unused Docker build cache** was removed. Docker reported **4.721 GB**
   reclaimed; `df` then reported **4.2 GB free / 85% used**. The same **24 running
   containers** remained; no active-container change was part of this cleanup.
@@ -31,6 +31,45 @@ historical. The host can now be inspected, but this is not evidence that all
 old stands are healthy. Baseline runtime, real-provider, storage, browser and
 phone gates still require the actual isolated environment after capacity and
 service issues are resolved. No new deployment is claimed here.
+
+## Worker exit diagnosis and local fixes — `ca3d612`
+
+Read-only server evidence identifies two distinct exit-1 failures. No restart,
+deployment or remote environment change was made during this diagnosis.
+
+- `atlas-gerbi-marathon-worker-1`: unhandled `getaddrinfo EAI_AGAIN postgres`
+  rejection from `OutboxPublisherService.publish`/pg-pool. Both initial and
+  periodic publication promises lacked rejection handling. This proves the
+  crash path, not why DNS failed. The local fix allows only one scheduled
+  publication at a time, catches failures with a fixed safe event/allowlisted
+  error code, retries next tick, marks durable outbox published only after queue
+  acceptance, retains the same BullMQ job ID and clears/drains work on shutdown.
+- `atlas-daily-coach-worker-1`: `AI_PROVIDER=fake` with empty optional
+  `GENAPI_API_KEY`, `GENAPI_BASE_URL`, `GENAPI_MODEL` from Compose failed Zod
+  validation; optional accepts undefined, not an empty string. The local fix
+  normalizes exactly empty optional chat fields, retaining rejection of invalid
+  nonempty values and required real GenAPI configuration. It also removes an
+  early return that skipped independent real food/push validation under fake
+  chat. No real-provider key or silent fallback was introduced to fix fake mode.
+
+Both workers reported `OOMKilled=false`. Before the publisher fix, 3/7 targeted
+regressions failed; a separate red configuration test demonstrated the bypass.
+After the fixes: full worker **12 suites / 52 tests PASS**, including actual
+PostgreSQL recovery/lifecycle cases; backend/worker typecheck and scoped lint
+**PASS**. These replace the earlier 44-test worker count for this checkpoint,
+without implying a fresh API/UI rerun.
+
+Privacy-safe source report: backend worktree
+`work/gerbi-backend-verification/worker-exit-root-cause.md`; corresponding logs
+`outbox-red.log`, `worker-config-red.log`, `worker-independent-config-red.log`,
+`worker-exit-fixes-all-tests.log`, `worker-exit-fixes-typecheck.log`,
+`worker-exit-fixes-backend-typecheck.log`, `worker-exit-fixes-lint.log`.
+No raw server application content or secrets are included in this document.
+
+**Remote boundary:** corrected code has not been deployed and the workers have
+not been restarted. The deployed defects remain; actual DNS outage recovery,
+worker startup and user journeys still need remote verification. Capacity and
+real storage/GenAPI/browser/phone gates remain pending.
 
 ## Historical implementation and verification record
 

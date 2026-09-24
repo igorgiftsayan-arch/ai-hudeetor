@@ -10,10 +10,20 @@
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
   scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone
   gates remain pending; full expanded-pilot acceptance is not claimed.
+- Backend `ca3d612`: fixes the marathon worker's unhandled outbox publication
+  rejection (`EAI_AGAIN postgres`; DNS failure cause not established) and the
+  fake daily-coach worker's rejection of empty optional GenAPI env values.
+  Both diagnosed workers had `OOMKilled=false`. Publisher retries without
+  overlap or premature outbox marking, retains stable job IDs and drains on
+  shutdown. Empty optional chat settings normalize to undefined; independent
+  real food/push configuration remains validated even with fake chat.
+  Worker **52/52** including actual PostgreSQL, backend/worker typecheck and
+  scoped lint PASS. No server restart or image update: the deployed defects
+  remain, remote DNS recovery and user journeys were not rerun.
 - User approved continued local development while server RAM/storage is increased.
   Latest live host snapshot is 1 CPU / 2 GB RAM; API containers for
   `atlas-gerbi-marathon` and `atlas-v01` have `State.OOMKilled=true`, and several
-  workers exited 1 (backend investigation ongoing). Earlier healthy statements
+  workers exited 1 (the two diagnosed causes and local fixes are recorded below). Earlier healthy statements
   below are historical observations, not current health claims.
 - Removed only unused Docker build cache: Docker reported 4.721 GB reclaimed;
   disk now 4.2 GB free / 85% used. The same 24 containers remained running.
