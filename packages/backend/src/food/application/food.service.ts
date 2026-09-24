@@ -162,7 +162,7 @@ export class FoodService {
         if (!/^[A-Za-z0-9_-]{1,512}$/.test(query.cursor)) throw invalid();
         const decoded = JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8'));
         if (decoded.version !== 1 || decoded.filter !== filter || decoded.order !== 'createdAtIdDesc' ||
-          typeof decoded.time !== 'string' || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[+-]\d{2}(?::\d{2})?$/.test(decoded.time) ||
+          typeof decoded.time !== 'string' || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[+-](?:0\d|1[0-5])(?::[0-5]\d)?$/.test(decoded.time) ||
           !Number.isFinite(Date.parse(decoded.time)) || typeof decoded.id !== 'string' ||
           !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded.id)) throw invalid();
         const [year,month,day] = decoded.time.slice(0,10).split('-').map(Number);

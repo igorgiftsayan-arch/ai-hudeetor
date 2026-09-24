@@ -207,6 +207,22 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
         },
       });
     });
+    it('rejects unsupported timezone offsets as validation errors', async () => {
+      for (const offset of ['+16:00', '+23:00', '-16:00', '+15:60', '+99']) {
+        const cursor = Buffer.from(
+          JSON.stringify({
+            version: 1,
+            filter: 'all',
+            order: 'createdAtIdDesc',
+            time: `2026-09-24 10:00:00.123456${offset}`,
+            id: randomUUID(),
+          }),
+        ).toString('base64url');
+        await expect(
+          service.listAnalyses(owner, { cursor }),
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', status: 422 });
+      }
+    });
     it('rejects malformed cursor and unbounded page sizes before querying', async () => {
       const badDate = Buffer.from(
         JSON.stringify({
