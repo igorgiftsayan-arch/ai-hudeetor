@@ -2,25 +2,28 @@
 
 ## Runtime checkpoint — 2026-09-25
 
-Browser onboarding fixed1204907 and observed actual completed state, one100-token
-starter grant. Preview fix4a997e2 deployed. PublicHTTP Safari blocks WebCrypto;
-localhost SSH tunnel is used only for desktop acceptance, not phoneHTTPS proof.
-Full-size upload exposed S3metadata signature mismatch (400 unsigned header).
-Minimal fix keeps checksum header signed; direct realMinIO full-size PUT200 /
-anonymousGET403, realSDK3/3 tests and APItypecheck/lint PASS. App deployment awaits
-independent review; no paid food operation or manual ledger mutation yet.
+Один active expanded стенд на прежнем2GB сервере; main не менялся. Web969dd85,
+API backendd9ba57c, workerbase da9e837. Все7сервисов healthy, resource OOM не было.
+Chat=fake, food=genapi, push=false. Старые стенды остановлены, volumes сохранены.
 
+Два разрешённых full-app food анализа завершены: provider54129307 и54130142,
+по1reservation(-5)+1confirmation,0refund; wallet100→90. Второй действительно
+восстановился после stop0 worker: accepted ID/hash подтверждены пока worker
+остановлен и совпали при завершении. Третий запрос не разрешён/не выполнялся.
+Первый photo/result/diary delete проверен по отдельности; физический purge completed,
+original/stagingHEAD404, ledger сохранён. Второй correction/confirm/reload и core
+browser gates завершаются. Подробные факты, timestamps и границы:
+[Full food runtime](../07-deployment/gerbi-full-food-runtime.md).
 
-На имеющемся2GB сервере один активный expanded стенд заменил Daily Coach; старые
-volumes и backup сохранены. Source da9e837/web26e6e0a. Миграции и7health checks PASS,
-OOM/restarts0; private storage anonymousGET/PUT403, signedPUT200 и точные bytes PASS.
-Полный browser/paid food путь ещё проверяется; новых AI запросов на этом этапе нет.
-HTTP3114 не подтверждает phone HTTPS/push. Подробности и provenance:
-[Constrained runtime](../07-deployment/gerbi-constrained-runtime.md).
+PublicHTTP Safari не имеет crypto.subtle: desktop acceptance идёт через localhost
+SSH tunnel к тому же реальному стеку с временным origin override. HTTPS для телефона
+и реальный push остаются неподтверждёнными. После browser gates требуется вернуть
+public origin и закрыть собственный tunnel. Synthetic marathon создан существующим
+API; временный bootstrap уже disabled/allowlist empty. Проверки wellness/weight/task
+ещё не объявлены завершёнными.
 
-Ниже сохранён предыдущий локальный срез; ожидание расширения ресурсов больше
-не является текущим блокером запуска одного стенда.
-
+Ниже исторический локальный срез; его ожидание расширения сервера и старые runtime
+адреса не описывают текущий единственный стенд.
 
 ## Актуальный срез — локальная разработка продолжается, 2026-09-24
 

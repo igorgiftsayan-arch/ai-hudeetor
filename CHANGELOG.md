@@ -6,11 +6,19 @@
 
 ### Runtime checkpoint — 2026-09-25
 
+- Actual full-app food analyses2/2 completed with exactly one reservation and
+  confirmation each, no refunds (wallet100→90). Second operation recovered from
+  observed known-ID pending worker crash with unchanged providerID/hash. First
+  photo physically purged after natural eligibility; result/diary deletes preserved
+  ledger. Details and still-open desktop/core/phone gates in
+  `docs/07-deployment/gerbi-full-food-runtime.md`.
+
+
 - Fixed actual browser S3 upload signing: checksum metadata stays in SignedHeaders
   instead of being hoisted to query while also required as a browser header.
   Actual full-size synthetic PNG2653194bytes reproduced400 before and passed200
   after; anonymousGET403 retained. Real SDK regression2red→3/3green includes
-  the10MiB boundary; APItypecheck/scopedlint PASS. Service deployment awaits review.
+  the10MiB boundary; APItypecheck/scopedlint PASS. Independent3/3 review PASS; API artifact deployed.
 
 
 - One constrained expanded test stack replaces Daily Coach on the existing2GB host.

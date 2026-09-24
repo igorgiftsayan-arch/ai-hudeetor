@@ -1,5 +1,9 @@
 # BOOT-001 — runtime verification
 
+> Historical snapshots below: old3112/other projects are stopped. Current single
+> stack3114 and actual food acceptance: [2026-09-25 evidence](gerbi-full-food-runtime.md).
+
+
 ## GERBI-MARATHON-PILOT — isolated backend and shared-stand verification
 
 - Дата: 2026-09-24. Backend branch `back/gerbi-marathon-pilot` проверена на commit `afabe77`; интегрированный isolated checkout зафиксировал browser evidence на `ffa680e` (code images из `bec79b4`). `main`, stable `atlas-v01` и прежний `atlas-ui-001` не изменялись.

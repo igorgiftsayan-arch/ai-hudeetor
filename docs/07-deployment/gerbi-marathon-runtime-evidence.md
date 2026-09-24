@@ -1,5 +1,9 @@
 # GERBI-MARATHON-PILOT — runtime evidence
 
+> Historical snapshots below: old3112/other projects are stopped. Current single
+> stack3114 and actual food acceptance: [2026-09-25 evidence](gerbi-full-food-runtime.md).
+
+
 **Контур:** isolated Compose project `atlas-gerbi-marathon`.
 
 **Public URL:** `http://5.42.126.71:3112/login`.

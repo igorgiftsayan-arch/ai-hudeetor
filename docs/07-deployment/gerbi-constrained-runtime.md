@@ -7,7 +7,8 @@ previous Daily Coach services were stopped gracefully; all old volumes remain.
 No main branch or public production deployment was changed. New PostgreSQL,
 Redis and MinIO volumes are independent of the old stack. Migrations completed.
 Seven running services were healthy, with zero restarts and OOMKilled=false.
-This is infrastructure acceptance; browser/full paid food flow is still pending.
+Later full-food/recovery/deletion evidence and updated component versions:
+[Full food runtime](gerbi-full-food-runtime.md). This initial snapshot is infrastructure acceptance.
 HTTP is not physical-device HTTPS Web Push acceptance; PUSH_ENABLED=false.
 
 Actual private-storage probe through the same public gateway: anonymous PUT403,
