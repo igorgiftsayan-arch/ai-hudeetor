@@ -4,7 +4,10 @@ import QuickReplyPage from './page';
 
 const api = '/api/v1';
 const conversationId = '773a7e6e-cb1a-42f0-9dca-24f94c5cc5af';
-const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+const { replaceMock, contextReload } = vi.hoisted(() => ({
+  replaceMock: vi.fn(),
+  contextReload: { current: undefined as (() => Promise<void>) | undefined },
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: replaceMock }),
@@ -19,7 +22,14 @@ vi.mock('../../features/ai-companion/provider-consent', () => ({
     accepted: false,
     acceptedAt: null,
   })),
-  ProviderConsentNotice: () => null,
+  ProviderConsentNotice: ({
+    onAccepted,
+  }: {
+    onAccepted: () => Promise<void>;
+  }) => {
+    contextReload.current = onAccepted;
+    return null;
+  },
 }));
 
 describe('AI chat screen', () => {
@@ -31,6 +41,256 @@ describe('AI chat screen', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it.each(['refunded', 'notRefunded'] as const)(
+    'restores failed history after remount with explicit %s ledger status',
+    async (refundStatus) => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-action-prices/quick-reply`) return price();
+        if (url === `${api}/ai-conversations/current`)
+          return conversation([
+            {
+              ...message('failed-input', 'user', 'Сохранённое сообщение'),
+              operation: {
+                id: 'failed-operation',
+                status: 'technicalError',
+                refundStatus,
+              },
+            },
+          ]);
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      const first = render(<QuickReplyPage />);
+      await screen.findByText('Сохранённое сообщение');
+      first.unmount();
+      render(<QuickReplyPage />);
+      await screen.findByText('Сохранённое сообщение');
+      const expected =
+        refundStatus === 'refunded'
+          ? 'Ответ не получен. Зарезервированный токен возвращён.'
+          : 'Ответ не получен. Возврат токена пока не подтверждён.';
+      expect(await screen.findByText(expected)).toBeInTheDocument();
+      expect(
+        fetchMock.mock.calls.every(
+          ([input]) => !String(input).includes('/ai/operations'),
+        ),
+      ).toBe(true);
+      expect(
+        screen.queryByRole('button', { name: 'Повторить отправку' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(['queued', 'processing', 'outcomeUnknown'] as const)(
+    'resumes persisted %s operation by GET and loads answer without resubmitting',
+    async (status) => {
+      let recovered = false;
+      const fetchMock = vi.fn(
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+          const url = String(input);
+          if (url === `${api}/users/me/onboarding`) return onboarding();
+          if (url === `${api}/ai-action-prices/quick-reply`) return price();
+          if (
+            url === `${api}/ai-conversations/current` ||
+            url === `${api}/ai-conversations/${conversationId}`
+          )
+            return conversation([
+              {
+                ...message('saved-input', 'user', 'Уже отправлено'),
+                operation: {
+                  id: 'saved-operation',
+                  status: recovered ? 'succeeded' : status,
+                  refundStatus: 'notRefunded',
+                },
+              },
+              ...(recovered
+                ? [message('saved-answer', 'assistant', 'Сохранённый ответ')]
+                : []),
+            ]);
+          if (url === `${api}/ai/operations/saved-operation` && !init?.method) {
+            recovered = true;
+            return operation(
+              'succeeded',
+              'saved-operation',
+              'saved-input',
+              'saved-answer',
+            );
+          }
+          throw new Error(`Unexpected fetch: ${url}`);
+        },
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      render(<QuickReplyPage />);
+      await screen.findByText('Уже отправлено');
+      expect(screen.getByLabelText('Сообщение')).toBeDisabled();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_100);
+      });
+      expect(await screen.findByText('Сохранённый ответ')).toBeInTheDocument();
+      expect(screen.getByLabelText('Сообщение')).toBeEnabled();
+      expect(
+        fetchMock.mock.calls.some(([, init]) => init?.method === 'POST'),
+      ).toBe(false);
+    },
+  );
+
+  it.each(['refunded', 'notRefunded', undefined] as const)(
+    'uses explicit %s marker when a recovered pending operation fails',
+    async (refundStatus) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: RequestInfo | URL) => {
+          const url = String(input);
+          if (url === `${api}/users/me/onboarding`) return onboarding();
+          if (url === `${api}/ai-action-prices/quick-reply`) return price();
+          if (url === `${api}/ai-conversations/current`)
+            return conversation([
+              {
+                ...message('saved-input', 'user', 'Проверить исход'),
+                operation: {
+                  id: 'saved-operation',
+                  status: 'processing',
+                  refundStatus: 'notRefunded',
+                },
+              },
+            ]);
+          if (url === `${api}/ai/operations/saved-operation`)
+            return json({
+              id: 'saved-operation',
+              status: 'technicalError',
+              conversationId,
+              inputMessageId: 'saved-input',
+              refundStatus,
+            });
+          throw new Error(`Unexpected fetch: ${url}`);
+        }),
+      );
+      render(<QuickReplyPage />);
+      await screen.findByText('Проверить исход');
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_100);
+      });
+      expect(
+        await screen.findByText(
+          refundStatus === 'refunded'
+            ? 'Ответ не получен. Зарезервированный токен возвращён.'
+            : 'Ответ не получен. Возврат токена пока не подтверждён.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText('Сообщение')).toBeEnabled();
+    },
+  );
+
+  it.each(['poll', 'history'] as const)(
+    'ignores old %s response after context reload',
+    async (boundary) => {
+      let finish!: (response: Response) => void;
+      const deferred = new Promise<Response>((resolve) => {
+        finish = resolve;
+      });
+      let newOwner = false;
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-action-prices/quick-reply`) return price();
+        if (url === `${api}/ai-conversations/current`)
+          return newOwner
+            ? json({
+                id: 'new-conversation',
+                messages: [message('new', 'user', 'Новый аккаунт')],
+              })
+            : conversation([
+                {
+                  ...message('old', 'user', 'Старый аккаунт'),
+                  operation: {
+                    id: 'old-operation',
+                    status: 'processing',
+                    refundStatus: 'notRefunded',
+                  },
+                },
+              ]);
+        if (url === `${api}/ai/operations/old-operation`)
+          return boundary === 'poll'
+            ? deferred
+            : operation('succeeded', 'old-operation', 'old', 'old-answer');
+        if (url === `${api}/ai-conversations/${conversationId}`)
+          return deferred;
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      render(<QuickReplyPage />);
+      await screen.findByText('Старый аккаунт');
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_100);
+      });
+      newOwner = true;
+      await act(async () => {
+        await contextReload.current?.();
+      });
+      expect(await screen.findByText('Новый аккаунт')).toBeInTheDocument();
+      await act(async () => {
+        finish(
+          boundary === 'poll'
+            ? operation('succeeded', 'old-operation', 'old', 'old-answer')
+            : conversation([message('old-answer', 'assistant', 'Чужой ответ')]),
+        );
+      });
+      expect(screen.queryByText('Чужой ответ')).not.toBeInTheDocument();
+      expect(screen.queryByText('Старый аккаунт')).not.toBeInTheDocument();
+      expect(screen.getByText('Новый аккаунт')).toBeInTheDocument();
+      expect(screen.getByLabelText('Сообщение')).toBeEnabled();
+      if (boundary === 'poll')
+        expect(
+          fetchMock.mock.calls.some(
+            ([url]) =>
+              String(url) === `${api}/ai-conversations/${conversationId}`,
+          ),
+        ).toBe(false);
+    },
+  );
+
+  it('does not continue old polling into history after unmount', async () => {
+    let finish!: (response: Response) => void;
+    const deferred = new Promise<Response>((resolve) => {
+      finish = resolve;
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `${api}/users/me/onboarding`) return onboarding();
+      if (url === `${api}/ai-action-prices/quick-reply`) return price();
+      if (url === `${api}/ai-conversations/current`)
+        return conversation([
+          {
+            ...message('old', 'user', 'До выхода'),
+            operation: {
+              id: 'old-operation',
+              status: 'processing',
+              refundStatus: 'notRefunded',
+            },
+          },
+        ]);
+      if (url === `${api}/ai/operations/old-operation`) return deferred;
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const view = render(<QuickReplyPage />);
+    await screen.findByText('До выхода');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    view.unmount();
+    await act(async () => {
+      finish(operation('succeeded', 'old-operation', 'old'));
+    });
+    expect(
+      fetchMock.mock.calls.some(
+        ([url]) => String(url) === `${api}/ai-conversations/${conversationId}`,
+      ),
+    ).toBe(false);
   });
 
   it('loads the persisted conversation as visually separated messages', async () => {
@@ -386,9 +646,7 @@ describe('AI chat screen', () => {
 
     expect(screen.getByLabelText('Сообщение')).toBeDisabled();
     const outcomeUnknownAlert = screen.getByRole('alert');
-    expect(outcomeUnknownAlert).toHaveTextContent(
-      'Статус ответа уточняется.',
-    );
+    expect(outcomeUnknownAlert).toHaveTextContent('Статус ответа уточняется.');
     expect(outcomeUnknownAlert).not.toHaveTextContent('возвращён');
     expect(
       screen.queryByRole('button', { name: 'Повторить отправку' }),
@@ -520,6 +778,16 @@ type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  operation?: {
+    id: string;
+    status:
+      | 'queued'
+      | 'processing'
+      | 'outcomeUnknown'
+      | 'succeeded'
+      | 'technicalError';
+    refundStatus: 'notRefunded' | 'refunded';
+  };
 };
 
 function onboarding(): Response {

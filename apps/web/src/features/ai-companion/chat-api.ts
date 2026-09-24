@@ -1,3 +1,8 @@
+import type {
+  AiConversationMessageResourceDto,
+  AiConversationDetailResourceDto,
+  AiOperationResourceDto,
+} from '@atlas/api-contracts';
 import {
   ApiError,
   apiRequest,
@@ -5,32 +10,24 @@ import {
   newIdempotencyKey,
 } from '../../shared/api';
 
-export type ChatMessage = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  createdAt: string;
-};
-
-export type ChatConversation = {
-  id: string;
-  messages: ChatMessage[];
-};
+export type ChatMessage = AiConversationMessageResourceDto;
+export type ChatConversation = AiConversationDetailResourceDto;
 
 export type ChatPrice = {
   priceTokens: number;
   priceVersion: number;
 };
 
-export type ChatOperation = {
-  id: string;
-  status:
-    'queued' | 'processing' | 'succeeded' | 'technicalError' | 'outcomeUnknown';
-  conversationId: string;
-  inputMessageId: string;
-  outputMessageId?: string;
-  errorCode?: string;
-};
+export type ChatOperation = Pick<
+  AiOperationResourceDto,
+  | 'id'
+  | 'status'
+  | 'conversationId'
+  | 'inputMessageId'
+  | 'outputMessageId'
+  | 'errorCode'
+  | 'refundStatus'
+>;
 
 const primaryConversationKey = 'atlas-primary-chat-v1';
 
