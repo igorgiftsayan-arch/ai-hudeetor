@@ -106,26 +106,36 @@ export const workerConfigSchema = baseSchema
       .default('success'),
     AI_PROVIDER: z.enum(['fake', 'genapi']),
     IDENTITY_AI_PROVIDER_PROCESSING_VERSION: z.string().min(1).default('v1'),
-    GENAPI_API_KEY: z.string().min(1).optional(),
-    GENAPI_BASE_URL: z.url().optional(),
-    GENAPI_MODEL: z.string().min(1).optional(),
+    GENAPI_API_KEY: z.preprocess(
+      (value) => value === '' ? undefined : value,
+      z.string().min(1).optional(),
+    ),
+    GENAPI_BASE_URL: z.preprocess(
+      (value) => value === '' ? undefined : value,
+      z.url().optional(),
+    ),
+    GENAPI_MODEL: z.preprocess(
+      (value) => value === '' ? undefined : value,
+      z.string().min(1).optional(),
+    ),
     GENAPI_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
     WORKER_HEALTH_PORT: z.coerce.number().int().positive().default(3002),
     WORKER_QUEUE_NAME: z.string().min(1).default('atlas-system'),
   })
   .superRefine((config, context) => {
-    if (config.AI_PROVIDER !== 'genapi') return;
-    for (const key of [
-      'GENAPI_API_KEY',
-      'GENAPI_BASE_URL',
-      'GENAPI_MODEL',
-    ] as const) {
-      if (!config[key])
-        context.addIssue({
-          code: 'custom',
-          path: [key],
-          message: `${key} is required when AI_PROVIDER=genapi`,
-        });
+    if (config.AI_PROVIDER === 'genapi') {
+      for (const key of [
+        'GENAPI_API_KEY',
+        'GENAPI_BASE_URL',
+        'GENAPI_MODEL',
+      ] as const) {
+        if (!config[key])
+          context.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `${key} is required when AI_PROVIDER=genapi`,
+          });
+      }
     }
     if (config.PUSH_ENABLED) {
       for (const key of ['PUSH_VAPID_SUBJECT','PUSH_VAPID_PUBLIC_KEY','PUSH_VAPID_PRIVATE_KEY'] as const)
