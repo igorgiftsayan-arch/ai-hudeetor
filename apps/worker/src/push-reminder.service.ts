@@ -52,4 +52,4 @@ export class PushReminderService implements OnModuleInit {
 }
 
 function localTime(now:Date,timezone:string){ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now); const value=(t:string)=>parts.find((p)=>p.type===t)?.value; return `${value('hour')}:${value('minute')}`; }
-function dueLagMinutes(now:Date,timezone:string,target:string){const current=localTime(now,timezone).split(':').map(Number);const desired=target.split(':').map(Number);return (current[0]??0)*60+(current[1]??0)-((desired[0]??0)*60+(desired[1]??0));}
+function dueLagMinutes(now:Date,timezone:string,target:string){const current=localTime(now,timezone).split(':').map(Number);const desired=target.split(':').map(Number);return ((current[0]??0)*60+(current[1]??0)-((desired[0]??0)*60+(desired[1]??0))+1440)%1440;}
