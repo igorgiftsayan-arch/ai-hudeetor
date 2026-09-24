@@ -1,12 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import type { FoodSuitabilityResultDto } from '@atlas/api-contracts';
 
 export type FoodAnalysisView = {
   items: readonly string[];
   suitability: string;
+  suitabilityStatus?: FoodSuitabilityResultDto['status'];
+  missingData?: readonly string[];
   assessedItems?: readonly string[];
 };
+
+const suitabilityLabels = {
+  matches: 'Соответствует',
+  doesNotMatch: 'Не соответствует',
+  mixed: 'Частично соответствует',
+  insufficientData: 'Недостаточно данных',
+} satisfies Record<FoodSuitabilityResultDto['status'], string>;
 
 export type ConfirmedFoodDraft = {
   items: string[];
@@ -108,11 +118,33 @@ export function FoodConfirmation({
         </p>
       )}
 
-      <p className="food-suitability" aria-live="polite">
-        {compositionChanged
-          ? 'Состав изменён. Прежняя оценка относится к исходному распознаванию. Исправленный состав пока не оценён.'
-          : analysis.suitability}
-      </p>
+      <div className="food-suitability" aria-live="polite">
+        {compositionChanged ? (
+          <p>
+            Состав изменён. Прежняя оценка относится к исходному распознаванию.
+            Исправленный состав пока не оценён.
+          </p>
+        ) : (
+          <>
+            {analysis.suitabilityStatus && (
+              <p>
+                <strong>{suitabilityLabels[analysis.suitabilityStatus]}</strong>
+              </p>
+            )}
+            {analysis.suitability && <p>{analysis.suitability}</p>}
+            {Boolean(analysis.missingData?.length) && (
+              <div>
+                <p>Для оценки не хватает данных:</p>
+                <ul aria-label="Недостающие данные для оценки блюда">
+                  {analysis.missingData!.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {!isConfirmed && (
         <div className="food-confirmation-actions">
