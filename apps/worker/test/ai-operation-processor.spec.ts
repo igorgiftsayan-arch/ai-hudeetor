@@ -153,6 +153,7 @@ describe('AiOperationProcessor GenAPI boundary', () => {
         personaId: 'analyst',
         memoryContext: 'bounded context',
       }),
+      expect.objectContaining({ onAccepted: expect.any(Function) }),
     );
     expect(client.query).toHaveBeenCalledWith(
       expect.stringContaining("status='succeeded'"),
