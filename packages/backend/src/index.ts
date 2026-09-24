@@ -74,8 +74,14 @@ export {
 } from './ai-companion/infrastructure/fake-ai-provider.adapter';
 export {
   GenApiAiProviderAdapter,
+  buildGenApiChatPayload,
   type AiTechnicalLogRecord,
 } from './ai-companion/infrastructure/genapi-ai-provider.adapter';
+export { GenApiOutcomeReconciliationClient } from './ai-companion/infrastructure/genapi-outcome-reconciliation.client';
+export {
+  FinalizeReconciledAiOutcomeUseCase,
+  type ReconciledAiSuccess,
+} from './ai-companion/application/finalize-reconciled-ai-outcome.use-case';
 export { ProfilesRepository } from './profiles/application/profiles-repository';
 export {
   GetCompanionProfileContextUseCase,

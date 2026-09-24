@@ -6,6 +6,7 @@
     "build": "pnpm --filter @atlas/backend build && nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
+    "reconcile:genapi": "node dist/reconcile-genapi-operation.js",
     "test": "jest --runInBand --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },

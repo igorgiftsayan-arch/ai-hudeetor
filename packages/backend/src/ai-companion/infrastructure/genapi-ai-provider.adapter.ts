@@ -130,19 +130,7 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
         'Content-Type': 'application/json',
         'X-Request-ID': request.operationId,
       },
-      body: JSON.stringify({
-        model: this.config.model,
-        messages: [
-          {
-            role: 'system',
-            content: buildSystemPrompt(
-              request.personaId,
-              request.memoryContext,
-            ),
-          },
-          ...request.messages,
-        ],
-      }),
+      body: JSON.stringify(buildGenApiChatPayload(request, this.config.model)),
       signal,
     };
     try {
@@ -173,6 +161,25 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
       errorCode: data.errorCode,
     });
   }
+}
+
+export function buildGenApiChatPayload(
+  request: AiProviderRequest,
+  model: string,
+): {
+  model: string;
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+} {
+  return {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content: buildSystemPrompt(request.personaId, request.memoryContext),
+      },
+      ...request.messages,
+    ],
+  };
 }
 
 function buildSystemPrompt(personaId: string, memoryContext?: string): string {
