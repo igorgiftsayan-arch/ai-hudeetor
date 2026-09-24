@@ -123,6 +123,15 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
       title: 'Шаги',
       description: 'Прогулка',
     });
+    const editedTask = await service.saveTask(captainId, randomUUID(), today, {
+      title: 'Шаги — обновлено',
+      description: 'Спокойная прогулка',
+    });
+    expect(editedTask).toMatchObject({
+      id: task.id,
+      title: 'Шаги — обновлено',
+      description: 'Спокойная прогулка',
+    });
     const completionKey = randomUUID();
     const completion = await service.completeTask(
       participantId,
