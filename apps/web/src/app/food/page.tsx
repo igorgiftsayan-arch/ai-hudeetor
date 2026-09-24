@@ -7,17 +7,22 @@ import {
   FoodConfirmation,
   type ConfirmedFoodDraft,
 } from '../../features/food/food-confirmation';
+import { FoodDeletion } from '../../features/food/food-deletion';
 import { FoodHistoryEntry } from '../../features/food/food-history-entry';
 import { FoodPhotoDraft } from '../../features/food/food-photo-draft';
 import {
   confirmFoodConsumption,
   createFoodAnalysis,
   loadFoodAnalysis,
+  loadFoodDeletionStatus,
   loadFoodScreen,
   prepareFoodImage,
   saveFoodCorrection,
 } from '../../features/food/food-api';
-import type { FoodScreenData } from '../../features/food/food-api';
+import type {
+  FoodScreenData,
+  FoodDeletionStatus,
+} from '../../features/food/food-api';
 import { ApiError, apiRequest, newIdempotencyKey } from '../../shared/api';
 import {
   ProviderConsentNotice,
@@ -59,6 +64,8 @@ export default function FoodPage() {
   const [providerConsent, setProviderConsent] = useState<ProviderConsent>();
   const [selectedFile, setSelectedFile] = useState<File>();
   const [analysis, setAnalysis] = useState<FoodAnalysisResourceDto>();
+  const [deletedAnalysisId, setDeletedAnalysisId] = useState<string>();
+  const [photoRevision, setPhotoRevision] = useState(0);
   const [starting, setStarting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
@@ -110,20 +117,39 @@ export default function FoodPage() {
         setPollingPaused(false);
         setHistoryMessage(undefined);
         setAnalysis(undefined);
+        setDeletedAnalysisId(undefined);
+        setPhotoRevision((value) => value + 1);
         activeAnalysisId.current = undefined;
         const raw = window.sessionStorage.getItem(key);
         recovery.current = raw ? (JSON.parse(raw) as Recovery) : {};
         pendingConfirmation.current = recovery.current.confirmation;
         if (recovery.current.analysisId) {
           activeAnalysisId.current = recovery.current.analysisId;
-          const current = await loadFoodAnalysis(recovery.current.analysisId);
-          if (sequence !== loadSequence.current || storageKey.current !== key)
-            return;
-          if (current.consumptionStatus === 'consumed') {
-            persist({ analysisId: current.id });
+          const id = recovery.current.analysisId;
+          try {
+            const current = await loadFoodAnalysis(id);
+            if (sequence !== loadSequence.current || storageKey.current !== key)
+              return;
+            if (current.consumptionStatus === 'consumed') {
+              persist({ analysisId: current.id });
+              pendingConfirmation.current = undefined;
+            }
+            setAnalysis(current);
+          } catch (cause) {
+            if (
+              !(cause instanceof ApiError) ||
+              cause.code !== 'FOOD_ANALYSIS_NOT_FOUND'
+            )
+              throw cause;
+            const deletion = await loadFoodDeletionStatus(id);
+            if (sequence !== loadSequence.current || storageKey.current !== key)
+              return;
+            if (deletion.analysisStatus !== 'deleted') throw cause;
+            setDeletedAnalysisId(id);
+            activeAnalysisId.current = undefined;
             pendingConfirmation.current = undefined;
+            persist({ analysisId: id });
           }
-          setAnalysis(current);
         } else if (
           recovery.current.uploadedImageId &&
           recovery.current.idempotencyKey &&
@@ -193,6 +219,7 @@ export default function FoodPage() {
 
   function chooseFile(file: File) {
     if (busy.current || recoverable || pendingConfirmation.current) return;
+    setDeletedAnalysisId(undefined);
     generation.current += 1;
     persist({});
     setPollingPaused(false);
@@ -263,6 +290,7 @@ export default function FoodPage() {
   }
 
   async function pollAnalysis(analysisId: string) {
+    if (activeAnalysisId.current !== analysisId) return;
     try {
       const current = await loadFoodAnalysis(analysisId);
       if (activeAnalysisId.current !== analysisId) return;
@@ -335,6 +363,32 @@ export default function FoodPage() {
     );
   }
 
+  function deletionChanged(status: FoodDeletionStatus) {
+    if (status.analysisId !== (analysis?.id ?? deletedAnalysisId)) return;
+    if (status.photoStatus !== 'available') {
+      setSelectedFile(undefined);
+      setPhotoRevision((value) => value + 1);
+    }
+    if (status.cancellationStatus === 'cancelledRefunded') {
+      setError(undefined);
+      activeAnalysisId.current = undefined;
+      setAnalysis((current) =>
+        current ? { ...current, status: 'cancelled' } : current,
+      );
+    }
+    if (status.analysisStatus === 'deleted') {
+      setError(undefined);
+      generation.current += 1;
+      activeAnalysisId.current = undefined;
+      pendingConfirmation.current = undefined;
+      setAnalysis(undefined);
+      setSelectedFile(undefined);
+      setDeletedAnalysisId(status.analysisId);
+      setPhotoRevision((value) => value + 1);
+      persist({ analysisId: status.analysisId });
+    }
+  }
+
   const analysisView = analysisToView(analysis);
   const waiting =
     analysis && ['queued', 'processing'].includes(analysis.status);
@@ -359,7 +413,11 @@ export default function FoodPage() {
           }
           style={{ border: 0, padding: 0, margin: 0 }}
         >
-          <FoodPhotoDraft policy={photoPolicy} onReady={chooseFile} />
+          <FoodPhotoDraft
+            key={photoRevision}
+            policy={photoPolicy}
+            onReady={chooseFile}
+          />
         </fieldset>
 
         {(selectedFile || recoverable) && !analysis && (
@@ -473,6 +531,33 @@ export default function FoodPage() {
               Проверить статус
             </button>
           )}
+        {(deletedAnalysisId ||
+          (analysis &&
+            [
+              'analyzed',
+              'technicalError',
+              'queued',
+              'processing',
+              'outcomeUnknown',
+              'cancelled',
+            ].includes(analysis.status))) &&
+          storageKey.current && (
+            <FoodDeletion
+              key={`${storageKey.current}:${analysis?.id ?? deletedAnalysisId}`}
+              analysisId={(analysis?.id ?? deletedAnalysisId)!}
+              ownerScope={storageKey.current}
+              csrfToken={data.csrfToken}
+              onSessionExpired={() => replace('/login')}
+              onStatus={deletionChanged}
+              mayCancel={Boolean(
+                analysis &&
+                ['queued', 'processing', 'outcomeUnknown'].includes(
+                  analysis.status,
+                ),
+              )}
+              disabled={confirming || Boolean(pendingConfirmation.current)}
+            />
+          )}
         {error && (
           <p className="food-draft-error" role="alert">
             {error}
@@ -491,8 +576,10 @@ export default function FoodPage() {
             <ol aria-label="Подтверждённые записи питания">
               {data.consumptions.map((consumption) => (
                 <FoodHistoryEntry
-                  key={consumption.id}
+                  key={`${storageKey.current}:${consumption.id}`}
                   consumption={consumption}
+                  ownerScope={storageKey.current}
+                  onDeletionStatus={deletionChanged}
                   csrfToken={data.csrfToken}
                   onSessionExpired={() => replace('/login')}
                   onChanged={async (message) => {

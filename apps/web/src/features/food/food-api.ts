@@ -5,6 +5,7 @@ import type {
   FoodConsumptionPageDto,
   FoodConsumptionResourceDto,
   FoodCorrectionDto,
+  FoodDeletionStatusDto,
   OnboardingResourceDto,
   QueuedFoodAnalysisResourceDto,
   UpdateFoodConsumptionDto,
@@ -209,4 +210,23 @@ export function deleteFoodConsumption(input: {
     method: 'DELETE',
     headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
   });
+}
+
+export type FoodDeletionStatus = FoodDeletionStatusDto;
+export function loadFoodDeletionStatus(id: string) {
+  return apiRequest<FoodDeletionStatus>(`/food-analyses/${id}/deletion-status`);
+}
+export function requestFoodDeletion(input: {
+  analysisId: string;
+  kind: 'photo' | 'analysis';
+  csrfToken: string;
+  idempotencyKey: string;
+}) {
+  return apiRequest<FoodDeletionStatus>(
+    `/food-analyses/${input.analysisId}${input.kind === 'photo' ? '/photo' : ''}`,
+    {
+      method: 'DELETE',
+      headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
+    },
+  );
 }

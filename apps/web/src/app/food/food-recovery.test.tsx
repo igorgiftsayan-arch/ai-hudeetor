@@ -7,6 +7,7 @@ import {
   within,
 } from '@testing-library/react';
 import FoodPage from './page';
+import { ApiError } from '../../shared/api';
 import * as food from '../../features/food/food-api';
 import { loadProviderConsent } from '../../features/ai-companion/provider-consent';
 import type { FoodAnalysisResourceDto } from '@atlas/api-contracts';
@@ -15,6 +16,8 @@ const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 vi.mock('../../features/food/food-api', () => ({
   loadFoodScreen: vi.fn(),
+  loadFoodDeletionStatus: vi.fn(),
+  requestFoodDeletion: vi.fn(),
   prepareFoodImage: vi.fn(),
   createFoodAnalysis: vi.fn(),
   loadFoodAnalysis: vi.fn(),
@@ -423,4 +426,128 @@ it('waits for accepted external-provider consent and another explicit start befo
   expect(food.prepareFoodImage).not.toHaveBeenCalled();
   fireEvent.click(screen.getByText('Начать анализ'));
   await waitFor(() => expect(food.createFoodAnalysis).toHaveBeenCalledTimes(1));
+});
+
+it('hides a deleted current analysis immediately and restores its deletion controls after reload', async () => {
+  saved({ analysisId: 'analysis-1' });
+  const available = {
+    analysisId: 'analysis-1',
+    photoStatus: 'available',
+    analysisStatus: 'available',
+    cancellationStatus: 'notCancelled',
+  } as const;
+  const deleted = { ...available, analysisStatus: 'deleted' } as const;
+  vi.mocked(food.loadFoodDeletionStatus).mockResolvedValue(available);
+  vi.mocked(food.requestFoodDeletion).mockResolvedValue(deleted);
+  const page = render(<FoodPage />);
+  await ready();
+  expect(screen.getByText('Съели это?')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('Фото и анализ'));
+  fireEvent.click(await screen.findByText('Удалить результат анализа'));
+  fireEvent.click(screen.getByText('Подтвердить удаление анализа'));
+  await screen.findByText(
+    'Результат анализа удалён. Подтверждённая запись о еде сохранена.',
+  );
+  expect(screen.queryByText('Съели это?')).not.toBeInTheDocument();
+  page.unmount();
+  vi.mocked(food.loadFoodAnalysis).mockRejectedValue(
+    new ApiError('request', 'Deleted', 'FOOD_ANALYSIS_NOT_FOUND', 404),
+  );
+  vi.mocked(food.loadFoodDeletionStatus).mockResolvedValue(deleted);
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Фото и анализ'));
+  await screen.findByText('Удалить исходное фото');
+  expect(screen.queryByText('Съели это?')).not.toBeInTheDocument();
+  expect(food.requestFoodDeletion).toHaveBeenCalledTimes(1);
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+});
+it('does not apply a late deletion response from a previous account to the active screen', async () => {
+  saved({ analysisId: 'analysis-1' });
+  vi.mocked(food.loadFoodDeletionStatus).mockResolvedValue({
+    analysisId: 'analysis-1',
+    photoStatus: 'available',
+    analysisStatus: 'available',
+    cancellationStatus: 'notCancelled',
+  });
+  let finish!: (value: food.FoodDeletionStatus) => void;
+  vi.mocked(food.requestFoodDeletion).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const mounted = render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Фото и анализ'));
+  fireEvent.click(await screen.findByText('Удалить результат анализа'));
+  fireEvent.click(screen.getByText('Подтвердить удаление анализа'));
+  await waitFor(() =>
+    expect(food.requestFoodDeletion).toHaveBeenCalledTimes(1),
+  );
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ userId: 'user-2' }), { status: 200 }),
+    ),
+  );
+  mounted.unmount();
+  render(<FoodPage />);
+  await ready();
+  await act(async () =>
+    finish({
+      analysisId: 'analysis-1',
+      photoStatus: 'available',
+      analysisStatus: 'deleted',
+      cancellationStatus: 'notCancelled',
+    }),
+  );
+  expect(screen.queryByText('Фото и анализ')).not.toBeInTheDocument();
+  expect(screen.queryByText('Съели это?')).not.toBeInTheDocument();
+  expect(sessionStorage.getItem('food-operation:user-2')).toBeNull();
+});
+
+it('stops showing a pending analysis once the server confirms cancellation and a full refund', async () => {
+  saved({ analysisId: 'analysis-1' });
+  vi.mocked(food.loadFoodAnalysis).mockResolvedValue({
+    ...analyzed,
+    status: 'queued',
+    recognizedResult: undefined,
+  });
+  vi.mocked(food.loadFoodDeletionStatus).mockResolvedValue({
+    analysisId: 'analysis-1',
+    photoStatus: 'available',
+    analysisStatus: 'available',
+    cancellationStatus: 'notCancelled',
+  });
+  vi.mocked(food.requestFoodDeletion).mockResolvedValue({
+    analysisId: 'analysis-1',
+    photoStatus: 'pending',
+    analysisStatus: 'available',
+    cancellationStatus: 'cancelledRefunded',
+  });
+  vi.useFakeTimers();
+  render(<FoodPage />);
+  await tick(0);
+  fireEvent.click(screen.getByText('Фото и анализ'));
+  await tick(0);
+  fireEvent.click(screen.getByText('Отменить анализ и удалить исходное фото'));
+  fireEvent.click(screen.getByText('Подтвердить удаление фото'));
+  await tick(0);
+  expect(
+    screen.getByText(
+      'Анализ отменён. Все зарезервированные токены возвращены.',
+    ),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByText('Проверяем изображение и готовим результат…'),
+  ).not.toBeInTheDocument();
+  await tick(60_000);
+  expect(food.loadFoodAnalysis).toHaveBeenCalledTimes(1);
+  expect(
+    screen.queryByText('Отменить анализ и удалить исходное фото'),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText('Съели это?')).not.toBeInTheDocument();
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
 });

@@ -6,6 +6,8 @@ import type {
   UpdateFoodConsumptionDto,
 } from '@atlas/api-contracts';
 import { ApiError, newIdempotencyKey } from '../../shared/api';
+import { FoodDeletion } from './food-deletion';
+import type { FoodDeletionStatus } from './food-api';
 import { deleteFoodConsumption, updateFoodConsumption } from './food-api';
 
 type Operation = {
@@ -20,8 +22,12 @@ export function FoodHistoryEntry({
   csrfToken,
   onChanged,
   onSessionExpired,
+  ownerScope,
+  onDeletionStatus,
 }: {
   consumption: FoodConsumptionResourceDto;
+  ownerScope?: string;
+  onDeletionStatus?: (status: FoodDeletionStatus) => void;
   csrfToken: string;
   onChanged: (message: string) => Promise<void>;
   onSessionExpired: () => void;
@@ -168,6 +174,16 @@ export function FoodHistoryEntry({
         >
           Повторить изменение
         </button>
+      )}
+      {ownerScope && (
+        <FoodDeletion
+          analysisId={consumption.foodAnalysisId}
+          ownerScope={ownerScope}
+          csrfToken={csrfToken}
+          onSessionExpired={onSessionExpired}
+          onStatus={onDeletionStatus}
+          disabled={busy || Boolean(pending.current)}
+        />
       )}
     </li>
   );
