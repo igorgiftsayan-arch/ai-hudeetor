@@ -6,6 +6,8 @@
 
 ### Added
 
+- GERBI food recovery (`add1a63`): подтверждение после потери ответа повторяется с исходным ключом без повторной коррекции; ожидающая операция восстанавливается после перезагрузки из метаданных, привязанных к пользователю. Устаревшие ответы polling игнорируются; неизвестный исход проверяется ограниченными сериями. Фотографии, AI-текст и секреты в Web Storage не сохраняются. Шесть новых regression-сценариев; серверная и мобильная приёмка остаются отдельными gates.
+
 - GERBI expanded pilot UI foundation: локальные компоненты выбора/preview/валидации food photo, явного analysed-versus-confirmed шага с отдельными датой/временем и capability/permission push UI. Компоненты не делают API-вызовов, не создают запись питания и не вызывают browser permission без явного клика; настоящая интеграция ожидает OpenAPI-контракт.
 - GERBI expanded pilot `/food`: контрактный private upload → typed analysis operation → polling, видимая цена, owner-scoped история только подтверждённой еды, явное confirmation после редактирования состава и локальных даты/времени. Результат fake adapter явно отмечен тестовым; real vision и phone push не объявляются проверенными.
 - GERBI expanded pilot scope: обязательны private food-photo analysis с отдельным consumed confirmation, phone Web Push с opt-in/user schedule и безопасное automatic AI recovery; неподтверждённое фото не считается съеденной едой, причинные выводы о весе запрещены.

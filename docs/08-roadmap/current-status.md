@@ -1,5 +1,12 @@
 # Текущий статус
 
+## Расширенный пилот — промежуточная интеграция 2026-09-24
+
+- Food UI recovery `add1a63` реализован; исполнитель подтвердил 79/79 web tests (включая параллельные push tests) и scoped lint. Полный typecheck на том шаге ожидал завершения notifications WIP. Это не подтверждение runtime готовности.
+- Backend checkpoint `ae0f95f` интегрирован в UI-ветку: browser-reachable private upload, food known-ID reconciliation, DTO validation и runtime push config/per-device revoke. По отчёту бэка: worker 37/37, API regression 44/44 и новые validation 2/2. Сквозной запуск ещё проверяется.
+- Фото/разбор не считаются употреблением без подтверждения. Edit/delete подтверждённого питания и push UI завершаются отдельными исполнителями.
+- Phone push acceptance ждёт HTTPS hostname и тестового телефона владельца. Правило возврата при неизвестном результате до provider ID ещё не утверждено. Main/stable и публичный запуск не изменены.
+
 ## Уточнение марафонного пилота 2026-09-24
 
 - Completion audit на verification commit `629f576` подтвердил PostgreSQL marathon gates `9/9`, calendar boundary `2/2` и GenAPI reconciliation matcher `2/2`: межкомандные read/write запрещены, captain create/edit разрешён, participant write запрещён, safe team DTO не содержит raw weight/chat/memory/baseline/cumulative totals, первый и последний дни/rollover обработаны по контракту. Frontend отдельно подтвердил в браузере видимый восстановленный assistant reply и разблокированный composer без нового платного запроса.
