@@ -1,13 +1,34 @@
 # GERBI local ledger/recovery checkpoint — 2026-09-24
 
-## Current checkpoint: integrated base `1ffd048`, worker fixes `ca3d612`
+## Current checkpoint: integrated `fa13d8d`
 
 The user approved continuing local development while increasing server RAM and
 storage. Remote capacity is pending. This update changes documentation only;
 product scope and `main` are unchanged. Local progress does not establish remote
 runtime acceptance.
 
-Recorded gates: API **92/92**, worker **44/44**, including actual PostgreSQL
+New scoped verification integrated into `fa13d8d`:
+
+| Package | Behavior and evidence | Limit |
+| --- | --- | --- |
+| Food UI `f231fed` | Account-switch fence; food **33/33**, web typecheck/scoped lint PASS | No new real browser/GenAPI acceptance |
+| Push `e226448` + `156a138` | Midnight catch-up and separate scheduled occurrence; actual PostgreSQL **9/9** PASS | Scheduler/persistence proof, no physical phone delivery |
+| Prepared replay `01832ac` | Saved immutable request payload/hash survives changed profile/context; current consent and attempt locking retained; submitting/ambiguous never resubmitted or refunded; targeted **14/14** in three suites, including actual PostgreSQL **9/9**; worker typecheck/scoped lint PASS | Provider/storage were stubbed; no remote restart/user-path acceptance |
+
+Prepared-replay regressions first reproduced three failures on the old code
+(food profile mutation and chat with current consent present/absent). After the
+fix, the saved snapshot/hash remains unchanged; missing current chat consent
+blocks the provider and settles the known-unsent operation once. Additional
+submitting/ambiguous cases preserve reservation without resubmission. Existing
+real PostgreSQL race regressions also pass.
+
+These scoped results overlap earlier suites. Do not add their counts to create
+a new full-worker total or claim a new full API/UI/worker run on the merged head.
+Terminal photo retention is a separate backend package **in progress**, not part
+of accepted functionality or verification at this checkpoint. Main and remote
+remain unchanged.
+
+Earlier recorded gates: API **92/92**, worker **44/44**, including actual PostgreSQL
 lifecycle/concurrency checks; provider-prompt **15/15**; food UI **24/24** on
 `d52eb9f`. These are the proven scoped results carried into integrated head
 `1ffd048`, not a fresh combined suite invocation. Real storage upload/download,

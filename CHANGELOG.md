@@ -6,7 +6,18 @@
 
 ### Current checkpoint — 2026-09-24
 
-- Integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
+- Integrated checkpoint **`fa13d8d`** includes food account-switch fence
+  `f231fed` (food **33/33**, web typecheck/lint PASS), push `e226448`/`156a138`
+  (midnight catch-up and separate scheduled occurrence, actual PostgreSQL
+  **9/9** PASS), and immutable prepared-receipt replay `01832ac` (targeted
+  **14/14**, including actual PostgreSQL **9/9**, worker typecheck/lint PASS).
+  Prepared replay preserves current consent/attempt locking and never resubmits
+  or refunds ambiguous/submitting receipts. Results are scoped per suite and
+  must not be summed into a new full-worker count.
+- Terminal photo retention is a separate package in progress, **not completed
+  or accepted** in this checkpoint. Main and remote are unchanged; real
+  storage/GenAPI/browser/physical-phone gates remain pending.
+- Earlier integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
   scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone
   gates remain pending; full expanded-pilot acceptance is not claimed.
