@@ -1,5 +1,14 @@
 # Текущий статус
 
+## Расширенный пилот — промежуточная интеграция 2026-09-24
+
+- UI checkpoints `baccdf5` и `b28b2b3`: настройки телефонных push и edit/delete подтверждённой еды завершены на уровне кода. Исполнители подтвердили web 94/94 (22 файла), typecheck и scoped lint PASS. Backend push lookup `900a25c` интегрирован; активной API-зависимости у push UI нет. Физическая доставка, реальная food vision и сквозная runtime-приёмка ещё не подтверждены.
+
+- Food UI recovery `add1a63` реализован; исполнитель подтвердил 79/79 web tests (включая параллельные push tests) и scoped lint. Полный typecheck на том шаге ожидал завершения notifications WIP. Это не подтверждение runtime готовности.
+- Backend checkpoint `ae0f95f` интегрирован в UI-ветку: browser-reachable private upload, food known-ID reconciliation, DTO validation и runtime push config/per-device revoke. По отчёту бэка: worker 37/37, API regression 44/44 и новые validation 2/2. Сквозной запуск ещё проверяется.
+- Фото/разбор не считаются употреблением без подтверждения. Edit/delete подтверждённого питания и push UI завершаются отдельными исполнителями.
+- Phone push acceptance ждёт HTTPS hostname и тестового телефона владельца. Правило возврата при неизвестном результате до provider ID ещё не утверждено. Main/stable и публичный запуск не изменены.
+
 ## Уточнение марафонного пилота 2026-09-24
 
 - Completion audit на verification commit `629f576` подтвердил PostgreSQL marathon gates `9/9`, calendar boundary `2/2` и GenAPI reconciliation matcher `2/2`: межкомандные read/write запрещены, captain create/edit разрешён, participant write запрещён, safe team DTO не содержит raw weight/chat/memory/baseline/cumulative totals, первый и последний дни/rollover обработаны по контракту. Frontend отдельно подтвердил в браузере видимый восстановленный assistant reply и разблокированный composer без нового платного запроса.
@@ -14,6 +23,7 @@
 - Командный API не раскрывает raw weight, AI chat/memory или накопленные итоги. `unknown` не заменяется нулём; первый день возвращает `notApplicable`; отчёт за последний день доступен следующим утром.
 - Приняты и проверены правила дневных показателей: точный вчера→сегодня процент, immutable first-in-marathon baseline, wellness как сумма восьми boolean, self-reported captain task и общие места при равенстве. PostgreSQL suite 8/8 и shared UI runtime подтверждают contract; stale task ID отклоняется `409 MARATHON_TASK_DATE_INVALID`, а точный успешный replay остаётся стабильным. Реальные даты, команды и капитаны остаются входными данными владельца.
 - Расширенный обязательный pilot scope теперь включает food photo analysis, phone push reminders и автоматическое AI recovery. Фото сначала анализируется, а употребление фиксируется только отдельным подтверждением «Съели ли вы это?»; только подтверждённые записи входят в дневник и наблюдаемую динамику питания/веса. Push требует отдельного opt-in и browser subscription. Причинные диагнозы и выдуманные профильные данные запрещены.
+- В отдельной UI-ветке от интеграционной базы `2bf0430` подготовлены local client-компоненты: выбор/preview/валидация фото, явное разделение analysed/confirmed с датой и временем только на этапе подтверждения, а также capability/permission UI для push. Добавлен `/food`: он читает управляемую цену и только подтверждённую историю, загружает выбранное фото через private upload intent, создаёт идемпотентную analysis operation и poll-ит typed status. Анализ не создаёт дневник; перед confirmation сохраняется correction. Fake adapter видимо помечается тестовым режимом. Реальные vision/push runtime acceptance и уже подтверждённые correction/delete ожидают следующих backend checkpoints и isolated verification.
 
 ## Документальный срез 2026-09-23
 

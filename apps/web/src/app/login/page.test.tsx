@@ -3,7 +3,13 @@ import userEvent from '@testing-library/user-event';
 import LoginPage from './page';
 
 const api = '/api/v1';
-const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+const { replaceMock, clearPushMock } = vi.hoisted(() => ({
+  replaceMock: vi.fn(),
+  clearPushMock: vi.fn(),
+}));
+vi.mock('../../features/notifications/push-browser', () => ({
+  clearPushBeforeLogin: clearPushMock,
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: replaceMock }),
@@ -12,10 +18,27 @@ vi.mock('next/navigation', () => ({
 describe('login screen', () => {
   beforeEach(() => {
     replaceMock.mockReset();
+    clearPushMock.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('does not replace accounts while old browser delivery cannot be stopped', async () => {
+    clearPushMock.mockRejectedValue(
+      new Error('Не удалось отключить уведомления предыдущего аккаунта.'),
+    );
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    render(<LoginPage />);
+    await user.type(screen.getByLabelText('Email'), 'next@example.test');
+    await user.type(screen.getByLabelText('Пароль'), 'password-42');
+    await user.click(screen.getByRole('button', { name: 'Войти' }));
+    await screen.findByRole('alert');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 
   it('logs in a completed user and opens today', async () => {
