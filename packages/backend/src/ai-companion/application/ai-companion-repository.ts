@@ -33,6 +33,7 @@ export type AiOperation = {
   pollUrl: string;
   runtimeAdapter: 'fake' | 'genapi';
   errorCode?: string;
+  refundStatus: 'notRefunded' | 'refunded';
 };
 
 export type AiActionPrice = {
@@ -50,6 +51,7 @@ export type AiConversationMessage = {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  operation?: Pick<AiOperation, 'id' | 'status' | 'errorCode' | 'refundStatus'>;
 };
 
 export type AiConversationDetail = AiConversation & {

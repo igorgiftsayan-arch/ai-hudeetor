@@ -1,5 +1,16 @@
 # Текущий статус
 
+## Chat history recovery — local checkpoint
+
+Conversation input messages now carry their owner-bound operation summary; GET
+operation and history expose ledger-derived refundStatus. A technicalError alone
+never implies a refund. PostgreSQL reload/pending/refund/foreign-owner coverage:
+5/5 PASS; API typecheck, scoped lint, backend build and generated contracts PASS.
+Actual new chat54133216 succeeded after consent alignment, wallet90→89; browser
+reply/reload PASS. Earlier local rejected operation and its refund are preserved.
+History UI deployment and native reconciliation model-alias validation remain pending.
+
+
 ## Chat consent runtime correction — 2026-09-25
 
 First synthetic chat was rejected locally before any provider POST: API required

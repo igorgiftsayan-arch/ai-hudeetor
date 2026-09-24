@@ -21,12 +21,22 @@ export class AiConversationResourceDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
 }
 
+export class AiConversationOperationSummaryDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ enum: ['queued', 'processing', 'succeeded', 'technicalError', 'outcomeUnknown'] })
+  status!: 'queued' | 'processing' | 'succeeded' | 'technicalError' | 'outcomeUnknown';
+  @ApiPropertyOptional() errorCode?: string;
+  @ApiProperty({ enum: ['notRefunded', 'refunded'] }) refundStatus!: 'notRefunded' | 'refunded';
+}
+
 export class AiConversationMessageResourceDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ enum: ['user', 'assistant'] })
   role!: 'user' | 'assistant';
   @ApiProperty() content!: string;
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiPropertyOptional({ type: () => AiConversationOperationSummaryDto })
+  operation?: AiConversationOperationSummaryDto;
 }
 
 export class AiConversationDetailResourceDto extends AiConversationResourceDto {
@@ -57,6 +67,7 @@ export class AiOperationResourceDto {
   @ApiProperty({ format: 'uuid', required: false }) outputMessageId?: string;
   @ApiProperty({ required: false }) responseText?: string;
   @ApiProperty({ required: false }) errorCode?: string;
+  @ApiProperty({ enum: ['notRefunded', 'refunded'], required: false }) refundStatus?: 'notRefunded' | 'refunded';
 }
 
 export class AiMemoryResourceDto {

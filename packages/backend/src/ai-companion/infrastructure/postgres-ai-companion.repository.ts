@@ -259,7 +259,7 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
         404,
         'Conversation not found',
       );
-    return this.loadConversationMessages(conversationId);
+    return this.loadConversationMessages(conversationId, userId);
   }
 
   async getCurrentConversation(userId: string): Promise<AiConversationDetail> {
@@ -280,7 +280,7 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
         404,
         'Conversation not found',
       );
-    return this.loadConversationMessages(conversation.rows[0].id);
+    return this.loadConversationMessages(conversation.rows[0].id, userId);
   }
 
   async getOperation(
@@ -298,11 +298,12 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
       price_version: number;
       runtime_adapter: 'fake' | 'genapi';
       error_class: string | null;
+      refunded: boolean;
     }>(
       `select operation.id, operation.status, operation.conversation_id,
               operation.input_message_id, operation.output_message_id,
               message.content as response_text, operation.reserved_tokens,
-              operation.price_version, operation.runtime_adapter, operation.error_class
+              operation.price_version, operation.runtime_adapter, operation.error_class, exists(select 1 from token_transactions t where t.operation_id=operation.id and t.user_id=operation.user_id and t.entry_type='aiRefund' and t.amount_tokens=operation.reserved_tokens) as refunded
          from ai_operations operation
          left join ai_messages message on message.id=operation.output_message_id
         where operation.id=$1 and operation.user_id=$2`,
@@ -329,23 +330,34 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
       pollUrl: `/api/v1/ai/operations/${row.id}`,
       runtimeAdapter: row.runtime_adapter,
       ...(row.error_class ? { errorCode: row.error_class } : {}),
+      refundStatus: row.refunded ? 'refunded' : 'notRefunded',
     };
   }
 
   private async loadConversationMessages(
     conversationId: string,
+    userId: string,
   ): Promise<AiConversationDetail> {
     const messages = await this.database.query<{
       id: string;
       role: 'user' | 'assistant';
       content: string;
       created_at: Date;
+      operation_id: string | null;
+      operation_status: AiOperation['status'];
+      error_class: string | null;
+      refunded: boolean;
     }>(
-      `select id,role,content,created_at
-         from ai_messages
-        where conversation_id=$1
-        order by created_at,id`,
-      [conversationId],
+      `select message.id,message.role,message.content,message.created_at,
+              operation.id as operation_id,operation.status as operation_status,
+              operation.error_class,exists(select 1 from token_transactions t where t.operation_id=operation.id and t.user_id=operation.user_id and t.entry_type='aiRefund' and t.amount_tokens=operation.reserved_tokens) as refunded
+         from ai_messages message
+         join ai_conversations conversation on conversation.id=message.conversation_id and conversation.user_id=$2
+         left join ai_operations operation on operation.input_message_id=message.id
+           and operation.conversation_id=conversation.id and operation.user_id=$2 and message.role='user'
+        where message.conversation_id=$1
+        order by message.created_at,message.id`,
+      [conversationId,userId],
     );
     return {
       id: conversationId,
@@ -354,6 +366,11 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
         role: message.role,
         content: message.content,
         createdAt: message.created_at.toISOString(),
+        ...(message.operation_id ? { operation: {
+          id: message.operation_id, status: message.operation_status,
+          ...(message.error_class ? { errorCode: message.error_class } : {}),
+          refundStatus: message.refunded ? 'refunded' as const : 'notRefunded' as const,
+        } } : {}),
       })),
     };
   }

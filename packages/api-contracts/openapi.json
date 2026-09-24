@@ -2094,6 +2094,40 @@
           "priceVersion"
         ]
       },
+      "AiConversationOperationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "succeeded",
+              "technicalError",
+              "outcomeUnknown"
+            ]
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "refundStatus": {
+            "type": "string",
+            "enum": [
+              "notRefunded",
+              "refunded"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "refundStatus"
+        ]
+      },
       "AiConversationMessageResourceDto": {
         "type": "object",
         "properties": {
@@ -2114,6 +2148,9 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/AiConversationOperationSummaryDto"
           }
         },
         "required": [
@@ -2239,6 +2276,13 @@
           },
           "errorCode": {
             "type": "string"
+          },
+          "refundStatus": {
+            "type": "string",
+            "enum": [
+              "notRefunded",
+              "refunded"
+            ]
           }
         },
         "required": [

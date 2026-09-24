@@ -164,6 +164,27 @@ describeWithDatabase('AI operation PostgreSQL transaction', () => {
     });
   });
 
+  it('restores owner-bound operation state and derives refunds from ledger on reload', async () => {
+    const fixture = await completedUserFixture();
+    const operation = await database.transaction((client) => repository.startQuickReply(client, {
+      userId: fixture.userId, conversationId: fixture.conversationId, idempotencyKey: randomUUID(),
+      content: 'Synthetic reload check', expectedPriceTokens: 1, priceVersion: 1,
+    }));
+    for (const status of ['queued', 'processing', 'outcomeUnknown', 'technicalError']) {
+      await database.query('update ai_operations set status=$2,error_class=$3 where id=$1', [operation.id,status,status==='technicalError' ? 'safetyRejected' : null]);
+      const history = await repository.getConversation(fixture.userId,fixture.conversationId);
+      expect(history.messages[0]?.operation).toMatchObject({id:operation.id,status,refundStatus:'notRefunded'});
+      expect((await repository.getOperation(fixture.userId,operation.id)).refundStatus).toBe('notRefunded');
+    }
+    await database.query(`insert into token_transactions(id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id,operation_id,reservation_id)
+      select $1,wallet_id,user_id,'aiRefund',1,'aiOperation',operation_id,operation_id,id from token_transactions where operation_id=$2 and entry_type='aiReservation'`,[randomUUID(),operation.id]);
+    const restarted = new PostgresAiCompanionRepository(database);
+    expect((await restarted.getCurrentConversation(fixture.userId)).messages[0]?.operation).toEqual({id:operation.id,status:'technicalError',errorCode:'safetyRejected',refundStatus:'refunded'});
+    expect((await restarted.getOperation(fixture.userId,operation.id)).refundStatus).toBe('refunded');
+    await expect(restarted.getConversation(randomUUID(),fixture.conversationId)).rejects.toMatchObject({code:'RESOURCE_NOT_FOUND'});
+    await expect(restarted.getOperation(randomUUID(),operation.id)).rejects.toMatchObject({code:'RESOURCE_NOT_FOUND'});
+  });
+
   it('loads persisted conversation messages in order for the owner', async () => {
     const fixture = await completedUserFixture();
     await database.query(

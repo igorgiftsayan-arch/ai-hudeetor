@@ -103,6 +103,32 @@ export interface AiActionPriceResourceDto {
   priceVersion: number;
 }
 
+export type AiConversationOperationSummaryDtoStatus = typeof AiConversationOperationSummaryDtoStatus[keyof typeof AiConversationOperationSummaryDtoStatus];
+
+
+export const AiConversationOperationSummaryDtoStatus = {
+  queued: 'queued',
+  processing: 'processing',
+  succeeded: 'succeeded',
+  technicalError: 'technicalError',
+  outcomeUnknown: 'outcomeUnknown',
+} as const;
+
+export type AiConversationOperationSummaryDtoRefundStatus = typeof AiConversationOperationSummaryDtoRefundStatus[keyof typeof AiConversationOperationSummaryDtoRefundStatus];
+
+
+export const AiConversationOperationSummaryDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
+export interface AiConversationOperationSummaryDto {
+  id: string;
+  status: AiConversationOperationSummaryDtoStatus;
+  errorCode?: string;
+  refundStatus: AiConversationOperationSummaryDtoRefundStatus;
+}
+
 export type AiConversationMessageResourceDtoRole = typeof AiConversationMessageResourceDtoRole[keyof typeof AiConversationMessageResourceDtoRole];
 
 
@@ -116,6 +142,7 @@ export interface AiConversationMessageResourceDto {
   role: AiConversationMessageResourceDtoRole;
   content: string;
   createdAt: string;
+  operation?: AiConversationOperationSummaryDto;
 }
 
 export interface AiConversationDetailResourceDto {
@@ -165,6 +192,14 @@ export const AiOperationResourceDtoRuntimeAdapter = {
   genapi: 'genapi',
 } as const;
 
+export type AiOperationResourceDtoRefundStatus = typeof AiOperationResourceDtoRefundStatus[keyof typeof AiOperationResourceDtoRefundStatus];
+
+
+export const AiOperationResourceDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
 export interface AiOperationResourceDto {
   id: string;
   status: AiOperationResourceDtoStatus;
@@ -177,6 +212,7 @@ export interface AiOperationResourceDto {
   outputMessageId?: string;
   responseText?: string;
   errorCode?: string;
+  refundStatus?: AiOperationResourceDtoRefundStatus;
 }
 
 export type AiMemoryResourceDtoCategory = typeof AiMemoryResourceDtoCategory[keyof typeof AiMemoryResourceDtoCategory];
