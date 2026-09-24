@@ -129,7 +129,9 @@ export class AiOperationProcessor extends WorkerHost {
     });
     const startedAt = Date.now();
     const result = consent
-      ? await this.adapter.execute(providerRequest)
+      ? await this.adapter.execute(providerRequest,{onAccepted:async(providerRequestId)=>{
+          await this.database.query(`update ai_operation_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where operation_id=$1 and submission_state in ('submitting','ambiguous')`,[operationId,providerRequestId]);
+        }})
       : ({ kind: 'technicalError', errorClass: 'safetyRejected' } as const);
     const latencyMs = Date.now() - startedAt;
     await this.database.transaction(async (client) => {
@@ -150,7 +152,7 @@ export class AiOperationProcessor extends WorkerHost {
            provider_request_id=coalesce($3,provider_request_id),
            updated_at=now()
          where operation_id=$1`,
-        [operationId,result.kind === 'outcomeUnknown' ? 'ambiguous' : 'completed',providerReference],
+        [operationId,result.kind === 'outcomeUnknown' && providerReference ? 'accepted' : result.kind === 'outcomeUnknown' ? 'ambiguous' : 'completed',providerReference],
       );
       const reservation = await client.query<{
         id: string;
@@ -216,11 +218,13 @@ export class AiOperationProcessor extends WorkerHost {
           `update ai_operations set status='technicalError',error_class=$2,updated_at=now() where id=$1`,
           [operationId, result.errorClass],
         );
-      } else
+      } else {
         await client.query(
-          `update ai_operations set status='outcomeUnknown',updated_at=now() where id=$1`,
+          `update ai_operations set status='outcomeUnknown',provider_reference=null,updated_at=now() where id=$1`,
           [operationId],
         );
+        if(providerReference)await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) values(gen_random_uuid(),'ai-companion.operation_reconciliation_requested.v1','aiOperation',$1,jsonb_build_object('operationId',($1::uuid)::text),now(),now()+interval '15 seconds',0)`,[operationId]);
+      }
     });
   }
 }

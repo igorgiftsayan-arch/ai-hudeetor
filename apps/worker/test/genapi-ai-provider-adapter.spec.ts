@@ -23,6 +23,18 @@ function response(body: unknown, status = 200): Response {
 }
 
 describe('GenApiAiProviderAdapter', () => {
+  it('persists the native async request id before polling the result', async () => {
+    const accepted=jest.fn().mockResolvedValue(undefined);
+    const fetcher=jest.fn()
+      .mockResolvedValueOnce(response({request_id:54055527,status:'starting'}))
+      .mockResolvedValueOnce(response({status:'success',cost:1.25,result:[{id:'response-native',choices:[{message:{content:'Готово'}}],usage:{prompt_tokens:3,completion_tokens:2,total_tokens:5}}]}));
+    const adapter=new GenApiAiProviderAdapter({apiKey:'secret',baseUrl:'https://proxy.gen-api.ru/v1',nativeBaseUrl:'https://api.gen-api.ru/api/v1',model:'grok-4-5',timeoutMs:1000,pollIntervalMs:0},fetcher);
+
+    await expect(adapter.execute(request,{onAccepted:accepted})).resolves.toMatchObject({kind:'success',text:'Готово',providerReference:'54055527'});
+    expect(accepted).toHaveBeenCalledWith('54055527');
+    expect(accepted.mock.invocationCallOrder[0]).toBeLessThan(fetcher.mock.invocationCallOrder[1]!);
+  });
+
   it('sends system prompt and conversation history and normalizes usage', async () => {
     const fetcher = jest.fn().mockResolvedValue(
       response({

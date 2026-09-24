@@ -19,6 +19,7 @@ export class OutboxPublisherService implements OnModuleInit {
     const rows = await this.database.query<{ id: string; event_type: string }>(
       `select id,event_type from outbox_messages
         where published_at is null
+          and available_at <= now()
           and event_type in (
             'ai-companion.quick_reply_requested.v1',
             'ai-companion.memory_extraction_requested.v1',

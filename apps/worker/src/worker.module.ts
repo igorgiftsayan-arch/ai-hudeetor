@@ -117,6 +117,7 @@ const redisUrl = new URL(config.REDIS_URL);
               baseUrl: config.GENAPI_BASE_URL!,
               model: config.GENAPI_MODEL!,
               timeoutMs: config.GENAPI_TIMEOUT_MS,
+              nativeBaseUrl: config.GENAPI_NATIVE_BASE_URL,
             })
           : new FakeAiProviderAdapter(config.AI_FAKE_MODE),
     },

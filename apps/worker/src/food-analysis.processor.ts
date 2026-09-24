@@ -34,7 +34,6 @@ export class FoodAnalysisProcessor {
       await client.query(`insert into food_analysis_request_receipts (food_analysis_id,user_id,provider,model,request_payload,request_hash,submission_state) values ($1,$2,$3,$4,$5::jsonb,$6,'prepared') on conflict (food_analysis_id) do nothing`,[analysisId,row.user_id,row.runtime_adapter,payload.modelVersion,serialized,hash]);
       const receipt = (await client.query<any>(`select request_hash,submission_state from food_analysis_request_receipts where food_analysis_id=$1 for update`,[analysisId])).rows[0];
       if (receipt.request_hash !== hash || receipt.submission_state !== 'prepared') throw new Error('Food request receipt is not safely claimable');
-      await client.query(`update food_analysis_request_receipts set submission_state='submitting',submitted_at=now(),updated_at=now() where food_analysis_id=$1`,[analysisId]);
       return { ...row, payload };
     });
     if (!claimed) return;
@@ -81,7 +80,7 @@ export class FoodAnalysisProcessor {
     expectedStatus:'processing'|'outcomeUnknown'='processing',
   ):Promise<void> {
     await this.db.transaction(async (client) => {
-      const operation = (await client.query<any>(`select id,user_id from food_analyses where id=$1 and status=$2 for update`,[analysisId,expectedStatus])).rows[0];
+      const operation = (await client.query<any>(`select id,user_id from food_analyses where id=$1 and status in ($2,'outcomeUnknown') for update`,[analysisId,expectedStatus])).rows[0];
       if (!operation) return;
       const reservation = (await client.query<any>(`select id,wallet_id,amount_tokens from token_transactions where food_analysis_id=$1 and entry_type='aiReservation' for update`,[analysisId])).rows[0];
       if (result.kind === 'success') {
@@ -132,9 +131,11 @@ export class FoodAnalysisProcessor {
       return {kind:'success',recognized:{kind:'food',dishName:'Тестовое блюдо',items:[{name:'Тестовый продукт',confidence:1}],uncertaintyNotes:[]},suitability:hasKnownProfile?{status:'mixed',source:'profile',observations:['Оценка основана только на сохранённых целях и предпочтениях пользователя.'],missingData:[]}:{status:'insufficientData',source:'none',observations:[],missingData:['Не хватает подтверждённых целей или ограничений питания.']}};
     }
     if(!this.storage||!this.config.s3||!this.config.apiKey||!this.config.networkId) return {kind:'technicalError',errorCategory:'providerConfiguration'};
-    const object=await this.storage.send(new GetObjectCommand({Bucket:this.config.s3.bucket,Key:claimed.payload.objectKey}));
-    const bytes=object.Body?Buffer.from(await object.Body.transformToByteArray()):Buffer.alloc(0);
+    let object;let bytes:Buffer;
+    try{object=await this.storage.send(new GetObjectCommand({Bucket:this.config.s3.bucket,Key:claimed.payload.objectKey}));bytes=object.Body?Buffer.from(await object.Body.transformToByteArray()):Buffer.alloc(0);}catch{return{kind:'technicalError',errorCategory:'imageUnavailable'};}
     if(!bytes.length||bytes.length>10_485_760) return {kind:'technicalError',errorCategory:'imageUnavailable'};
+    const submitting=await this.db.query(`update food_analysis_request_receipts set submission_state='submitting',submitted_at=now(),updated_at=now() where food_analysis_id=$1 and submission_state in ('prepared','ambiguous')`,[claimed.id]);
+    if(!submitting.rowCount)return{kind:'outcomeUnknown'};
     const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),this.config.timeoutMs);
     let response:Response;
     const requestBody={is_sync:false,model:this.config.modelVersion,response_format:{type:'json_object'},messages:[{role:'system',content:'Return strict JSON only. Recognize visible food without inventing hidden ingredients. Use only supplied known profile facts for suitability. If insufficient, use status insufficientData.'},{role:'user',content:[{type:'text',text:`Known profile JSON: ${JSON.stringify(claimed.payload.knownProfile)}. Required JSON: {recognized:{kind:food|nonFood|ambiguous,dishName:string|null,items:[{name,confidence}],uncertaintyNotes:string[]},suitability:{status:matches|doesNotMatch|mixed|insufficientData,source:profile|none,observations:string[],missingData:string[]}}`},{type:'image_url',image_url:{url:`data:${object.ContentType ?? 'image/jpeg'};base64,${bytes.toString('base64')}`}}]}]};
@@ -144,7 +145,7 @@ export class FoodAnalysisProcessor {
     const accepted:any=await response.json().catch(()=>null); const requestId=accepted?.request_id;
     if(typeof requestId!=='string'&&typeof requestId!=='number')return{kind:'technicalError',errorCategory:'invalidProviderResponse'};
     const providerReference=String(requestId);
-    await this.db.query(`update food_analysis_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where food_analysis_id=$1 and submission_state='submitting'`,[claimed.id,providerReference]);
+    await this.db.query(`update food_analysis_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where food_analysis_id=$1 and submission_state in ('submitting','ambiguous')`,[claimed.id,providerReference]);
     while(!controller.signal.aborted){
       await new Promise((resolve)=>setTimeout(resolve,1500));
       let poll:Response; try{poll=await fetch(`${this.config.nativeBaseUrl.replace(/\/$/,'')}/request/get/${encodeURIComponent(providerReference)}`,{headers:{Authorization:`Bearer ${this.config.apiKey}`,'Accept':'application/json'},signal:controller.signal});}catch{if(controller.signal.aborted){clearTimeout(timer);return{kind:'outcomeUnknown',providerReference} as VisionResult;}continue;}

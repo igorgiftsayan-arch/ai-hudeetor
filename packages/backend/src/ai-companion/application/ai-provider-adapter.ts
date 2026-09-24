@@ -23,9 +23,11 @@ export type AiProviderResult =
       errorClass:
         'providerUnavailable' | 'invalidProviderResponse' | 'safetyRejected';
     }
-  | { kind: 'outcomeUnknown' };
+  | { kind: 'outcomeUnknown'; providerReference?: string };
+
+export type AiProviderLifecycle = { onAccepted(providerRequestId:string):Promise<void> };
 
 export abstract class AiProviderAdapter {
   abstract readonly providerName: 'fake' | 'genapi';
-  abstract execute(request: AiProviderRequest): Promise<AiProviderResult>;
+  abstract execute(request: AiProviderRequest,lifecycle?:AiProviderLifecycle): Promise<AiProviderResult>;
 }
