@@ -10,7 +10,7 @@ export class PushNotificationsService {
     const user = await this.current.execute(accessToken);
     const preference = (await this.db.query<any>(`select enabled,local_time::text,timezone from push_notification_preferences where user_id=$1`, [user.userId])).rows[0];
     const count = (await this.db.query<{ count: number }>(`select count(*)::int count from push_subscriptions where user_id=$1 and status='active'`, [user.userId])).rows[0]?.count ?? 0;
-    return { enabled: preference?.enabled ?? false, localTime: preference?.local_time?.slice(0,5) ?? null, timezone: preference?.timezone ?? null, permissionState: count ? 'granted' : 'notRequested', activeSubscriptionCount: count };
+    return { enabled: preference?.enabled ?? false, localTime: preference?.local_time?.slice(0,5) ?? null, timezone: preference?.timezone ?? null, subscriptionState: count ? 'active' as const : 'none' as const, activeSubscriptionCount: count };
   }
 
   async savePreference(accessToken: string, input: { enabled: boolean; localTime?: string; timezone?: string }) {
@@ -21,11 +21,13 @@ export class PushNotificationsService {
     return this.get(accessToken);
   }
 
-  async subscribe(accessToken: string, input: { endpoint: string; p256dh: string; auth: string; platform: string; permissionState: 'granted' }) {
+  async subscribe(accessToken: string, input: { endpoint: string; p256dh: string; auth: string; platform: string }) {
     const user = await this.current.execute(accessToken);
-    if (!input.endpoint.startsWith('https://') || input.p256dh.length < 16 || input.auth.length < 8) throw new IdentityError('PUSH_SUBSCRIPTION_INVALID',422,'Push subscription is invalid');
+    if (!isAllowedPushEndpoint(input.endpoint) || input.p256dh.length < 16 || input.auth.length < 8) throw new IdentityError('PUSH_SUBSCRIPTION_INVALID',422,'Push subscription is invalid');
     const endpointHash = createHash('sha256').update(input.endpoint).digest('hex');
-    const result = await this.db.query<any>(`insert into push_subscriptions (id,user_id,endpoint,endpoint_hash,p256dh,auth_secret,platform,status) values ($1,$2,$3,$4,$5,$6,$7,'active') on conflict (endpoint_hash) do update set user_id=excluded.user_id,p256dh=excluded.p256dh,auth_secret=excluded.auth_secret,platform=excluded.platform,status='active',revoked_at=null,updated_at=now() returning id,platform,status`, [randomUUID(),user.userId,input.endpoint,endpointHash,input.p256dh,input.auth,input.platform]);
+    const existing = (await this.db.query<{user_id:string}>(`select user_id from push_subscriptions where endpoint_hash=$1`,[endpointHash])).rows[0];
+    if (existing && existing.user_id !== user.userId) throw new IdentityError('PUSH_SUBSCRIPTION_OWNERSHIP_CONFLICT',409,'Push subscription belongs to another account and must be revoked first');
+    const result = await this.db.query<any>(`insert into push_subscriptions (id,user_id,endpoint,endpoint_hash,p256dh,auth_secret,platform,status) values ($1,$2,$3,$4,$5,$6,$7,'active') on conflict (endpoint_hash) do update set p256dh=excluded.p256dh,auth_secret=excluded.auth_secret,platform=excluded.platform,status='active',revoked_at=null,updated_at=now() where push_subscriptions.user_id=excluded.user_id returning id,platform,status`, [randomUUID(),user.userId,input.endpoint,endpointHash,input.p256dh,input.auth,input.platform]);
     return result.rows[0];
   }
 
@@ -37,3 +39,11 @@ export class PushNotificationsService {
 }
 
 function validateTimezone(value: string) { try { new Intl.DateTimeFormat('en-US',{timeZone:value}).format(); } catch { throw new IdentityError('PROFILE_TIMEZONE_INVALID',422,'Timezone is invalid'); } }
+function isAllowedPushEndpoint(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return false;
+    const host = url.hostname.toLowerCase();
+    return host === 'fcm.googleapis.com' || host === 'updates.push.services.mozilla.com' || host === 'web.push.apple.com' || host.endsWith('.push.apple.com') || host.endsWith('.notify.windows.com');
+  } catch { return false; }
+}

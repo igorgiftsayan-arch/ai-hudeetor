@@ -170,6 +170,30 @@ export class FoodService {
     const result = await this.database.query<any>(`select id,food_analysis_id,consumed_at,local_date,timezone,confirmed_result from food_consumptions where user_id=$1 and deleted_at is null order by consumed_at desc,id desc limit 100`, [user.userId]);
     return { items: result.rows.map(mapConsumption) };
   }
+
+  async updateConsumption(accessToken:string,idempotencyKey:string,id:string,input:{consumedAt:string;timezone:string;confirmedResult:{dishName?:string;items:Array<{name:string;confidence?:number}>;note?:string}}){
+    const user=await this.currentUser.execute(accessToken); const instant=new Date(input.consumedAt); if(Number.isNaN(instant.valueOf()))throw new IdentityError('VALIDATION_ERROR',422,'consumedAt is invalid'); const localDate=localCalendarDate(instant,input.timezone);
+    const hash=createHash('sha256').update(JSON.stringify({id,...input,consumedAt:instant.toISOString()})).digest('hex');
+    return this.database.transaction(async(client)=>{
+      await client.query(`insert into idempotency_records (id,user_id,operation_scope,idempotency_key,request_hash,state) values ($1,$2,'foodConsumptionUpdate',$3,$4,'processing') on conflict do nothing`,[randomUUID(),user.userId,idempotencyKey,hash]);
+      const idem=(await client.query<any>(`select request_hash,state,response_body from idempotency_records where user_id=$1 and operation_scope='foodConsumptionUpdate' and idempotency_key=$2 for update`,[user.userId,idempotencyKey])).rows[0]!;
+      if(idem.request_hash!==hash)throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request'); if(idem.state==='completed')return idem.response_body;
+      const saved=(await client.query<any>(`update food_consumptions set consumed_at=$1,local_date=$2,timezone=$3,confirmed_result=$4::jsonb,updated_at=now() where id=$5 and user_id=$6 and deleted_at is null returning id,food_analysis_id,consumed_at,local_date,timezone,confirmed_result`,[instant,localDate,input.timezone,JSON.stringify(input.confirmedResult),id,user.userId])).rows[0];
+      if(!saved)throw new IdentityError('FOOD_CONSUMPTION_NOT_FOUND',404,'Food consumption not found'); const response=mapConsumption(saved);
+      await client.query(`update idempotency_records set state='completed',response_status=200,response_body=$1::jsonb,completed_at=now() where user_id=$2 and operation_scope='foodConsumptionUpdate' and idempotency_key=$3`,[JSON.stringify(response),user.userId,idempotencyKey]); return response;
+    });
+  }
+
+  async deleteConsumption(accessToken:string,idempotencyKey:string,id:string){
+    const user=await this.currentUser.execute(accessToken); const hash=createHash('sha256').update(JSON.stringify({id})).digest('hex');
+    await this.database.transaction(async(client)=>{
+      await client.query(`insert into idempotency_records (id,user_id,operation_scope,idempotency_key,request_hash,state) values ($1,$2,'foodConsumptionDelete',$3,$4,'processing') on conflict do nothing`,[randomUUID(),user.userId,idempotencyKey,hash]);
+      const idem=(await client.query<any>(`select request_hash,state from idempotency_records where user_id=$1 and operation_scope='foodConsumptionDelete' and idempotency_key=$2 for update`,[user.userId,idempotencyKey])).rows[0]!; if(idem.request_hash!==hash)throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request'); if(idem.state==='completed')return;
+      const owned=await client.query(`select 1 from food_consumptions where id=$1 and user_id=$2`,[id,user.userId]); if(!owned.rowCount)throw new IdentityError('FOOD_CONSUMPTION_NOT_FOUND',404,'Food consumption not found');
+      await client.query(`update food_consumptions set deleted_at=coalesce(deleted_at,now()),updated_at=now() where id=$1 and user_id=$2`,[id,user.userId]);
+      await client.query(`update idempotency_records set state='completed',response_status=204,response_body='{}'::jsonb,completed_at=now() where user_id=$1 and operation_scope='foodConsumptionDelete' and idempotency_key=$2`,[user.userId,idempotencyKey]);
+    });
+  }
 }
 
 function mapAnalysis(row: any) { return { id: row.id, uploadedImageId: row.uploaded_image_id, status: row.status, runtimeAdapter: row.runtime_adapter, recognizedResult: row.recognized_result, suitabilityResult: row.suitability_result, userCorrection: row.user_correction, errorCategory: row.error_category, consumptionStatus: row.consumed ? 'consumed' : 'notConfirmed', createdAt: new Date(row.created_at).toISOString() }; }

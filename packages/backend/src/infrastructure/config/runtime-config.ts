@@ -80,6 +80,19 @@ export const apiConfigSchema = baseSchema
 export const workerConfigSchema = baseSchema
   .extend({
     FOOD_FAKE_MODE: z.enum(['success', 'technicalError', 'outcomeUnknown']).default('success'),
+    FOOD_VISION_PROVIDER: z.enum(['fake','genapi']).default('fake'),
+    GENAPI_VISION_MODEL: z.string().min(1).optional(),
+    GENAPI_NATIVE_BASE_URL: z.url().default('https://api.gen-api.ru/api/v1'),
+    S3_ENDPOINT: z.url().default('http://localhost:9000'),
+    S3_REGION: z.string().min(1).default('us-east-1'),
+    S3_BUCKET: z.string().min(1).default('atlas-private'),
+    S3_ACCESS_KEY_ID: z.string().min(1).default('disabled'),
+    S3_SECRET_ACCESS_KEY: z.string().min(1).default('disabled'),
+    S3_FORCE_PATH_STYLE: z.enum(['true','false']).default('true').transform((value)=>value==='true'),
+    PUSH_ENABLED: z.enum(['true','false']).default('false').transform((value)=>value==='true'),
+    PUSH_VAPID_SUBJECT: z.string().optional(),
+    PUSH_VAPID_PUBLIC_KEY: z.string().optional(),
+    PUSH_VAPID_PRIVATE_KEY: z.string().optional(),
     AI_FAKE_MODE: z
       .enum(['success', 'technicalError', 'outcomeUnknown'])
       .default('success'),
@@ -105,6 +118,15 @@ export const workerConfigSchema = baseSchema
           path: [key],
           message: `${key} is required when AI_PROVIDER=genapi`,
         });
+    }
+    if (config.PUSH_ENABLED) {
+      for (const key of ['PUSH_VAPID_SUBJECT','PUSH_VAPID_PUBLIC_KEY','PUSH_VAPID_PRIVATE_KEY'] as const)
+        if (!config[key]) context.addIssue({code:'custom',path:[key],message:`${key} is required when PUSH_ENABLED=true`});
+    }
+    if (config.FOOD_VISION_PROVIDER === 'genapi') {
+      if (!config.GENAPI_VISION_MODEL) context.addIssue({code:'custom',path:['GENAPI_VISION_MODEL'],message:'GENAPI_VISION_MODEL is required for GenAPI food vision'});
+      if (!config.GENAPI_API_KEY || !config.GENAPI_BASE_URL) context.addIssue({code:'custom',path:['GENAPI_API_KEY'],message:'GenAPI credentials are required for food vision'});
+      if (config.S3_ACCESS_KEY_ID === 'disabled' || config.S3_SECRET_ACCESS_KEY === 'disabled') context.addIssue({code:'custom',path:['S3_ACCESS_KEY_ID'],message:'Private S3 access is required for food vision'});
     }
   });
 

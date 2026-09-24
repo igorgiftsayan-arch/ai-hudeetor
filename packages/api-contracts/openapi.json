@@ -1410,6 +1410,109 @@
         ]
       }
     },
+    "/api/v1/food-consumptions/{id}": {
+      "patch": {
+        "operationId": "FoodController_updateConsumption_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFoodConsumptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodConsumptionResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      },
+      "delete": {
+        "operationId": "FoodController_deleteConsumption_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
     "/api/v1/notification-preferences/push": {
       "get": {
         "operationId": "NotificationsController_get_api/v1",
@@ -3620,6 +3723,25 @@
           "items"
         ]
       },
+      "UpdateFoodConsumptionDto": {
+        "type": "object",
+        "properties": {
+          "consumedAt": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "confirmedResult": {
+            "$ref": "#/components/schemas/FoodCorrectionDto"
+          }
+        },
+        "required": [
+          "consumedAt",
+          "timezone",
+          "confirmedResult"
+        ]
+      },
       "PushPreferenceResourceDto": {
         "type": "object",
         "properties": {
@@ -3634,13 +3756,11 @@
             "type": "string",
             "nullable": true
           },
-          "permissionState": {
+          "subscriptionState": {
             "type": "string",
             "enum": [
-              "granted",
-              "denied",
-              "unsupported",
-              "notRequested"
+              "active",
+              "none"
             ]
           },
           "activeSubscriptionCount": {
@@ -3649,7 +3769,7 @@
         },
         "required": [
           "enabled",
-          "permissionState",
+          "subscriptionState",
           "activeSubscriptionCount"
         ]
       },
@@ -3692,20 +3812,13 @@
               "desktopPwa",
               "unknown"
             ]
-          },
-          "permissionState": {
-            "type": "string",
-            "enum": [
-              "granted"
-            ]
           }
         },
         "required": [
           "endpoint",
           "p256dh",
           "auth",
-          "platform",
-          "permissionState"
+          "platform"
         ]
       },
       "PushSubscriptionResourceDto": {

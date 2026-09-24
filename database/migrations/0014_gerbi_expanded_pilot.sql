@@ -177,7 +177,7 @@ CREATE TABLE push_deliveries (
   delivered_at timestamptz,
   CONSTRAINT uq_push_deliveries_schedule UNIQUE (subscription_id, reminder_type, scheduled_for),
   CONSTRAINT ck_push_deliveries_type CHECK (reminder_type = 'dailyCheckin'),
-  CONSTRAINT ck_push_deliveries_status CHECK (status IN ('queued','processing','delivered','technicalError','expired')),
+  CONSTRAINT ck_push_deliveries_status CHECK (status IN ('queued','processing','delivered','technicalError','deliveryUnknown','expired')),
   CONSTRAINT ck_push_deliveries_attempt_count CHECK (attempt_count >= 0)
 );
 CREATE INDEX idx_push_deliveries_due

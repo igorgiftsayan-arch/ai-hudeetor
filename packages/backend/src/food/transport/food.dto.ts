@@ -81,6 +81,10 @@ export class ConfirmFoodConsumptionDto {
   @ApiProperty() @IsString() @MaxLength(64) timezone!: string;
 }
 
+export class UpdateFoodConsumptionDto extends ConfirmFoodConsumptionDto {
+  @ApiProperty({ type: FoodCorrectionDto }) @ValidateNested() @Type(() => FoodCorrectionDto) confirmedResult!: FoodCorrectionDto;
+}
+
 export class FoodAnalysisResourceDto {
   @ApiProperty() id!: string;
   @ApiProperty() uploadedImageId!: string;

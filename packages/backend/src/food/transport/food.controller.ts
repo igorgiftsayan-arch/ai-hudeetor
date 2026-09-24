@@ -1,9 +1,9 @@
-import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { ApiAcceptedResponse, ApiCookieAuth, ApiCreatedResponse, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { IdentityError } from '../../identity/domain/identity-error';
 import { FoodService } from '../application/food.service';
-import { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodCorrectionDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto } from './food.dto';
+import { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodCorrectionDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto, UpdateFoodConsumptionDto } from './food.dto';
 
 @ApiTags('food')
 @ApiCookieAuth()
@@ -45,6 +45,14 @@ export class FoodController {
   @Get('food-consumptions')
   @ApiOkResponse({ type: FoodConsumptionPageDto })
   consumptions(@Req() req: Request) { return this.food.listConsumptions(token(req)); }
+
+  @Patch('food-consumptions/:id')
+  @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOkResponse({type:FoodConsumptionResourceDto})
+  updateConsumption(@Param('id') id:string,@Body() body:UpdateFoodConsumptionDto,@Req() req:Request,@Headers('idempotency-key') key?:string){return this.food.updateConsumption(token(req),requiredKey(key),id,body);}
+
+  @Delete('food-consumptions/:id') @HttpCode(204)
+  @ApiHeader({name:'Idempotency-Key',required:true})
+  deleteConsumption(@Param('id') id:string,@Req() req:Request,@Headers('idempotency-key') key?:string){return this.food.deleteConsumption(token(req),requiredKey(key),id);}
 }
 
 function token(req: Request) { return req.cookies?.atlas_access ?? ''; }

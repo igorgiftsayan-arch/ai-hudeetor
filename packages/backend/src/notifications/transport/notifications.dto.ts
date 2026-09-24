@@ -11,7 +11,7 @@ export class PushPreferenceResourceDto {
   @ApiProperty() enabled!: boolean;
   @ApiPropertyOptional({ type: String, nullable: true }) localTime!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) timezone!: string | null;
-  @ApiProperty({ enum: ['granted','denied','unsupported','notRequested'] }) permissionState!: string;
+  @ApiProperty({ enum: ['active','none'] }) subscriptionState!: 'active' | 'none';
   @ApiProperty() activeSubscriptionCount!: number;
 }
 
@@ -21,7 +21,6 @@ export class SavePushSubscriptionDto {
   @ApiProperty() @IsString() auth!: string;
   @ApiProperty({ enum: ['iosPwa','androidPwa','desktopPwa','unknown'] })
   @IsIn(['iosPwa','androidPwa','desktopPwa','unknown']) platform!: string;
-  @ApiProperty({ enum: ['granted'] }) @IsIn(['granted']) permissionState!: 'granted';
 }
 
 export class PushSubscriptionResourceDto {
