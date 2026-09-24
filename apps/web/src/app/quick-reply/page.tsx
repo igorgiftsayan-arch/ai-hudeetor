@@ -44,11 +44,15 @@ export default function QuickReplyPage() {
   const [error, setError] = useState<string>();
   const pendingSubmission = useRef<PendingSubmission | undefined>(undefined);
   const pollInFlight = useRef(false);
+  const contextGeneration = useRef(0);
   const conversationRefreshVersion = useRef(0);
   const feedEnd = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void loadInitialState();
+    return () => {
+      contextGeneration.current += 1;
+    };
   }, []);
 
   useEffect(() => {
@@ -57,14 +61,24 @@ export default function QuickReplyPage() {
 
   useEffect(() => {
     if (!operation || !isActiveOperation(operation.status)) return;
+    const generation = contextGeneration.current;
     const timer = window.setInterval(
-      () => void pollOperation(operation.id),
+      () => void pollOperation(operation.id, generation),
       1_000,
     );
     return () => window.clearInterval(timer);
   }, [operation?.id, operation?.status]);
 
   async function loadInitialState() {
+    const generation = ++contextGeneration.current;
+    conversationRefreshVersion.current += 1;
+    pollInFlight.current = false;
+    pendingSubmission.current = undefined;
+    setMessages([]);
+    setOperation(undefined);
+    setConversationId('');
+    setDraft('');
+    setSending(false);
     setLoading(true);
     setError(undefined);
     try {
@@ -72,6 +86,7 @@ export default function QuickReplyPage() {
         status: string;
         csrfToken: string;
       }>('/users/me/onboarding');
+      if (generation !== contextGeneration.current) return;
       if (onboarding.status !== 'completed') {
         replace('/onboarding');
         return;
@@ -81,6 +96,7 @@ export default function QuickReplyPage() {
         loadOrCreateConversation(onboarding.csrfToken),
         loadProviderConsent(),
       ]);
+      if (generation !== contextGeneration.current) return;
       setCsrfToken(onboarding.csrfToken);
       setPrice(currentPrice);
       setConversationId(conversation.id);
@@ -100,22 +116,29 @@ export default function QuickReplyPage() {
       );
       setProviderConsent(consent);
     } catch (cause) {
+      if (generation !== contextGeneration.current) return;
       if (cause instanceof ApiError && cause.kind === 'session') {
         replace('/login');
       } else {
         setError('Не удалось открыть чат. Попробуйте обновить страницу.');
       }
     } finally {
-      setLoading(false);
+      if (generation === contextGeneration.current) setLoading(false);
     }
   }
 
-  async function refreshConversation(id = conversationId) {
-    if (!id) return;
+  async function refreshConversation(
+    id = conversationId,
+    generation = contextGeneration.current,
+  ) {
+    if (!id || generation !== contextGeneration.current) return;
     const version = conversationRefreshVersion.current + 1;
     conversationRefreshVersion.current = version;
     const conversation = await loadConversation(id);
-    if (conversationRefreshVersion.current === version)
+    if (
+      generation === contextGeneration.current &&
+      conversationRefreshVersion.current === version
+    )
       setMessages(conversation.messages);
   }
 
@@ -136,6 +159,7 @@ export default function QuickReplyPage() {
       pendingSubmission.current = next;
     }
 
+    const generation = contextGeneration.current;
     setSending(true);
     setError(undefined);
     try {
@@ -146,11 +170,13 @@ export default function QuickReplyPage() {
         content,
         price,
       });
+      if (generation !== contextGeneration.current) return;
       pendingSubmission.current = undefined;
       setDraft('');
       setOperation(started);
-      await refreshConversation(conversationId);
+      await refreshConversation(conversationId, generation);
     } catch (cause) {
+      if (generation !== contextGeneration.current) return;
       if (cause instanceof ApiError && cause.kind === 'session') {
         replace('/login');
       } else {
@@ -159,15 +185,16 @@ export default function QuickReplyPage() {
         setError(readChatError(cause));
       }
     } finally {
-      setSending(false);
+      if (generation === contextGeneration.current) setSending(false);
     }
   }
 
-  async function pollOperation(operationId: string) {
-    if (pollInFlight.current) return;
+  async function pollOperation(operationId: string, generation: number) {
+    if (generation !== contextGeneration.current || pollInFlight.current) return;
     pollInFlight.current = true;
     try {
       const next = await loadChatOperation(operationId);
+      if (generation !== contextGeneration.current) return;
       setMessages((current) =>
         current.map((message) =>
           message.id === next.inputMessageId
@@ -184,7 +211,8 @@ export default function QuickReplyPage() {
         ),
       );
       if (next.status === 'succeeded') {
-        await refreshConversation(next.conversationId);
+        await refreshConversation(next.conversationId, generation);
+        if (generation !== contextGeneration.current) return;
         setOperation(next);
         setError(undefined);
       } else if (next.status === 'technicalError') {
@@ -197,13 +225,15 @@ export default function QuickReplyPage() {
         setOperation(next);
       }
     } catch (cause) {
+      if (generation !== contextGeneration.current) return;
       if (cause instanceof ApiError && cause.kind === 'session') {
         replace('/login');
       } else {
         setError('Связь прервалась. Повторяем загрузку ответа…');
       }
     } finally {
-      pollInFlight.current = false;
+      if (generation === contextGeneration.current)
+        pollInFlight.current = false;
     }
   }
 

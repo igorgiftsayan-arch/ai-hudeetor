@@ -4,7 +4,10 @@ import QuickReplyPage from './page';
 
 const api = '/api/v1';
 const conversationId = '773a7e6e-cb1a-42f0-9dca-24f94c5cc5af';
-const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+const { replaceMock, contextReload } = vi.hoisted(() => ({
+  replaceMock: vi.fn(),
+  contextReload: { current: undefined as (() => Promise<void>) | undefined },
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: replaceMock }),
@@ -19,7 +22,14 @@ vi.mock('../../features/ai-companion/provider-consent', () => ({
     accepted: false,
     acceptedAt: null,
   })),
-  ProviderConsentNotice: () => null,
+  ProviderConsentNotice: ({
+    onAccepted,
+  }: {
+    onAccepted: () => Promise<void>;
+  }) => {
+    contextReload.current = onAccepted;
+    return null;
+  },
 }));
 
 describe('AI chat screen', () => {
@@ -174,6 +184,114 @@ describe('AI chat screen', () => {
       expect(screen.getByLabelText('Сообщение')).toBeEnabled();
     },
   );
+
+  it.each(['poll', 'history'] as const)(
+    'ignores old %s response after context reload',
+    async (boundary) => {
+      let finish!: (response: Response) => void;
+      const deferred = new Promise<Response>((resolve) => {
+        finish = resolve;
+      });
+      let newOwner = false;
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-action-prices/quick-reply`) return price();
+        if (url === `${api}/ai-conversations/current`)
+          return newOwner
+            ? json({
+                id: 'new-conversation',
+                messages: [message('new', 'user', 'Новый аккаунт')],
+              })
+            : conversation([
+                {
+                  ...message('old', 'user', 'Старый аккаунт'),
+                  operation: {
+                    id: 'old-operation',
+                    status: 'processing',
+                    refundStatus: 'notRefunded',
+                  },
+                },
+              ]);
+        if (url === `${api}/ai/operations/old-operation`)
+          return boundary === 'poll'
+            ? deferred
+            : operation('succeeded', 'old-operation', 'old', 'old-answer');
+        if (url === `${api}/ai-conversations/${conversationId}`)
+          return deferred;
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      render(<QuickReplyPage />);
+      await screen.findByText('Старый аккаунт');
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_100);
+      });
+      newOwner = true;
+      await act(async () => {
+        await contextReload.current?.();
+      });
+      expect(await screen.findByText('Новый аккаунт')).toBeInTheDocument();
+      await act(async () => {
+        finish(
+          boundary === 'poll'
+            ? operation('succeeded', 'old-operation', 'old', 'old-answer')
+            : conversation([message('old-answer', 'assistant', 'Чужой ответ')]),
+        );
+      });
+      expect(screen.queryByText('Чужой ответ')).not.toBeInTheDocument();
+      expect(screen.queryByText('Старый аккаунт')).not.toBeInTheDocument();
+      expect(screen.getByText('Новый аккаунт')).toBeInTheDocument();
+      expect(screen.getByLabelText('Сообщение')).toBeEnabled();
+      if (boundary === 'poll')
+        expect(
+          fetchMock.mock.calls.some(
+            ([url]) =>
+              String(url) === `${api}/ai-conversations/${conversationId}`,
+          ),
+        ).toBe(false);
+    },
+  );
+
+  it('does not continue old polling into history after unmount', async () => {
+    let finish!: (response: Response) => void;
+    const deferred = new Promise<Response>((resolve) => {
+      finish = resolve;
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === `${api}/users/me/onboarding`) return onboarding();
+      if (url === `${api}/ai-action-prices/quick-reply`) return price();
+      if (url === `${api}/ai-conversations/current`)
+        return conversation([
+          {
+            ...message('old', 'user', 'До выхода'),
+            operation: {
+              id: 'old-operation',
+              status: 'processing',
+              refundStatus: 'notRefunded',
+            },
+          },
+        ]);
+      if (url === `${api}/ai/operations/old-operation`) return deferred;
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const view = render(<QuickReplyPage />);
+    await screen.findByText('До выхода');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    view.unmount();
+    await act(async () => {
+      finish(operation('succeeded', 'old-operation', 'old'));
+    });
+    expect(
+      fetchMock.mock.calls.some(
+        ([url]) => String(url) === `${api}/ai-conversations/${conversationId}`,
+      ),
+    ).toBe(false);
+  });
 
   it('loads the persisted conversation as visually separated messages', async () => {
     vi.stubGlobal(
