@@ -14,9 +14,15 @@
   Prepared replay preserves current consent/attempt locking and never resubmits
   or refunds ambiguous/submitting receipts. Results are scoped per suite and
   must not be summed into a new full-worker count.
-- Terminal photo retention is a separate package in progress, **not completed
-  or accepted** in this checkpoint. Main and remote are unchanged; real
-  storage/GenAPI/browser/physical-phone gates remain pending.
+- Terminal photo retention `ea4525f` is **implemented locally, awaiting independent
+  review; not accepted**. Migration0015 captures immutable terminal time; durable
+  cleanup retries original/staging deletion after 30 days, excludes unresolved
+  or unproven terminal state, prevents upload resurrection and preserves ledger,
+  receipts, analysis results and confirmed history. Targeted **12/12** PASS
+  (7 actual PG retention + 3 runner + 2 existing lifecycle); backend build,
+  worker typecheck/scoped lint and migrate/repeat PASS. S3 transport is stubbed;
+  no live deletion occurred. Voluntary photo/analysis deletion remains absent.
+  Main/remote unchanged; real storage/GenAPI/browser/phone gates remain pending.
 - Earlier integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
   scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone
