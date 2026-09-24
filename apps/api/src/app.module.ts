@@ -66,15 +66,19 @@ const config = loadApiConfig();
     FoodModule.forRoot({
       enabled: config.FOOD_STORAGE_ENABLED,
       endpoint: config.S3_ENDPOINT,
+      publicEndpoint: config.S3_PUBLIC_ENDPOINT,
       region: config.S3_REGION,
       bucket: config.S3_BUCKET,
       accessKeyId: config.S3_ACCESS_KEY_ID,
       secretAccessKey: config.S3_SECRET_ACCESS_KEY,
       forcePathStyle: config.S3_FORCE_PATH_STYLE,
-      runtimeAdapter: config.AI_PROVIDER,
+      runtimeAdapter: config.FOOD_VISION_PROVIDER,
       consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
     }),
-    NotificationsModule,
+    NotificationsModule.forRoot({
+      enabled: config.PUSH_ENABLED,
+      publicKey: config.PUSH_VAPID_PUBLIC_KEY,
+    }),
   ],
   controllers: [HealthController],
 })

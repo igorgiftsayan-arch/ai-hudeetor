@@ -56,4 +56,33 @@ describe('OutboxPublisherService', () => {
       expect.objectContaining({ jobId: 'outbox-memory' }),
     );
   });
+
+  it('publishes food reconciliation with the durable outbox id as the job id', async () => {
+    const database = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'outbox-food-reconciliation',
+              event_type: 'food.analysis_reconciliation_requested.v1',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] }),
+    };
+    const queue = { add: jest.fn().mockResolvedValue(undefined) };
+    const service = new OutboxPublisherService(
+      database as never,
+      queue as never,
+    );
+
+    await service.publish();
+
+    expect(queue.add).toHaveBeenCalledWith(
+      'food-analysis-reconciliation',
+      { outboxId: 'outbox-food-reconciliation' },
+      expect.objectContaining({ jobId: 'outbox-food-reconciliation' }),
+    );
+  });
 });

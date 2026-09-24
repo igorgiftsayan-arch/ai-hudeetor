@@ -985,6 +985,7 @@ export interface FoodSuitabilityResultDto {
 
 export interface FoodCorrectionDto {
   dishName?: string;
+  /** @maxItems 25 */
   items: FoodComponentDto[];
   note?: string;
 }
@@ -1048,6 +1049,9 @@ export const PushPreferenceResourceDtoSubscriptionState = {
 } as const;
 
 export interface PushPreferenceResourceDto {
+  available: boolean;
+  /** @nullable */
+  vapidPublicKey?: string | null;
   enabled: boolean;
   /** @nullable */
   localTime?: string | null;
@@ -1084,6 +1088,10 @@ export interface PushSubscriptionResourceDto {
   id: string;
   platform: string;
   status: string;
+}
+
+export interface RevokePushSubscriptionDto {
+  endpoint: string;
 }
 
 export type healthControllerLivenessApiV1Response200 = {
@@ -2975,6 +2983,46 @@ export const notificationsControllerSubscribeApiV1 = async (savePushSubscription
 
   const data: notificationsControllerSubscribeApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as notificationsControllerSubscribeApiV1Response
+}
+
+
+
+export type notificationsControllerUnsubscribeByEndpointApiV1Response204 = {
+  data: void
+  status: 204
+}
+
+export type notificationsControllerUnsubscribeByEndpointApiV1ResponseSuccess = (notificationsControllerUnsubscribeByEndpointApiV1Response204) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerUnsubscribeByEndpointApiV1Response = (notificationsControllerUnsubscribeByEndpointApiV1ResponseSuccess)
+
+export const getNotificationsControllerUnsubscribeByEndpointApiV1Url = () => {
+
+
+
+
+  return `/api/v1/notification-preferences/push/subscription-revocations`
+}
+
+export const notificationsControllerUnsubscribeByEndpointApiV1 = async (revokePushSubscriptionDto: RevokePushSubscriptionDto, options?: RequestInit): Promise<notificationsControllerUnsubscribeByEndpointApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerUnsubscribeByEndpointApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(revokePushSubscriptionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerUnsubscribeByEndpointApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as notificationsControllerUnsubscribeByEndpointApiV1Response
 }
 
 

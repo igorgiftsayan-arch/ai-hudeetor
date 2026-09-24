@@ -43,6 +43,10 @@ export class AiOperationProcessor extends WorkerHost {
       if (this.foodAnalysis) await this.foodAnalysis.process(job);
       return;
     }
+    if (job.name === 'food-analysis-reconciliation') {
+      if (this.foodAnalysis) await this.foodAnalysis.reconcile(job);
+      return;
+    }
     if (job.name === 'push-delivery') {
       if (this.pushReminder) await this.pushReminder.process(job);
       return;

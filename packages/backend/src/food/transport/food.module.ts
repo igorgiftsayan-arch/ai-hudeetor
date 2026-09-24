@@ -1,4 +1,5 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import type { DynamicModule} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { DatabaseService } from '../../infrastructure/database/database.service';
 import { GetCurrentUserUseCase } from '../../identity/application/get-current-user.use-case';
 import { FoodService } from '../application/food.service';

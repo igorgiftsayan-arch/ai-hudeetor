@@ -8,6 +8,8 @@ export class SavePushPreferenceDto {
 }
 
 export class PushPreferenceResourceDto {
+  @ApiProperty() available!: boolean;
+  @ApiPropertyOptional({ type: String, nullable: true }) vapidPublicKey!: string | null;
   @ApiProperty() enabled!: boolean;
   @ApiPropertyOptional({ type: String, nullable: true }) localTime!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) timezone!: string | null;
@@ -27,4 +29,8 @@ export class PushSubscriptionResourceDto {
   @ApiProperty() id!: string;
   @ApiProperty() platform!: string;
   @ApiProperty() status!: string;
+}
+
+export class RevokePushSubscriptionDto {
+  @ApiProperty() @IsString() endpoint!: string;
 }

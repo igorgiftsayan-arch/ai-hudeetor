@@ -32,13 +32,17 @@ export const apiConfigSchema = baseSchema
     IDENTITY_PRIVACY_VERSION: z.string().min(1),
     IDENTITY_AI_WELLNESS_NOTICE_VERSION: z.string().min(1),
     AI_PROVIDER: z.enum(['fake', 'genapi']).default('fake'),
+    FOOD_VISION_PROVIDER: z.enum(['fake','genapi']).default('fake'),
     FOOD_STORAGE_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
     S3_ENDPOINT: z.url().default('http://localhost:9000'),
+    S3_PUBLIC_ENDPOINT: z.url().optional(),
     S3_REGION: z.string().min(1).default('us-east-1'),
     S3_BUCKET: z.string().min(1).default('atlas-private'),
     S3_ACCESS_KEY_ID: z.string().min(1).default('disabled'),
     S3_SECRET_ACCESS_KEY: z.string().min(1).default('disabled'),
     S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('true').transform((value) => value === 'true'),
+    PUSH_ENABLED: z.enum(['true','false']).default('false').transform((value)=>value==='true'),
+    PUSH_VAPID_PUBLIC_KEY: z.string().optional(),
     IDENTITY_AI_PROVIDER_PROCESSING_VERSION: z.string().min(1).default('v1'),
     IDENTITY_AI_PROVIDER_DISCLOSURE: z
       .string()
@@ -75,6 +79,9 @@ export const apiConfigSchema = baseSchema
     if (config.FOOD_STORAGE_ENABLED && (config.S3_ACCESS_KEY_ID === 'disabled' || config.S3_SECRET_ACCESS_KEY === 'disabled')) {
       context.addIssue({ code: 'custom', path: ['S3_ACCESS_KEY_ID'], message: 'Private S3 credentials are required when food storage is enabled' });
     }
+    if (config.PUSH_ENABLED && !config.PUSH_VAPID_PUBLIC_KEY) {
+      context.addIssue({ code: 'custom', path: ['PUSH_VAPID_PUBLIC_KEY'], message: 'PUSH_VAPID_PUBLIC_KEY is required when push is enabled' });
+    }
   });
 
 export const workerConfigSchema = baseSchema
@@ -82,6 +89,7 @@ export const workerConfigSchema = baseSchema
     FOOD_FAKE_MODE: z.enum(['success', 'technicalError', 'outcomeUnknown']).default('success'),
     FOOD_VISION_PROVIDER: z.enum(['fake','genapi']).default('fake'),
     GENAPI_VISION_MODEL: z.string().min(1).optional(),
+    GENAPI_VISION_MODEL_VERSION: z.string().min(1).default('gpt-4o-2024-08-06'),
     GENAPI_NATIVE_BASE_URL: z.url().default('https://api.gen-api.ru/api/v1'),
     S3_ENDPOINT: z.url().default('http://localhost:9000'),
     S3_REGION: z.string().min(1).default('us-east-1'),

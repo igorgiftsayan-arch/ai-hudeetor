@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import webpush from 'web-push';
 import { createHash } from 'node:crypto';

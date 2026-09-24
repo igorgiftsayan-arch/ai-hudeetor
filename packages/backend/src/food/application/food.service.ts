@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createHash, randomUUID } from 'node:crypto';
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -10,6 +11,7 @@ const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export class FoodService {
   private readonly storage: S3Client;
+  private readonly publicStorage: S3Client;
 
   constructor(
     private readonly database: DatabaseService,
@@ -17,6 +19,7 @@ export class FoodService {
     private readonly config: {
       enabled: boolean;
       endpoint: string;
+      publicEndpoint?: string;
       region: string;
       bucket: string;
       accessKeyId: string;
@@ -35,6 +38,17 @@ export class FoodService {
         secretAccessKey: config.secretAccessKey,
       },
     });
+    this.publicStorage = config.publicEndpoint
+      ? new S3Client({
+          endpoint: config.publicEndpoint,
+          region: config.region,
+          forcePathStyle: config.forcePathStyle,
+          credentials: {
+            accessKeyId: config.accessKeyId,
+            secretAccessKey: config.secretAccessKey,
+          },
+        })
+      : this.storage;
   }
 
   async price(accessToken: string) {
@@ -59,7 +73,7 @@ export class FoodService {
       [id, user.userId, objectKey, input.contentType, input.sizeBytes, input.sha256],
     );
     const command = new PutObjectCommand({ Bucket: this.config.bucket, Key: objectKey, ContentType: input.contentType, ContentLength: input.sizeBytes, Metadata: { sha256: input.sha256 } });
-    const uploadUrl = await getSignedUrl(this.storage, command, { expiresIn: 600 });
+    const uploadUrl = await getSignedUrl(this.publicStorage, command, { expiresIn: 600 });
     return { id, status: 'pendingUpload' as const, uploadUrl, expiresAt: new Date(Date.now() + 600_000).toISOString(), requiredHeaders: { 'content-type': input.contentType, 'x-amz-meta-sha256': input.sha256 } };
   }
 
@@ -79,7 +93,7 @@ export class FoodService {
     const bytes = await this.storage.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: image.object_key }));
     const body = bytes.Body ? Buffer.from(await bytes.Body.transformToByteArray()) : Buffer.alloc(0);
     const digest = createHash('sha256').update(body).digest('hex');
-    let decoded = false;
+    let decoded: boolean;
     try {
       const metadata = await sharp(body, { limitInputPixels: 40_000_000 }).metadata();
       decoded = Boolean(metadata.width && metadata.height && metadata.format);
