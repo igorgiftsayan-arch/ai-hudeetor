@@ -87,7 +87,7 @@ export class FoodService {
     if (image.status === 'available') return { id: imageId, status: 'available' as const };
     const head = await this.storage.send(new HeadObjectCommand({ Bucket: this.config.bucket, Key: image.object_key }));
     if (head.ContentLength !== image.size_bytes || head.ContentType !== image.content_type || head.Metadata?.sha256 !== image.sha256) {
-      await this.database.query(`update uploaded_images set status='quarantined' where id=$1 and user_id=$2`, [imageId, user.userId]);
+      await this.database.query(`update uploaded_images set status='quarantined' where id=$1 and user_id=$2 and status='pendingUpload' and deleted_at is null`, [imageId, user.userId]);
       throw new IdentityError('FOOD_IMAGE_VALIDATION_FAILED', 422, 'Uploaded image metadata does not match the intent');
     }
     const bytes = await this.storage.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: image.object_key }));
@@ -99,7 +99,7 @@ export class FoodService {
       decoded = Boolean(metadata.width && metadata.height && metadata.format);
     } catch { decoded = false; }
     if (body.length !== image.size_bytes || digest !== image.sha256 || !matchesMagic(body, image.content_type) || !decoded) {
-      await this.database.query(`update uploaded_images set status='quarantined' where id=$1 and user_id=$2`, [imageId, user.userId]);
+      await this.database.query(`update uploaded_images set status='quarantined' where id=$1 and user_id=$2 and status='pendingUpload' and deleted_at is null`, [imageId, user.userId]);
       throw new IdentityError('FOOD_IMAGE_VALIDATION_FAILED', 422, 'Uploaded file is not a supported image');
     }
     return this.database.transaction(async (client) => {

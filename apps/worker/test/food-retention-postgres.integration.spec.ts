@@ -3,6 +3,7 @@ import { S3Client, HeadObjectCommand, GetObjectCommand, PutObjectCommand } from 
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { DatabaseService, FoodImageRetentionService } from '@atlas/backend';
+import { FoodAnalysisProcessor } from '../src/food-analysis.processor';
 import { FoodService } from '../../../packages/backend/src/food/application/food.service';
 
 const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
@@ -285,6 +286,49 @@ withDatabase('Terminal food photo retention on actual PostgreSQL', () => {
       expect(await completion).toMatchObject({code:'FOOD_IMAGE_NOT_FOUND'});
       expect(send.mock.calls.some(call=>call[0] instanceof PutObjectCommand)).toBe(false);
       expect((await db.query('select status from uploaded_images where id=$1',[due.imageId])).rows[0]).toEqual({status:'deleted'});
+    } finally {release();send.mockRestore();}
+  });
+
+  it.each([
+    ['HEAD','available'],['BODY','available'],['HEAD','deleted'],['BODY','deleted'],
+  ] as const)('does not let stale invalid %s quarantine a newer %s image',async(validation,newerState)=>{
+    await db.query(migration);
+    const bytes=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1sAAAAASUVORK5CYII=','base64');
+    const sha=createHash('sha256').update(bytes).digest('hex');
+    const service=food();
+    const image=await service.createUploadIntent('owner',{contentType:'image/png',sizeBytes:bytes.length,sha256:sha});
+    let entered!:()=>void,release!:()=>void,blocked=false;
+    const paused=new Promise<void>(resolve=>{entered=resolve;});
+    const resumed=new Promise<void>(resolve=>{release=resolve;});
+    const head={ContentLength:bytes.length,ContentType:'image/png',Metadata:{sha256:sha}};
+    const send=jest.spyOn(S3Client.prototype,'send').mockImplementation((async(command:unknown)=>{
+      if(!blocked && ((validation==='HEAD' && command instanceof HeadObjectCommand) || (validation==='BODY' && command instanceof GetObjectCommand))){
+        blocked=true;entered();await resumed;
+        return validation==='HEAD' ? {...head,ContentLength:bytes.length+1} : {Body:{transformToByteArray:async()=>new Uint8Array([0])}};
+      }
+      if(command instanceof HeadObjectCommand)return head;
+      if(command instanceof GetObjectCommand)return {Body:{transformToByteArray:async()=>bytes}};
+      return {};
+    }) as never);
+    try {
+      const stale=service.completeUpload('owner',image.id).then(()=>null,error=>error);
+      await paused;
+      await expect(service.completeUpload('owner',image.id)).resolves.toEqual({id:image.id,status:'available'});
+      const price=await service.price('owner');
+      const analysis=await service.createAnalysis('owner',randomUUID(),{uploadedImageId:image.id,expectedTokenPrice:price.tokenPrice,expectedPriceVersion:price.priceVersion});
+      const event=(await db.query<{id:string}>("select id from outbox_messages where aggregate_id=$1 and event_type='food.analysis_requested.v1'",[analysis.id])).rows[0]!;
+      const processor=new FoodAnalysisProcessor(db,{provider:'fake',fakeMode:'success',nativeBaseUrl:'http://127.0.0.1:1',modelVersion:'test',timeoutMs:100});
+      await processor.process({data:{outboxId:event.id}} as Parameters<FoodAnalysisProcessor['process']>[0]);
+      const cleanupNow=new Date(Date.now()+31*86400000),port=storage(),retention=new FoodImageRetentionService(db,port);
+      if(newerState==='deleted') {await retention.enqueueDue(cleanupNow);await retention.processOne(cleanupNow);}
+      const before=(await db.query('select status,object_key,uploaded_at,deleted_at from uploaded_images where id=$1',[image.id])).rows[0];
+      release();
+      expect(await stale).toMatchObject({code:'FOOD_IMAGE_VALIDATION_FAILED'});
+      expect((await db.query('select status,object_key,uploaded_at,deleted_at from uploaded_images where id=$1',[image.id])).rows[0]).toEqual(before);
+      expect((await service.getAnalysis('owner',analysis.id)).status).toBe('analyzed');
+      if(newerState==='available') {expect((await retention.enqueueDue(cleanupNow)).enqueued).toBe(1);await retention.processOne(cleanupNow);}
+      expect(port.deleteObject).toHaveBeenCalledTimes(2);
+      expect((await db.query('select status from uploaded_images where id=$1',[image.id])).rows[0]).toEqual({status:'deleted'});
     } finally {release();send.mockRestore();}
   });
 
