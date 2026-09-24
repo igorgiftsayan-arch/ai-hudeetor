@@ -833,9 +833,19 @@ export const ProviderConsentMetadataDtoProviderMode = {
   genapi: 'genapi',
 } as const;
 
+export type ProviderConsentMetadataDtoFoodProviderMode = typeof ProviderConsentMetadataDtoFoodProviderMode[keyof typeof ProviderConsentMetadataDtoFoodProviderMode];
+
+
+export const ProviderConsentMetadataDtoFoodProviderMode = {
+  fake: 'fake',
+  genapi: 'genapi',
+} as const;
+
 export interface ProviderConsentMetadataDto {
   providerMode: ProviderConsentMetadataDtoProviderMode;
   externalProviderEnabled: boolean;
+  foodProviderMode: ProviderConsentMetadataDtoFoodProviderMode;
+  foodExternalProviderEnabled: boolean;
   documentVersion: string;
   disclosure: string;
   accepted: boolean;

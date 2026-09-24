@@ -55,6 +55,8 @@ describe('food screen', () => {
         if (url === `${api}/users/me/ai-provider-consent`)
           return json({
             providerMode: 'fake',
+            foodProviderMode: 'fake',
+            foodExternalProviderEnabled: false,
             externalProviderEnabled: false,
             accepted: false,
           });
@@ -149,6 +151,79 @@ describe('food screen', () => {
         fetchMock.mock.calls.filter(([, init]) => init?.method === 'DELETE'),
       ).toHaveLength(1),
     );
+  });
+  it('shows real food consent with fake chat and only enables explicit start after accepting', async () => {
+    let accepted = false;
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn(() => 'blob:food'),
+      revokeObjectURL: vi.fn(),
+    });
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === `${api}/users/me`) return json({ userId: 'user-1' });
+        if (url === `${api}/users/me/onboarding`)
+          return json({
+            status: 'completed',
+            csrfToken: 'csrf',
+            profile: { timezone: 'UTC' },
+          });
+        if (url === `${api}/ai-action-prices/food-photo-analysis`)
+          return json({
+            actionType: 'foodPhotoAnalysis',
+            tokenPrice: 3,
+            priceVersion: 1,
+          });
+        if (url === `${api}/food-consumptions`) return json({ items: [] });
+        if (url === `${api}/users/me/ai-provider-consent`) {
+          if (init?.method === 'PUT') {
+            expect(JSON.parse(String(init.body))).toEqual({
+              accepted: true,
+              documentVersion: 'food-v1',
+            });
+            accepted = true;
+          }
+          return json({
+            providerMode: 'fake',
+            externalProviderEnabled: false,
+            foodProviderMode: 'genapi',
+            foodExternalProviderEnabled: true,
+            documentVersion: 'food-v1',
+            disclosure: 'External processing',
+            accepted,
+            acceptedAt: accepted ? '2026-09-25T00:00:00Z' : null,
+          });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      },
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<FoodPage />);
+    await screen.findByRole('heading', { name: 'Фото блюда' });
+    fireEvent.change(screen.getByLabelText('Выбрать фото блюда'), {
+      target: {
+        files: [new File(['photo'], 'food.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    fireEvent.click(screen.getByText('Продолжить'));
+    expect(screen.getByText('Начать анализ')).toBeDisabled();
+    expect(
+      screen.getByText(
+        'Фото блюда и необходимый контекст будут переданы внешнему сервису GenAPI для разбора.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('AI сейчас работает в тестовом режиме.'),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Разрешить обработку'));
+    await waitFor(() =>
+      expect(screen.getByText('Начать анализ')).not.toBeDisabled(),
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        /food-images|\/food-analyses/.test(String(url)),
+      ),
+    ).toBe(false);
   });
 });
 

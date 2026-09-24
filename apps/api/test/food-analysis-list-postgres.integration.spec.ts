@@ -157,6 +157,7 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
         consumptionStatus: 'consumed',
         deletionStatus: { analysisStatus: 'deleted', photoStatus: 'available' },
       });
+      if (!item) throw new Error('Expected the deleted analysis tombstone');
       expect(Object.keys(item).sort()).toEqual(
         [
           'id',
@@ -169,13 +170,18 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
           'deletionStatus',
         ].sort(),
       );
-      expect(
-        (await db.query('select status from food_analyses where id=$1', [id]))
-          .rows[0].status,
-      ).toBe('analyzed');
-      expect(
-        (await service.listConsumptions(owner)).items[0].confirmedResult,
-      ).toEqual({ dishName: 'Kept diary' });
+      const persisted = (
+        await db.query('select status from food_analyses where id=$1', [id])
+      ).rows[0];
+      expect(persisted).toBeDefined();
+      if (!persisted)
+        throw new Error('Expected the financial analysis record to remain');
+      expect(persisted.status).toBe('analyzed');
+      const consumption = (await service.listConsumptions(owner)).items[0];
+      expect(consumption).toBeDefined();
+      if (!consumption)
+        throw new Error('Expected the confirmed diary record to remain');
+      expect(consumption.confirmedResult).toEqual({ dishName: 'Kept diary' });
     });
     it('keeps errors, cancellations and pending photo deletion discoverable', async () => {
       const failed = await seed();

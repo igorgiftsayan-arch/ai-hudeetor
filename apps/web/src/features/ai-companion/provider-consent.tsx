@@ -22,12 +22,14 @@ export function ProviderConsentNotice({
   consent,
   csrfToken,
   disclosure,
+  feature = 'chat',
   onAccepted,
   onSessionExpired,
 }: {
   consent: ProviderConsent;
   csrfToken: string;
   disclosure?: string;
+  feature?: 'chat' | 'food';
   onAccepted: () => Promise<void> | void;
   onSessionExpired: () => void;
 }) {
@@ -35,7 +37,11 @@ export function ProviderConsentNotice({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
 
-  if (consent.providerMode === 'fake' || !consent.externalProviderEnabled) {
+  const externalProviderEnabled =
+    feature === 'food'
+      ? consent.foodExternalProviderEnabled !== false
+      : consent.providerMode !== 'fake' && consent.externalProviderEnabled;
+  if (!externalProviderEnabled) {
     return (
       <p className="marathon-consent-notice">
         AI сейчас работает в тестовом режиме.

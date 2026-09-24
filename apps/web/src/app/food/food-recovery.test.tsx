@@ -70,6 +70,8 @@ beforeEach(() => {
   sessionStorage.clear();
   vi.mocked(loadProviderConsent).mockResolvedValue({
     providerMode: 'fake',
+    foodProviderMode: 'fake',
+    foodExternalProviderEnabled: false,
     externalProviderEnabled: false,
     accepted: false,
   } as Awaited<ReturnType<typeof loadProviderConsent>>);
@@ -405,6 +407,8 @@ it('requires completed upload after a failed upload retry before sending the pai
 it('waits for accepted external-provider consent and another explicit start before any upload', async () => {
   const consent = {
     providerMode: 'genapi',
+    foodProviderMode: 'genapi',
+    foodExternalProviderEnabled: true,
     externalProviderEnabled: true,
     accepted: false,
   } as Awaited<ReturnType<typeof loadProviderConsent>>;
@@ -551,3 +555,27 @@ it('stops showing a pending analysis once the server confirms cancellation and a
   expect(screen.queryByText('Съели это?')).not.toBeInTheDocument();
   expect(food.createFoodAnalysis).not.toHaveBeenCalled();
 });
+
+it.each([
+  ['fake', 'genapi', true],
+  ['genapi', 'fake', false],
+  ['fake', 'fake', false],
+] as const)(
+  'uses the food capability for chat=%s food=%s before allowing upload',
+  async (providerMode, foodProviderMode, requiresConsent) => {
+    vi.mocked(loadProviderConsent).mockResolvedValue({
+      providerMode,
+      externalProviderEnabled: providerMode === 'genapi',
+      foodProviderMode,
+      foodExternalProviderEnabled: foodProviderMode === 'genapi',
+      accepted: false,
+    } as Awaited<ReturnType<typeof loadProviderConsent>>);
+    render(<FoodPage />);
+    await ready();
+    fireEvent.click(screen.getByText('Выбрать фото'));
+    const start = screen.getByText('Начать анализ');
+    if (requiresConsent) expect(start).toBeDisabled();
+    else expect(start).not.toBeDisabled();
+    expect(food.prepareFoodImage).not.toHaveBeenCalled();
+  },
+);
