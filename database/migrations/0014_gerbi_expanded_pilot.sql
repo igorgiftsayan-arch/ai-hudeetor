@@ -20,6 +20,8 @@ CREATE TABLE ai_operation_request_receipts (
     CHECK ((submission_state = 'accepted' AND provider_request_id IS NOT NULL) OR submission_state <> 'accepted')
 );
 
+ALTER TABLE ai_operations ADD COLUMN processing_attempt_id uuid;
+
 CREATE INDEX idx_ai_operation_request_receipts_user_prepared
   ON ai_operation_request_receipts(user_id, prepared_at DESC, operation_id);
 CREATE UNIQUE INDEX uq_ai_operation_request_receipts_provider_request
@@ -59,6 +61,7 @@ CREATE TABLE food_analyses (
   user_correction jsonb,
   error_category text,
   provider_reference text,
+  processing_attempt_id uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   analyzed_at timestamptz,

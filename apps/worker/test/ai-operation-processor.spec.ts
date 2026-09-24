@@ -20,9 +20,9 @@ describe('AiOperationProcessor GenAPI boundary', () => {
             },
           ],
         })
-        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ request_hash: requestHash('gentleFriend',[{role:'user',content:'Не отправлять провайдеру'}]), submission_state: 'prepared' }] })
-        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         .mockResolvedValueOnce({
           rows: [
             {
@@ -98,7 +98,7 @@ describe('AiOperationProcessor GenAPI boundary', () => {
         })
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ request_hash: requestHash('analyst',messages), submission_state: 'prepared' }] })
-        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         .mockResolvedValueOnce({
           rows: [
             {

@@ -36,8 +36,8 @@ describe('FoodAnalysisProcessor reconciliation', () => {
     await processor.reconcile({ data: { outboxId: 'outbox-1' } } as never);
 
     expect(client.query).toHaveBeenCalledWith(
-      expect.stringContaining("status in ($2,'outcomeUnknown') for update"),
-      ['analysis-1', 'outcomeUnknown'],
+      expect.stringContaining("status in ($2,'outcomeUnknown')"),
+      ['analysis-1', 'outcomeUnknown', null],
     );
     expect(client.query).toHaveBeenCalledWith(
       expect.stringContaining("'aiConfirmation'"),

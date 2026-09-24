@@ -13,7 +13,7 @@ import {
 } from '@atlas/backend';
 import { MemoryExtractionProcessor } from './memory-extraction.processor';
 import { FoodAnalysisProcessor } from './food-analysis.processor';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { PushReminderService } from './push-reminder.service';
 import { AiOperationReconciliationProcessor } from './ai-operation-reconciliation.processor';
 
@@ -66,17 +66,18 @@ export class AiOperationProcessor extends WorkerHost {
     );
     const operationId = event.rows[0]?.payload.operationId;
     if (!operationId) return;
+    const attemptId=randomUUID();
     const claimed = await this.database.transaction(async (client) => {
       const result = await client.query<{
         persona_id: string;
         user_id: string;
         conversation_id: string;
       }>(
-        `update ai_operations set status='processing',runtime_adapter=$2,updated_at=now()
+        `update ai_operations set status='processing',runtime_adapter=$2,processing_attempt_id=$3,updated_at=now()
           where id=$1 and status='queued'
           returning user_id,conversation_id,
             (select persona_id from ai_preferences where user_id=ai_operations.user_id) as persona_id`,
-        [operationId, this.adapter.providerName],
+        [operationId, this.adapter.providerName,attemptId],
       );
       return result.rows[0] ?? null;
     });
@@ -113,7 +114,7 @@ export class AiOperationProcessor extends WorkerHost {
     };
     const requestPayload = JSON.stringify(providerRequest);
     const requestHash = createHash('sha256').update(requestPayload).digest('hex');
-    await this.database.transaction(async (client) => {
+    const receiptClaimed=await this.database.transaction(async (client) => {
       await client.query(
         `insert into ai_operation_request_receipts
           (operation_id,user_id,provider,model,prompt_id,prompt_version,request_payload,request_hash,submission_state)
@@ -124,13 +125,19 @@ export class AiOperationProcessor extends WorkerHost {
       const receipt = await client.query<{ request_hash: string; submission_state: string }>(
         `select request_hash,submission_state from ai_operation_request_receipts where operation_id=$1 for update`,[operationId]);
       if (receipt.rows[0]?.request_hash !== requestHash) throw new Error('AI request receipt mismatch');
-      if (receipt.rows[0]?.submission_state !== 'prepared') throw new Error('AI request was already submitted');
-      await client.query(`update ai_operation_request_receipts set submission_state='submitting',submitted_at=now(),updated_at=now() where operation_id=$1`,[operationId]);
+      if (receipt.rows[0]?.submission_state !== 'prepared') return false;
+      const submitting=await client.query(`update ai_operation_request_receipts r set submission_state='submitting',submitted_at=now(),updated_at=now() from ai_operations a where r.operation_id=$1 and r.operation_id=a.id and r.submission_state='prepared' and a.status='processing' and a.processing_attempt_id=$2`,[operationId,attemptId]);
+      if(!submitting.rowCount)return false;
+      return true;
     });
+    if(!receiptClaimed)return;
     const startedAt = Date.now();
     const result = consent
       ? await this.adapter.execute(providerRequest,{onAccepted:async(providerRequestId)=>{
-          await this.database.query(`update ai_operation_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where operation_id=$1 and submission_state in ('submitting','ambiguous')`,[operationId,providerRequestId]);
+          await this.database.transaction(async(client)=>{
+            await client.query(`update ai_operation_request_receipts r set submission_state='accepted',provider_request_id=$2,updated_at=now() from ai_operations a where r.operation_id=$1 and r.operation_id=a.id and r.submission_state in ('submitting','ambiguous') and a.processing_attempt_id=$3`,[operationId,providerRequestId,attemptId]);
+            await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'ai-companion.operation_reconciliation_requested.v1','aiOperation',$1,jsonb_build_object('operationId',($1::uuid)::text),now(),now()+interval '15 seconds',0 where exists(select 1 from ai_operations where id=$1 and status='outcomeUnknown') and not exists(select 1 from outbox_messages where event_type='ai-companion.operation_reconciliation_requested.v1' and aggregate_id=$1 and published_at is null)`,[operationId]);
+          });
         }})
       : ({ kind: 'technicalError', errorClass: 'safetyRejected' } as const);
     const latencyMs = Date.now() - startedAt;
@@ -140,8 +147,8 @@ export class AiOperationProcessor extends WorkerHost {
         conversation_id: string;
         input_message_id: string;
       }>(
-        `select user_id,conversation_id,input_message_id from ai_operations where id=$1 and status='processing' for update`,
-        [operationId],
+        `select user_id,conversation_id,input_message_id from ai_operations where id=$1 and status in ('processing','outcomeUnknown') and processing_attempt_id=$2 for update`,
+        [operationId,attemptId],
       );
       if (!operation.rows[0]) return;
       const row = operation.rows[0];
