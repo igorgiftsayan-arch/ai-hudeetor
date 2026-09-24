@@ -17,7 +17,7 @@ import {
   saveFoodCorrection,
 } from '../../features/food/food-api';
 import type { FoodScreenData } from '../../features/food/food-api';
-import { ApiError, newIdempotencyKey } from '../../shared/api';
+import { ApiError, apiRequest, newIdempotencyKey } from '../../shared/api';
 import {
   ProviderConsentNotice,
   loadProviderConsent,
@@ -27,11 +27,25 @@ import type { FoodAnalysisResourceDto } from '@atlas/api-contracts';
 
 type ViewState = 'loading' | 'ready' | 'error' | 'onboarding';
 type PendingAnalysis = {
-  file: File;
+  file?: File;
+  price?: FoodScreenData['price'];
   idempotencyKey: string;
   uploadedImageId?: string;
 };
 
+type PendingConfirmation = {
+  analysisId: string;
+  idempotencyKey: string;
+  consumedAt: string;
+  timezone: string;
+};
+type Recovery = {
+  analysisId?: string;
+  uploadedImageId?: string;
+  idempotencyKey?: string;
+  price?: FoodScreenData['price'];
+  confirmation?: PendingConfirmation;
+};
 const photoPolicy = {
   acceptedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
   maxBytes: 10_485_760,
@@ -48,22 +62,71 @@ export default function FoodPage() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
   const pendingAnalysis = useRef<PendingAnalysis | undefined>(undefined);
-  const pendingConfirmation = useRef<
-    { payload: string; idempotencyKey: string } | undefined
-  >(undefined);
+  const activeAnalysisId = useRef<string | undefined>(undefined);
+  const pendingConfirmation = useRef<PendingConfirmation | undefined>(
+    undefined,
+  );
+  const storageKey = useRef<string | undefined>(undefined);
+  const recovery = useRef<Recovery>({});
+  const busy = useRef(false);
+  const generation = useRef(0);
+  const [recoverable, setRecoverable] = useState(false);
+  const [pollingPaused, setPollingPaused] = useState(false);
+  const [pollRun, setPollRun] = useState(0);
+
+  function persist(next: Recovery) {
+    // Persist only operation references, never credentials, images or AI content.
+    if (!storageKey.current)
+      throw new Error('Не удалось определить владельца разбора.');
+    window.sessionStorage.setItem(storageKey.current, JSON.stringify(next));
+    recovery.current = next;
+  }
 
   const load = useCallback(async () => {
     setViewState('loading');
     setError(undefined);
     try {
-      const [screen, consent] = await Promise.all([
+      const [screen, consent, identity] = await Promise.all([
         loadFoodScreen(),
         loadProviderConsent(),
+        apiRequest<{ userId: string }>('/users/me'),
       ]);
+      const key = `food-operation:${identity.userId}`;
+      if (storageKey.current !== key) {
+        generation.current += 1;
+        storageKey.current = key;
+        setAnalysis(undefined);
+        activeAnalysisId.current = undefined;
+        const raw = window.sessionStorage.getItem(key);
+        recovery.current = raw ? (JSON.parse(raw) as Recovery) : {};
+        pendingConfirmation.current = recovery.current.confirmation;
+        if (recovery.current.analysisId) {
+          activeAnalysisId.current = recovery.current.analysisId;
+          const current = await loadFoodAnalysis(recovery.current.analysisId);
+          if (current.consumptionStatus === 'consumed') {
+            persist({ analysisId: current.id });
+            pendingConfirmation.current = undefined;
+          }
+          setAnalysis(current);
+        } else if (
+          recovery.current.uploadedImageId &&
+          recovery.current.idempotencyKey &&
+          recovery.current.price
+        ) {
+          pendingAnalysis.current = {
+            uploadedImageId: recovery.current.uploadedImageId,
+            idempotencyKey: recovery.current.idempotencyKey,
+            price: recovery.current.price,
+          };
+          setRecoverable(true);
+        }
+      }
       setData(screen);
       setProviderConsent(consent);
       setViewState('ready');
     } catch (cause) {
+      // A failed restore must be attempted again by the page retry action.
+      storageKey.current = undefined;
       if (cause instanceof ApiError && cause.kind === 'session')
         replace('/login');
       else if (cause instanceof ApiError && cause.kind === 'onboarding')
@@ -77,18 +140,47 @@ export default function FoodPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!analysis || !['queued', 'processing'].includes(analysis.status))
+    return () => {
+      generation.current += 1;
+      activeAnalysisId.current = undefined;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      !analysis ||
+      !['queued', 'processing', 'outcomeUnknown'].includes(analysis.status)
+    )
       return;
-    const timer = window.setInterval(
-      () => void pollAnalysis(analysis.id),
-      1_000,
-    );
-    return () => window.clearInterval(timer);
-  }, [analysis?.id, analysis?.status]);
+    let cancelled = false;
+    let timer: number;
+    let attempts = 0;
+    setPollingPaused(false);
+    const check = async () => {
+      await pollAnalysis(analysis.id);
+      if (cancelled || activeAnalysisId.current !== analysis.id) return;
+      attempts += 1;
+      if (attempts >= 30) {
+        setPollingPaused(true);
+        return;
+      }
+      timer = window.setTimeout(() => void check(), 2_000);
+    };
+    timer = window.setTimeout(() => void check(), 1_000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [analysis?.id, pollRun]);
 
   function chooseFile(file: File) {
+    if (busy.current || recoverable || pendingConfirmation.current) return;
+    generation.current += 1;
+    persist({});
+    setPollingPaused(false);
     setSelectedFile(file);
     setAnalysis(undefined);
+    activeAnalysisId.current = undefined;
     setError(undefined);
     pendingAnalysis.current = {
       file,
@@ -97,23 +189,38 @@ export default function FoodPage() {
   }
 
   async function start() {
-    if (!data || !selectedFile || !canUseFoodAi(providerConsent)) return;
+    if (!data || busy.current || !canUseFoodAi(providerConsent)) return;
     const pending = pendingAnalysis.current;
-    if (!pending || pending.file !== selectedFile) return;
+    if (!pending) return;
+    const version = generation.current;
+    busy.current = true;
 
     setStarting(true);
     setError(undefined);
     try {
-      pending.uploadedImageId ??= await prepareFoodImage({
-        file: pending.file,
-        csrfToken: data.csrfToken,
+      if (!pending.uploadedImageId && pending.file) {
+        pending.uploadedImageId = await prepareFoodImage({
+          file: pending.file,
+          csrfToken: data.csrfToken,
+        });
+      }
+      if (!pending.uploadedImageId) return;
+      pending.price ??= data.price;
+      persist({
+        uploadedImageId: pending.uploadedImageId,
+        idempotencyKey: pending.idempotencyKey,
+        price: pending.price,
       });
+      setRecoverable(true);
       const queued = await createFoodAnalysis({
         uploadedImageId: pending.uploadedImageId,
         csrfToken: data.csrfToken,
         idempotencyKey: pending.idempotencyKey,
-        price: data.price,
+        price: pending.price,
       });
+      if (generation.current !== version) return;
+      persist({ analysisId: queued.id });
+      setRecoverable(false);
       pendingAnalysis.current = undefined;
       setAnalysis({
         id: queued.id,
@@ -123,12 +230,13 @@ export default function FoodPage() {
         consumptionStatus: 'notConfirmed',
         createdAt: new Date().toISOString(),
       });
-      await pollAnalysis(queued.id);
+      activeAnalysisId.current = queued.id;
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session')
         replace('/login');
       else setError(readFoodError(cause));
     } finally {
+      busy.current = false;
       setStarting(false);
     }
   }
@@ -136,9 +244,13 @@ export default function FoodPage() {
   async function pollAnalysis(analysisId: string) {
     try {
       const current = await loadFoodAnalysis(analysisId);
+      if (activeAnalysisId.current !== analysisId) return;
       setAnalysis(current);
+      if (!['queued', 'processing', 'outcomeUnknown'].includes(current.status))
+        activeAnalysisId.current = undefined;
       if (current.status !== 'outcomeUnknown') setError(undefined);
     } catch (cause) {
+      if (activeAnalysisId.current !== analysisId) return;
       if (cause instanceof ApiError && cause.kind === 'session')
         replace('/login');
       else setError('Связь прервалась. Продолжаем проверять статус разбора…');
@@ -146,34 +258,32 @@ export default function FoodPage() {
   }
 
   async function confirm(draft: ConfirmedFoodDraft) {
-    if (!data || !analysis) return;
-    const consumedAt = new Date(draft.consumedAt).toISOString();
-    const payload = JSON.stringify({
-      analysisId: analysis.id,
-      consumedAt,
-      timezone: data.timezone,
-    });
-    if (pendingConfirmation.current?.payload !== payload) {
-      pendingConfirmation.current = {
-        payload,
-        idempotencyKey: newIdempotencyKey(),
-      };
-    }
+    if (!data || !analysis || busy.current) return;
+    busy.current = true;
     setConfirming(true);
     setError(undefined);
     try {
-      await saveFoodCorrection({
-        analysisId: analysis.id,
-        csrfToken: data.csrfToken,
-        correction: { items: draft.items.map((name) => ({ name })) },
-      });
+      if (!pendingConfirmation.current) {
+        await saveFoodCorrection({
+          analysisId: analysis.id,
+          csrfToken: data.csrfToken,
+          correction: { items: draft.items.map((name) => ({ name })) },
+        });
+        const pending = {
+          analysisId: analysis.id,
+          idempotencyKey: newIdempotencyKey(),
+          consumedAt: new Date(draft.consumedAt).toISOString(),
+          timezone: data.timezone,
+        };
+        persist({ analysisId: analysis.id, confirmation: pending });
+        pendingConfirmation.current = pending;
+      }
+      const pending = pendingConfirmation.current;
       await confirmFoodConsumption({
-        analysisId: analysis.id,
+        ...pending,
         csrfToken: data.csrfToken,
-        idempotencyKey: pendingConfirmation.current.idempotencyKey,
-        consumedAt,
-        timezone: data.timezone,
       });
+      persist({ analysisId: analysis.id });
       pendingConfirmation.current = undefined;
       setAnalysis((current) =>
         current ? { ...current, consumptionStatus: 'consumed' } : current,
@@ -184,6 +294,7 @@ export default function FoodPage() {
         replace('/login');
       else setError(readFoodError(cause));
     } finally {
+      busy.current = false;
       setConfirming(false);
     }
   }
@@ -212,9 +323,19 @@ export default function FoodPage() {
           </p>
         </header>
 
-        <FoodPhotoDraft policy={photoPolicy} onReady={chooseFile} />
+        <fieldset
+          disabled={
+            starting ||
+            recoverable ||
+            confirming ||
+            Boolean(pendingConfirmation.current)
+          }
+          style={{ border: 0, padding: 0, margin: 0 }}
+        >
+          <FoodPhotoDraft policy={photoPolicy} onReady={chooseFile} />
+        </fieldset>
 
-        {selectedFile && !analysis && (
+        {(selectedFile || recoverable) && !analysis && (
           <section
             className="food-analysis-start"
             aria-labelledby="food-analysis-start-title"
@@ -242,7 +363,11 @@ export default function FoodPage() {
               disabled={starting || !canUseFoodAi(providerConsent)}
               onClick={() => void start()}
             >
-              {starting ? 'Отправляем фото…' : 'Начать анализ'}
+              {starting
+                ? 'Отправляем фото…'
+                : recoverable
+                  ? 'Восстановить отправленный разбор'
+                  : 'Начать анализ'}
             </button>
           </section>
         )}
@@ -262,16 +387,32 @@ export default function FoodPage() {
                 распознавание.
               </p>
             )}
-            <FoodConfirmation
-              analysis={analysisView}
-              now={localDateTimeInputValue(data.timezone)}
-              status={
-                analysis.consumptionStatus === 'consumed'
-                  ? 'confirmed'
-                  : 'unconfirmed'
-              }
-              onConfirm={(draft) => void confirm(draft)}
-            />
+            <fieldset
+              disabled={confirming || Boolean(pendingConfirmation.current)}
+              style={{ border: 0, padding: 0, margin: 0 }}
+            >
+              <FoodConfirmation
+                key={analysis.id}
+                analysis={analysisView}
+                now={localDateTimeInputValue(data.timezone)}
+                status={
+                  analysis.consumptionStatus === 'consumed'
+                    ? 'confirmed'
+                    : 'unconfirmed'
+                }
+                onConfirm={(draft) => void confirm(draft)}
+              />
+            </fieldset>
+            {pendingConfirmation.current &&
+              !confirming &&
+              analysis.consumptionStatus !== 'consumed' && (
+                <button
+                  type="button"
+                  onClick={() => void confirm({ items: [], consumedAt: '' })}
+                >
+                  Повторить подтверждение
+                </button>
+              )}
             {confirming && (
               <p className="food-draft-pending" aria-live="polite">
                 Подтверждаем запись…
@@ -290,6 +431,21 @@ export default function FoodPage() {
             <p>Статус разбора уточняется. Не отправляйте фото повторно.</p>
           </section>
         )}
+        {pollingPaused &&
+          analysis &&
+          ['queued', 'processing', 'outcomeUnknown'].includes(
+            analysis.status,
+          ) && (
+            <button
+              type="button"
+              onClick={() => {
+                activeAnalysisId.current = analysis.id;
+                setPollRun((run) => run + 1);
+              }}
+            >
+              Проверить статус
+            </button>
+          )}
         {error && (
           <p className="food-draft-error" role="alert">
             {error}

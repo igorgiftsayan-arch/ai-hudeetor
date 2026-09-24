@@ -10,7 +10,10 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('food screen', () => {
-  beforeEach(() => replaceMock.mockReset());
+  beforeEach(() => {
+    replaceMock.mockReset();
+    sessionStorage.clear();
+  });
   afterEach(() => vi.unstubAllGlobals());
 
   it('shows the managed analysis price and only confirmed meal history', async () => {
@@ -23,6 +26,7 @@ describe('food screen', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
+        if (url === `${api}/users/me`) return json({ userId: 'user-1' });
         if (url === `${api}/users/me/onboarding`)
           return json({
             status: 'completed',
