@@ -38,7 +38,9 @@
   один раз. Возможная/подтверждённая отправка исключена. Отсутствие provider ID
   не является доказательством; pre-ID unknown refund policy остаётся `TBD`.
   Реализация `5a08efb` локально независимо проверена (10/10 actual PostgreSQL);
-  runtime-приёмка отмены отдельно не закрыта.
+  дополнительно runtime known-unsent API fixture подтвердил1reserve/1refund,
+  одинаковый replay и отсутствие provider POST после restart; физическое удаление
+  фото учитывается отдельно в [runtime evidence](../07-deployment/gerbi-full-food-runtime.md).
 - Web Push на телефон: отдельный opt-in, permission текущего устройства,
   подключение/отключение его subscription и выбранные `localTime`/`timezone`.
   Для iPhone требуется поддерживаемая установленная PWA на экране «Домой»;

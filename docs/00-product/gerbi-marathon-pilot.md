@@ -136,21 +136,23 @@ Recovery использует immutable request receipt/snapshot, provider reque
 с возможной или подтверждённой отправкой исключены; правило не разрешает refund
 или resubmit для pre-ID `outcomeUnknown`/`ambiguous`. Политика goodwill для
 неопределённого исхода остаётся `TBD`. Реализация `5a08efb` локально независимо
-проверена: 10/10 actual PostgreSQL tests PASS. Это не закрывает отдельную
-runtime-приёмку отмены и возврата.
+проверена: 10/10 actual PostgreSQL tests PASS. Дополнительно отдельный runtime
+API fixture подтвердил отмену до submit, полный exactly-once refund и повтор
+DELETE; после worker restart старый job не вызвал provider POST. Подробнее ниже.
 
 ## Текущая граница приёмки — 2026-09-25
 
 Активен один `atlas-gerbi-expanded` на HTTP `5.42.126.71:3114`; прежний Daily Coach
-остановлен с сохранением volumes/backup. Чат работает в fake-режиме, фото — через
-GenAPI с отдельным consent, Push выключен. Node24.18.0/pnpm11.14.0 builds и
-private storage gate подтверждены; текущие артефакты и отдельные browser-этапы — в
-[constrained runtime](../07-deployment/gerbi-constrained-runtime.md).
-Полный food acceptance продолжается; локальные исправления preview, подписи
-загрузки и сохранения коррекции не заменяют повтор конкретного пользовательского
-шага. Recovery после контролируемого сбоя и телефонная доставка ещё не приняты.
-HTTP и desktop localhost SSH tunnel не закрывают HTTPS/phone gate. Прежний
-марафонный цикл, дневные podium и запрет раскрытия накопленного итога сохраняются.
+остановлен с сохранением volumes/backup. Chat и food используют GenAPI, Push
+выключен. Node24.18.0/pnpm11.14.0 builds и private storage gate подтверждены.
+Два real food пути, correction/confirm/reload, отдельное удаление, known-ID food
+recovery после stop0, один реальный chat/reload и known-unsent API cancellation
+с полным возвратом прошли bounded acceptance. Прежние core weight/wellness/task
+сценарии проверены на synthetic fixtures. Точные IDs/ledger/версии и ограничения —
+в [full runtime](../07-deployment/gerbi-full-food-runtime.md).
+Phone HTTPS/PWA/push остаются непроверенными; HTTP/localhost tunnel их не заменяют.
+Не заявляется broad model quality, load acceptance или interrupted chat recovery.
+Прежний марафонный цикл и запрет раскрытия накопленного итога сохраняются.
 
 ## Исторический срез реализации — 2026-09-24
 

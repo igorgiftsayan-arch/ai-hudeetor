@@ -180,7 +180,35 @@ API256/worker256/web192/Postgres128/Redis64/MinIO256/gateway32MiB caps unchanged
 Hostavailable972MiB, disk3863MiB; RSS approximately455MiB, MinIO229MiB of256.
 Public login200. Bootstrap remainsfalse, publicorigin retained, no localhosttunnel.
 
-Next bounded gates: focused actualPG chat prepared-context inclusion/exclusion
-for corrected confirmed food; controlled known-unsent API cancellation acceptance
-before worker submission (requires planned pause/readiness). These are not claimed
-as completed by the chat/history checkpoint.
+Focused actualPG prepared-context gate6c9b1b4 passed1/1 with worker typecheck and
+scoped lint. It uses production WorkerModule context factory/SQL and processor,
+asserting persisted native request includes own corrected confirmed food/time,
+profile and current weight; unconfirmed/deleted/foreign food excluded, deletion
+reload excludes former data. Only provider transport stubbed, no external call.
+This sparse fixture proves wiring/filtering, not guaranteed inclusion of every
+fact under the existing1600-character context cap. Actual cancellation follows.
+
+## Actual known-unsent cancellation — 2026-09-25
+
+Dedicated synthetic accountf6c20bda-3758-4451-8568-6892f7c8ad28 was registered,
+onboarded and consented through existing APIs; exactly one normal100-token starter
+grant, no manual balance/state writes. Unchanged2653194byte fixture uploaded via
+real signed PUT and completion. With zero active chat/food operations, only the
+expanded worker was stopped, then queued analysisf6bfddb4-2277-4e82-a5be-412636b8da03
+was created. Before cancellation: queued, no receipt and no provider reference.
+
+Analysis DELETE and replay with the same idempotency key returned identical
+cancelledRefunded. One reservation(-5), one refund(+5), wallet restored100.
+Worker promptly restarted; the stale original outbox was published and BullMQ job
+3663b86f-bead-412b-9176-a019ba59add5 completed once. Analysis remains cancelled,
+receipt count0, provider reference absent. ZERO external provider requests for
+this record: this is not a third food generation. Main synthetic owner remains
+wallet89 with second food/photo/result/consumption preserved.
+
+Photo560e47a1-1312-41e3-aa62-5e4115f6dae1 was deleted through its normal API:
+tombstone immediate. After natural upload age600s (created2026-09-24T19:51:13Z),
+cleanup completed on its first attempt; observed20:02Z originalHEAD404 and
+stagingHEAD404, no error. No timestamps changed or direct S3 deletion used.
+Final7services healthy/OOMfalse/restarts0, unchanged memory caps, hostavailable
+947MiB/disk3860MiB. Runtime evidence is separate from local
+PostgreSQL cancellation concurrency tests.

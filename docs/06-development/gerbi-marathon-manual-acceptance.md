@@ -100,20 +100,16 @@
 ## Текущая граница доказательств — 2026-09-25
 
 Один `atlas-gerbi-expanded` работает на `http://5.42.126.71:3114`; прежние
-контуры остановлены, данные сохранены. Чат fake, food GenAPI, Push выключен.
-[Runtime evidence](../07-deployment/gerbi-constrained-runtime.md) фиксирует
-Node24.18.0/pnpm11.14.0, артефакты, фактические лимиты контейнеров и private storage
-probe. Актуальные browser-этапы фиксируются отдельно: весь список сценариев
-этого документа автоматически выполненным не считается.
-
-Исправления onboarding `1204907`, consent preview `4a997e2`, upload signature
-`d9ba57c` и сохранения исправленного состава `969dd85` локально проверены; для
-каждого runtime-шага нужен точный deployed artifact. Полный food acceptance
-продолжается. Known-unsent cancellation `5a08efb` имеет независимые 10/10 actual
-PostgreSQL tests, runtime-приёмка отдельно впереди. Контролируемый recovery/restart
-и физическая phone delivery **NOT ACCEPTED**. Desktop localhost через SSH tunnel
-не является проверкой телефонного HTTPS/PWA. Реальные даты/команды марафона не
-задаются без владельца; дополнительные Герби-правила и pre-ID goodwill — TBD.
+контуры остановлены, данные сохранены. Chat и food — GenAPI, Push выключен.
+[Full runtime evidence](../07-deployment/gerbi-full-food-runtime.md) фиксирует
+точные component hashes,2food/1chat real provider результата, ledger и reload,
+коррекцию/подтверждение/удаление, food known-ID crash recovery, отдельную
+known-unsent API cancellation с exactly-once refund и ZERO external generation.
+Core onboarding/weight/wellness/captain проверены на synthetic fixtures.
+Это не автоматическая отметка обо всём списке: phone delivery/HTTPS ещё NOT RUN,
+реальное interrupted chat recovery не заявляется. Desktop localhost SSH tunnel
+не заменяет phoneHTTPS/PWA. Реальные даты/команды марафона не задаются без владельца;
+дополнительные Герби-правила и pre-ID goodwill — TBD.
 
 ## Исторический результат 2026-09-24
 

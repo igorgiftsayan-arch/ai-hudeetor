@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+- Context6c9b1b4 actualPG1/1 verifies production prepared chat contains own corrected
+  confirmed food/time and weight, excluding unconfirmed/deleted/foreign entries.
+  Sparse fixture within1600-character cap; no external provider call.
+
+
+- Actual known-unsent cancellation on a dedicated synthetic API account passed:
+  same-key DELETE replay, exactly one full refund, stale job completed after
+  worker restart with no receipt/provider reference. ZERO external generation;
+  normal photo cleanup completed attempt1 after natural eligibility;
+  original/staging HEAD404, final7services healthy with no OOM/restarts.
+
+
 ### Real chat checkpoint — 2026-09-25
 
 - Actual chat54133216 reply/reload passed, exactly one debit, wallet89. Earlier

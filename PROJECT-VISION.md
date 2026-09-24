@@ -101,18 +101,16 @@ AI-001/002/003 не делают публичный продукт готовы�
 приватный bucket и signed upload проверены. Node 24.18.0 / pnpm 11.14.0 и
 происхождение артефактов зафиксированы в
 [runtime evidence](docs/07-deployment/gerbi-constrained-runtime.md).
-Текущая конфигурация: чат `AI_PROVIDER=fake`, фото `FOOD_VISION_PROVIDER=genapi`,
-`PUSH_ENABLED=false`. Реальный анализ фото требует отдельного актуального согласия
-независимо от режима чата. Старые проверки реального чата не доказывают его
-включение на текущем стенде.
-
-Food browser acceptance продолжается: исправления onboarding `1204907`, preview
-`4a997e2`, подписи загрузки `d9ba57c` и сохранения коррекции `969dd85` имеют
-отдельные локальные проверки. Это не общая отметка о завершении пользовательского
-пути; фактический deployed artifact и этапы записываются в runtime evidence.
-Known-unsent cancellation `5a08efb` реализована и независимо проверена локально
-(10/10 actual PostgreSQL); runtime-приёмка отмены отдельно не закрыта.
-Контролируемый restart/recovery и доставка на физический телефон ещё не приняты.
+Текущая конфигурация: чат `AI_PROVIDER=genapi`, фото `FOOD_VISION_PROVIDER=genapi`,
+`PUSH_ENABLED=false`. Версия согласия API/worker выровнена; два full-app food
+анализа и один реальный chat с reload и точным ledger проверены. Исправленный
+состав → подтверждение → reload, отдельные удаления photo/result/diary прошли
+реальный путь. Known-ID food recovery после stop0 подтверждён тем же ID/hash;
+реальное прерванное chat recovery этим не заявляется. Known-unsent cancellation
+проверена отдельным API fixture:1reserve/1refund, повтор DELETE, старый job после
+restart без provider receipt/POST. Подробности и границы:
+[full runtime evidence](docs/07-deployment/gerbi-full-food-runtime.md).
+Физическая phone delivery пока не принята.
 Проверка desktop через localhost SSH tunnel не заменяет доверенный HTTPS для
 телефона. `main` не изменён; расширение ресурсов не является текущим блокером
 работы одного тестового стенда.

@@ -18,6 +18,18 @@ independent9/9, сохранённый реальный envelope прошёл pr
 от запоздалого ответа прошлого пользователя; финальная browser history проверка после re-login/reload PASS: прежняя ошибка
 с возвратом и реальный ответ сохранены.
 
+## Known-unsent runtime cancellation
+
+Отдельный synthetic API account: queued analysis до submit отменён, повтор DELETE
+тем же ключом идентичен;1reserve(-5)/1refund(+5), wallet100 восстановлен. После
+restart worker старый job completed, receipt0/providerref отсутствует: ZERO
+external generations. Фото tombstoned; после штатных600s cleanup completed attempt1,
+original/staging HEAD404. Финальные7services healthy/OOMfalse/restarts0.
+Основной account wallet89/второй food результат сохранены. ContextPG6c9b1b4 actual1/1 PASS через production factory/SQL/receipt: own corrected
+confirmed food/time/weight включены, unconfirmed/deleted/foreign исключены.
+Это sparse fixture, не гарантия всех фактов при лимите1600 символов.
+PhoneHTTPS/push и pre-ID policy остаются открытыми.
+
 ## Runtime checkpoint — 2026-09-25
 
 Один активный expanded стенд на прежнем2GB сервере; main не менялся. API/worker backendf952948, worker composition41b80f6, web8694435. Public3114 login/APIready200;7сервисов healthy,
