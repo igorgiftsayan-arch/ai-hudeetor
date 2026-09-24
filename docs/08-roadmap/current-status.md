@@ -2,6 +2,8 @@
 
 ## Расширенный пилот — промежуточная интеграция 2026-09-24
 
+- Конституция и scope синхронизированы в `e6874de`. Общий backend/UI checkpoint `31fd0c8`: локальные builds/lint/contracts PASS, worker 40/40, API 46/46 и web 94/94 по отчёту исполнителя; 46 PostgreSQL-проверок локально пропущены. Повторный review оставляет late-provider/sweep race незакрытой до следующего исправления. Test server SSH без banner, прежние HTTP-стенды недоступны; причина не подтверждена, owner console запрошена. Runtime и физический phone push НЕ приняты.
+
 - UI checkpoints `baccdf5` и `b28b2b3`: настройки телефонных push и edit/delete подтверждённой еды завершены на уровне кода. Исполнители подтвердили web 94/94 (22 файла), typecheck и scoped lint PASS. Backend push lookup `900a25c` интегрирован; активной API-зависимости у push UI нет. Физическая доставка, реальная food vision и сквозная runtime-приёмка ещё не подтверждены.
 
 - Food UI recovery `add1a63` реализован; исполнитель подтвердил 79/79 web tests (включая параллельные push tests) и scoped lint. Полный typecheck на том шаге ожидал завершения notifications WIP. Это не подтверждение runtime готовности.
