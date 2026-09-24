@@ -56,6 +56,33 @@ describe('FoodConfirmation', () => {
     });
   });
 
+  it('hides the original assessment as soon as composition changes and restores it only for the assessed composition', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(
+      <FoodConfirmation
+        analysis={analysis}
+        now="2026-09-24T09:30"
+        onConfirm={onConfirm}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Исправить состав' }));
+    const composition = screen.getByLabelText('Состав блюда');
+    await user.clear(composition);
+    await user.type(composition, 'рыба');
+    expect(screen.queryByText(analysis.suitability)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Исправленный состав пока не оценён/),
+    ).toBeVisible();
+    expect(onConfirm).not.toHaveBeenCalled();
+    await user.clear(composition);
+    await user.type(composition, 'гречка, овощи');
+    expect(screen.getByText(analysis.suitability)).toBeVisible();
+    expect(
+      screen.queryByText(/Исправленный состав пока не оценён/),
+    ).not.toBeInTheDocument();
+  });
+
   it('marks already confirmed data without offering another confirmation', () => {
     render(
       <FoodConfirmation

@@ -5,6 +5,7 @@ import { useState } from 'react';
 export type FoodAnalysisView = {
   items: readonly string[];
   suitability: string;
+  assessedItems?: readonly string[];
 };
 
 export type ConfirmedFoodDraft = {
@@ -68,6 +69,11 @@ export function FoodConfirmation({
   }
 
   const isConfirmed = status === 'confirmed';
+  const compositionChanged =
+    JSON.stringify(parseItems(composition)) !==
+    JSON.stringify(
+      (analysis.assessedItems ?? analysis.items).map((item) => item.trim()),
+    );
 
   return (
     <section
@@ -102,7 +108,11 @@ export function FoodConfirmation({
         </p>
       )}
 
-      <p className="food-suitability">{analysis.suitability}</p>
+      <p className="food-suitability" aria-live="polite">
+        {compositionChanged
+          ? 'Состав изменён. Прежняя оценка относится к исходному распознаванию. Исправленный состав пока не оценён.'
+          : analysis.suitability}
+      </p>
 
       {!isConfirmed && (
         <div className="food-confirmation-actions">
