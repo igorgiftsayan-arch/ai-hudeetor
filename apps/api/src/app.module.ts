@@ -12,6 +12,8 @@ import {
   TechnicalInfrastructureModule,
   TrackingModule,
   MarathonModule,
+  FoodModule,
+  NotificationsModule,
 } from '@atlas/backend';
 import { loadApiConfig } from './config/load-config';
 import { HealthController } from './health/health.controller';
@@ -61,6 +63,18 @@ const config = loadApiConfig();
       consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
       consentDisclosure: config.IDENTITY_AI_PROVIDER_DISCLOSURE,
     }),
+    FoodModule.forRoot({
+      enabled: config.FOOD_STORAGE_ENABLED,
+      endpoint: config.S3_ENDPOINT,
+      region: config.S3_REGION,
+      bucket: config.S3_BUCKET,
+      accessKeyId: config.S3_ACCESS_KEY_ID,
+      secretAccessKey: config.S3_SECRET_ACCESS_KEY,
+      forcePathStyle: config.S3_FORCE_PATH_STYLE,
+      runtimeAdapter: config.AI_PROVIDER,
+      consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+    }),
+    NotificationsModule,
   ],
   controllers: [HealthController],
 })
