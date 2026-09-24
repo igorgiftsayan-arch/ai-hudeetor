@@ -40,8 +40,48 @@ export class FoodAnalysisProcessor {
     if (!claimed) return;
 
     const result:VisionResult = claimed.runtime_adapter!==this.config.provider ? {kind:'technicalError',errorCategory:'providerConfigurationChanged'} : await this.executeVision(claimed);
+    await this.finalize(analysisId, result);
+  }
+
+  async reconcile(job: Job<{outboxId:string}>): Promise<void> {
+    const event = await this.db.query<{payload:{analysisId:string}}>(
+      `select payload from outbox_messages where id=$1 and event_type='food.analysis_reconciliation_requested.v1'`,
+      [job.data.outboxId],
+    );
+    const analysisId = event.rows[0]?.payload.analysisId;
+    if (!analysisId || this.config.provider !== 'genapi' || !this.config.apiKey) return;
+    const found = await this.db.query<{provider_request_id:string}>(
+      `select r.provider_request_id
+         from food_analyses a
+         join food_analysis_request_receipts r on r.food_analysis_id=a.id
+        where a.id=$1 and a.status='outcomeUnknown'
+          and r.submission_state='accepted' and r.provider_request_id is not null`,
+      [analysisId],
+    );
+    const providerReference = found.rows[0]?.provider_request_id;
+    if (!providerReference) return;
+    const result = await this.pollKnownRequest(providerReference);
+    if (!result) {
+      await this.db.query(
+        `insert into outbox_messages
+          (id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts)
+         select gen_random_uuid(),'food.analysis_reconciliation_requested.v1','foodAnalysis',$1,
+                jsonb_build_object('analysisId',($1::uuid)::text),now(),now()+interval '30 seconds',0
+          where exists(select 1 from food_analyses where id=$1 and status='outcomeUnknown')`,
+        [analysisId],
+      );
+      return;
+    }
+    await this.finalize(analysisId, result, 'outcomeUnknown');
+  }
+
+  private async finalize(
+    analysisId:string,
+    result:VisionResult,
+    expectedStatus:'processing'|'outcomeUnknown'='processing',
+  ):Promise<void> {
     await this.db.transaction(async (client) => {
-      const operation = (await client.query<any>(`select id,user_id from food_analyses where id=$1 and status='processing' for update`,[analysisId])).rows[0];
+      const operation = (await client.query<any>(`select id,user_id from food_analyses where id=$1 and status=$2 for update`,[analysisId,expectedStatus])).rows[0];
       if (!operation) return;
       const reservation = (await client.query<any>(`select id,wallet_id,amount_tokens from token_transactions where food_analysis_id=$1 and entry_type='aiReservation' for update`,[analysisId])).rows[0];
       if (result.kind === 'success') {
@@ -58,6 +98,29 @@ export class FoodAnalysisProcessor {
         if(result.providerReference) await client.query(`insert into outbox_messages (id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) values (gen_random_uuid(),'food.analysis_reconciliation_requested.v1','foodAnalysis',$1,jsonb_build_object('analysisId',($1::uuid)::text),now(),now()+interval '15 seconds',0)`,[analysisId]);
       }
     });
+  }
+
+  private async pollKnownRequest(providerReference:string):Promise<VisionResult|null>{
+    let poll:Response;
+    try {
+      poll=await fetch(`${this.config.nativeBaseUrl.replace(/\/$/,'')}/request/get/${encodeURIComponent(providerReference)}`,{headers:{Authorization:`Bearer ${this.config.apiKey}`,'Accept':'application/json'}});
+    } catch {
+      return null;
+    }
+    if(!poll.ok)return null;
+    const state:any=await poll.json().catch(()=>null);
+    if(state?.status==='processing'||state?.status==='starting')return null;
+    if(state?.status==='error')return{kind:'technicalError',errorCategory:'providerError'};
+    if(state?.status!=='success')return{kind:'technicalError',errorCategory:'invalidProviderResponse'};
+    const content=extractProviderContent(state);
+    if(!content)return{kind:'technicalError',errorCategory:'invalidProviderResponse'};
+    try {
+      const parsed=JSON.parse(content);
+      if(!validResult(parsed))throw new Error();
+      return{kind:'success',recognized:parsed.recognized,suitability:parsed.suitability,providerReference};
+    } catch {
+      return{kind:'technicalError',errorCategory:'invalidProviderResponse'};
+    }
   }
 
   private async executeVision(claimed:any):Promise<VisionResult>{

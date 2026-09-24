@@ -23,6 +23,7 @@ export class OutboxPublisherService implements OnModuleInit {
             'ai-companion.quick_reply_requested.v1',
             'ai-companion.memory_extraction_requested.v1',
             'food.analysis_requested.v1',
+            'food.analysis_reconciliation_requested.v1',
             'notifications.push_delivery_requested.v1'
           )
         order by created_at limit 50`,
@@ -33,6 +34,8 @@ export class OutboxPublisherService implements OnModuleInit {
           ? 'memory-extraction'
           : row.event_type === 'food.analysis_requested.v1'
             ? 'food-analysis'
+            : row.event_type === 'food.analysis_reconciliation_requested.v1'
+              ? 'food-analysis-reconciliation'
             : row.event_type === 'notifications.push_delivery_requested.v1'
               ? 'push-delivery'
             : 'ai-operation',

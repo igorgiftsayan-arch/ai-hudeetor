@@ -1,10 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsISO8601, IsInt, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsISO8601, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 
 export class CreateFoodUploadIntentDto {
   @ApiProperty({ enum: ['image/jpeg', 'image/png', 'image/webp'] })
   @IsString()
+  @IsIn(['image/jpeg', 'image/png', 'image/webp'])
   contentType!: string;
 
   @ApiProperty({ minimum: 1, maximum: 10_485_760 })
@@ -15,6 +16,7 @@ export class CreateFoodUploadIntentDto {
 
   @ApiProperty({ pattern: '^[0-9a-f]{64}$' })
   @IsString()
+  @Matches(/^[0-9a-f]{64}$/)
   sha256!: string;
 }
 
@@ -72,7 +74,7 @@ export class FoodSuitabilityResultDto {
 
 export class FoodCorrectionDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) dishName?: string;
-  @ApiProperty({ type: [FoodComponentDto] }) @IsArray() @ValidateNested({ each: true }) @Type(() => FoodComponentDto) items!: FoodComponentDto[];
+  @ApiProperty({ type: [FoodComponentDto], maxItems: 25 }) @IsArray() @ArrayMaxSize(25) @ValidateNested({ each: true }) @Type(() => FoodComponentDto) items!: FoodComponentDto[];
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(500) note?: string;
 }
 

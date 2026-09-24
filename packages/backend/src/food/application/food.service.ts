@@ -11,6 +11,7 @@ const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export class FoodService {
   private readonly storage: S3Client;
+  private readonly publicStorage: S3Client;
 
   constructor(
     private readonly database: DatabaseService,
@@ -18,6 +19,7 @@ export class FoodService {
     private readonly config: {
       enabled: boolean;
       endpoint: string;
+      publicEndpoint?: string;
       region: string;
       bucket: string;
       accessKeyId: string;
@@ -36,6 +38,17 @@ export class FoodService {
         secretAccessKey: config.secretAccessKey,
       },
     });
+    this.publicStorage = config.publicEndpoint
+      ? new S3Client({
+          endpoint: config.publicEndpoint,
+          region: config.region,
+          forcePathStyle: config.forcePathStyle,
+          credentials: {
+            accessKeyId: config.accessKeyId,
+            secretAccessKey: config.secretAccessKey,
+          },
+        })
+      : this.storage;
   }
 
   async price(accessToken: string) {
@@ -60,7 +73,7 @@ export class FoodService {
       [id, user.userId, objectKey, input.contentType, input.sizeBytes, input.sha256],
     );
     const command = new PutObjectCommand({ Bucket: this.config.bucket, Key: objectKey, ContentType: input.contentType, ContentLength: input.sizeBytes, Metadata: { sha256: input.sha256 } });
-    const uploadUrl = await getSignedUrl(this.storage, command, { expiresIn: 600 });
+    const uploadUrl = await getSignedUrl(this.publicStorage, command, { expiresIn: 600 });
     return { id, status: 'pendingUpload' as const, uploadUrl, expiresAt: new Date(Date.now() + 600_000).toISOString(), requiredHeaders: { 'content-type': input.contentType, 'x-amz-meta-sha256': input.sha256 } };
   }
 

@@ -5,13 +5,13 @@ import type { GetCurrentUserUseCase } from '../../identity/application/get-curre
 import { IdentityError } from '../../identity/domain/identity-error';
 
 export class PushNotificationsService {
-  constructor(private readonly db: DatabaseService, private readonly current: GetCurrentUserUseCase) {}
+  constructor(private readonly db: DatabaseService, private readonly current: GetCurrentUserUseCase, private readonly config: { enabled:boolean; publicKey?:string }) {}
 
   async get(accessToken: string) {
     const user = await this.current.execute(accessToken);
     const preference = (await this.db.query<any>(`select enabled,local_time::text,timezone from push_notification_preferences where user_id=$1`, [user.userId])).rows[0];
     const count = (await this.db.query<{ count: number }>(`select count(*)::int count from push_subscriptions where user_id=$1 and status='active'`, [user.userId])).rows[0]?.count ?? 0;
-    return { enabled: preference?.enabled ?? false, localTime: preference?.local_time?.slice(0,5) ?? null, timezone: preference?.timezone ?? null, subscriptionState: count ? 'active' as const : 'none' as const, activeSubscriptionCount: count };
+    return { available:this.config.enabled, vapidPublicKey:this.config.enabled?this.config.publicKey ?? null:null, enabled: preference?.enabled ?? false, localTime: preference?.local_time?.slice(0,5) ?? null, timezone: preference?.timezone ?? null, subscriptionState: count ? 'active' as const : 'none' as const, activeSubscriptionCount: count };
   }
 
   async savePreference(accessToken: string, input: { enabled: boolean; localTime?: string; timezone?: string }) {
@@ -36,6 +36,12 @@ export class PushNotificationsService {
     const user = await this.current.execute(accessToken);
     const result = await this.db.query(`update push_subscriptions set status='revoked',revoked_at=now(),updated_at=now() where id=$1 and user_id=$2 and status='active'`, [id,user.userId]);
     if (!result.rowCount) throw new IdentityError('PUSH_SUBSCRIPTION_NOT_FOUND',404,'Push subscription not found');
+  }
+
+  async unsubscribeByEndpoint(accessToken:string,endpoint:string) {
+    const user=await this.current.execute(accessToken);
+    const endpointHash=createHash('sha256').update(endpoint).digest('hex');
+    await this.db.query(`update push_subscriptions set status='revoked',revoked_at=now(),updated_at=now() where user_id=$1 and endpoint_hash=$2 and status='active'`,[user.userId,endpointHash]);
   }
 }
 

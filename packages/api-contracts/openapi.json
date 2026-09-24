@@ -1609,6 +1609,35 @@
         ]
       }
     },
+    "/api/v1/notification-preferences/push/subscription-revocations": {
+      "post": {
+        "operationId": "NotificationsController_unsubscribeByEndpoint_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokePushSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
     "/api/v1/notification-preferences/push/subscriptions/{id}": {
       "delete": {
         "operationId": "NotificationsController_unsubscribe_api/v1",
@@ -3598,6 +3627,7 @@
             "type": "string"
           },
           "items": {
+            "maxItems": 25,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FoodComponentDto"
@@ -3745,6 +3775,13 @@
       "PushPreferenceResourceDto": {
         "type": "object",
         "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "vapidPublicKey": {
+            "type": "string",
+            "nullable": true
+          },
           "enabled": {
             "type": "boolean"
           },
@@ -3768,6 +3805,7 @@
           }
         },
         "required": [
+          "available",
           "enabled",
           "subscriptionState",
           "activeSubscriptionCount"
@@ -3838,6 +3876,17 @@
           "id",
           "platform",
           "status"
+        ]
+      },
+      "RevokePushSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint"
         ]
       }
     }
