@@ -4,6 +4,7 @@ import type { Job } from 'bullmq';
 import type {
   DatabaseService,
   AiProviderAdapter,
+  AiProviderRequest,
   MemoryContextBuilder,
 } from '@atlas/backend';
 import {
@@ -72,11 +73,19 @@ export class AiOperationProcessor extends WorkerHost {
         persona_id: string;
         user_id: string;
         conversation_id: string;
+        saved_request: AiProviderRequest | null;
+        saved_hash: string | null;
+        saved_provider: string | null;
+        saved_model: string | null;
       }>(
         `update ai_operations set status='processing',runtime_adapter=$2,processing_attempt_id=$3,updated_at=now()
           where id=$1 and status='queued'
           returning user_id,conversation_id,
-            (select persona_id from ai_preferences where user_id=ai_operations.user_id) as persona_id`,
+            (select persona_id from ai_preferences where user_id=ai_operations.user_id) as persona_id,
+            (select request_payload from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_request,
+            (select request_hash from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_hash,
+            (select provider from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_provider,
+            (select model from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_model`,
         [operationId, this.adapter.providerName,attemptId],
       );
       return result.rows[0] ?? null;
@@ -94,26 +103,30 @@ export class AiOperationProcessor extends WorkerHost {
           )
         ).rows[0],
       );
-    const history = await this.database.query<{
-      role: 'user' | 'assistant';
-      content: string;
-    }>(
-      `select role,content from ai_messages
-        where conversation_id=$1 order by created_at,id`,
-      [claimed.conversation_id],
-    );
-    const providerRequest = {
-      operationId,
-      promptVersion: 'quick-reply-v1' as const,
-      personaId: claimed.persona_id,
-      memoryContext: await this.memoryContext.build(
-        claimed.user_id,
-        history.rows.at(-1)?.content ?? '',
-      ),
-      messages: history.rows,
-    };
+    // A prepared receipt is known not to have been submitted. Its persisted
+    // request is authoritative even when profile, weight or memory has changed.
+    // Consent above is intentionally checked again, independently of the snapshot.
+    if (claimed.saved_request && (
+      claimed.saved_request.operationId !== operationId ||
+      claimed.saved_provider !== this.adapter.providerName ||
+      claimed.saved_model !== (process.env.GENAPI_MODEL ?? this.adapter.providerName)
+    )) throw new Error('AI prepared receipt configuration mismatch');
+    let providerRequest = claimed.saved_request;
+    if (!providerRequest) {
+      const history = await this.database.query<{
+        role: 'user' | 'assistant'; content: string;
+      }>(`select role,content from ai_messages where conversation_id=$1 order by created_at,id`,[claimed.conversation_id]);
+      providerRequest = {
+        operationId,
+        promptVersion: 'quick-reply-v1',
+        personaId: claimed.persona_id,
+        memoryContext: await this.memoryContext.build(claimed.user_id,history.rows.at(-1)?.content ?? ''),
+        messages: history.rows,
+      };
+    }
     const requestPayload = JSON.stringify(providerRequest);
-    const requestHash = createHash('sha256').update(requestPayload).digest('hex');
+    // Preserve the original hash: JSONB may return keys in a different order.
+    const requestHash = claimed.saved_hash ?? createHash('sha256').update(requestPayload).digest('hex');
     const receiptClaimed=await this.database.transaction(async (client) => {
       const operation=await client.query(`select 1 from ai_operations where id=$1 and status='processing' and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return false;
       await client.query(
