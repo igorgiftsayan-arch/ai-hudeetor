@@ -7,6 +7,7 @@ import {
   FoodConfirmation,
   type ConfirmedFoodDraft,
 } from '../../features/food/food-confirmation';
+import { FoodHistoryEntry } from '../../features/food/food-history-entry';
 import { FoodPhotoDraft } from '../../features/food/food-photo-draft';
 import {
   confirmFoodConsumption,
@@ -61,6 +62,7 @@ export default function FoodPage() {
   const [starting, setStarting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
+  const [historyMessage, setHistoryMessage] = useState<string>();
   const pendingAnalysis = useRef<PendingAnalysis | undefined>(undefined);
   const activeAnalysisId = useRef<string | undefined>(undefined);
   const pendingConfirmation = useRef<PendingConfirmation | undefined>(
@@ -457,21 +459,22 @@ export default function FoodPage() {
             <p className="section-label">Дневник питания</p>
             <h2 id="food-history-title">Подтверждённые записи</h2>
           </div>
+          {historyMessage && <p role="status">{historyMessage}</p>}
           {data.consumptions.length === 0 ? (
             <p>Здесь появится только подтверждённая еда.</p>
           ) : (
             <ol aria-label="Подтверждённые записи питания">
               {data.consumptions.map((consumption) => (
-                <li key={consumption.id}>
-                  <time dateTime={consumption.consumedAt}>
-                    {consumption.localDate}
-                  </time>
-                  <strong>
-                    {consumption.confirmedResult.items
-                      .map((item) => item.name)
-                      .join(', ')}
-                  </strong>
-                </li>
+                <FoodHistoryEntry
+                  key={consumption.id}
+                  consumption={consumption}
+                  csrfToken={data.csrfToken}
+                  onSessionExpired={() => replace('/login')}
+                  onChanged={async (message) => {
+                    setData(await loadFoodScreen());
+                    setHistoryMessage(message);
+                  }}
+                />
               ))}
             </ol>
           )}

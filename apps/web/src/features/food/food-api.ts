@@ -7,6 +7,7 @@ import type {
   FoodCorrectionDto,
   OnboardingResourceDto,
   QueuedFoodAnalysisResourceDto,
+  UpdateFoodConsumptionDto,
 } from '@atlas/api-contracts';
 import {
   ApiError,
@@ -181,4 +182,31 @@ async function sha256(file: File) {
   return Array.from(new Uint8Array(digest), (value) =>
     value.toString(16).padStart(2, '0'),
   ).join('');
+}
+
+export function updateFoodConsumption(input: {
+  id: string;
+  csrfToken: string;
+  idempotencyKey: string;
+  payload: UpdateFoodConsumptionDto;
+}) {
+  return apiRequest<FoodConsumptionResourceDto>(
+    `/food-consumptions/${input.id}`,
+    {
+      method: 'PATCH',
+      headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
+      body: JSON.stringify(input.payload),
+    },
+  );
+}
+
+export function deleteFoodConsumption(input: {
+  id: string;
+  csrfToken: string;
+  idempotencyKey: string;
+}) {
+  return apiRequest<void>(`/food-consumptions/${input.id}`, {
+    method: 'DELETE',
+    headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
+  });
 }
