@@ -1,11 +1,57 @@
 # GERBI local ledger/recovery checkpoint — 2026-09-24
 
-## Current checkpoint: integrated `ca24217`, retention locally reviewed
+## Current checkpoint: integrated `1c6a234`, cancellation locally independently reviewed
 
 The user approved continuing local development while increasing server RAM and
 storage. Remote capacity is pending. This update changes documentation only;
 product scope and `main` are unchanged. Local progress does not establish remote
 runtime acceptance.
+
+### User-requested deletion and known-unsent cancellation
+
+| Checkpoint | Local evidence | Acceptance boundary |
+| --- | --- | --- |
+| Terminal deletion `b9a60be` | **32/32** targeted PG/runner PASS; independent reviewer found no P1/P2 and reran **7/7 actual PG** | Local terminal checkpoint reviewed; no real S3/SLA assertion |
+| Cancellation `5a08efb` | **41/41** across six suites; latest cancellation subset **10/10** after strict-NULL/empty-ID and repeated-delete checks | Independent reviewer: no concrete P1/P2, **10/10 actual PG** PASS; remote acceptance pending |
+| Food UI `1c6a234` | **43/43** food tests, full web typecheck and scoped lint PASS; official generated DTO | Browser/runtime acceptance pending |
+
+The counts overlap; do not add them into a new aggregate test count. Migration0016
+and0017, followed by repeated migration runner invocations, passed on the dedicated
+local PostgreSQL database. Backend/worker/API typecheck, scoped lint, generated
+OpenAPI/Orval and committed-tree contracts:check passed. Tests use actual migrations
+and synthetic PostgreSQL schemas; external S3/provider transport is stubbed.
+
+Terminal deletion provides independent photo/result commands and owner-scoped status
+after tombstone. Result deletion clears structured content, erasable receipt payload
+and old content-bearing idempotency responses while retaining receipt identity/hash,
+ledger and the separately confirmed diary snapshot. Photo deletion immediately
+blocks reuse and durably retries original/staging cleanup; a live lease and the first
+24-hour deadline survive repeat requests. ADR-012 records the invariant split.
+
+Owner-approved cancellation is implemented only for queued/no-receipt or a prepared
+receipt with strictly NULL submission time/provider references. The transaction locks
+the operation row used by worker claim/submit/finalize, refunds the full reservation
+once with a distinct cancellation reason, clears the attempt and marks the receipt
+cancelled. Actual PG barriers cover both outcomes: cancellation wins and resumed
+worker sends nothing; submission wins before provider ID and cancellation rejects
+without refund. Missing provider ID alone is insufficient. Pre-ID unknown goodwill
+policy remains TBD. Independent financial-race review found no concrete P1/P2 and reran the10-case
+actual-PG cancellation suite successfully. This is local verification only.
+
+Evidence in backend worktree `work/gerbi-backend-verification/`:
+`terminal-delete-evidence.md`, `terminal-delete-final-pg.log`,
+`food-cancellation-evidence.md`, `food-cancellation-final-pg.log`,
+`food-cancellation-targeted-pg.log`, `food-cancellation-contract-check.log`,
+and corresponding `*-migration.log`, `*-migration-repeat.log`, `*-typecheck.log`,
+`*-lint.log`. No remote objects were deleted; main/remote remain unchanged.
+
+The UI exposes controls for the current analysis and confirmed history. Old
+unconfirmed/technicalError analyses still lack an owner-scoped listing, so complete
+deletion discoverability remains unfinished. Real storage round trip/deletion,
+GenAPI food, browser/runtime and physical phone delivery remain **PENDING / NOT
+ACCEPTED**. Local tests do not prove the24-hour physical-deletion SLA.
+
+### Earlier scoped checkpoints
 
 New scoped verification integrated into `fa13d8d`:
 
@@ -61,7 +107,7 @@ Evidence: backend worktree
 `retention-worker-typecheck.log`, `retention-lint.log`, `retention-migration.log`,
 `retention-migration-repeat.log` in that directory. The follow-up below closes the local review finding;
 these results still do not establish real S3/runtime acceptance. Voluntary user-requested
-photo/analysis deletion is still absent; no new retention period was set for
+photo/analysis deletion was absent at that historical checkpoint (current implementation above); no new retention period was set for
 never-analyzed uploads. Real S3/provider/browser/phone/runtime gates remain pending.
 
 ### Closed review finding — `3531480`
@@ -83,14 +129,12 @@ the backend verification directory: `stale-invalid-upload-red.log`,
 `stale-invalid-upload-green.log`, `stale-invalid-upload-typecheck.log`,
 `stale-invalid-upload-lint.log`. Counts are scoped, not an aggregate worker run.
 
-Next user-requested terminal photo/analysis deletion is being designed jointly
-by backend/frontend and is **not accepted**. Owner decision 2026-09-24 permits
-cancellation of a paid photo analysis proven not submitted, with a full reserved
-token refund exactly once. Missing provider ID alone is insufficient proof;
-possibly submitted/accepted/ambiguous states remain excluded. The separate
-pre-ID unknown goodwill/refund policy remains owner TBD. Implementation is in
-progress; this paragraph records policy, not verified delivery.
-Real storage/provider/browser/phone/runtime gates remain pending.
+The earlier policy-only checkpoint `e1472a7` recorded owner authorization for
+proven-unsent full cancellation refund; implementation and local independent
+review are now recorded at the top of this document. Missing provider ID alone
+remains insufficient; possibly submitted/accepted/ambiguous states remain excluded.
+Pre-ID unknown goodwill/refund policy remains owner TBD. Real storage/provider/
+browser/phone/runtime gates remain pending.
 
 Earlier recorded gates: API **92/92**, worker **44/44**, including actual PostgreSQL
 lifecycle/concurrency checks; provider-prompt **15/15**; food UI **24/24** on

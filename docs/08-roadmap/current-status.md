@@ -2,7 +2,7 @@
 
 ## Актуальный срез — локальная разработка продолжается, 2026-09-24
 
-Текущий общий интеграционный checkpoint: `ca24217`, с review-fix `3531480`, после `fa13d8d` (включает предыдущую базу
+Текущий общий интеграционный checkpoint: `1c6a234`, включает backend `b9a60be`/`5a08efb`, policy `e1472a7` и предыдущие `ca24217`/`3531480`/`fa13d8d` (включает предыдущую базу
 `1ffd048` и исправления worker `ca3d612`). Пользователь разрешил продолжать
 разработку и проверки локально, пока увеличивает RAM/storage сервера. Расширение
 remote capacity ожидается; новый remote build/deploy не является результатом
@@ -30,21 +30,37 @@ remote capacity ожидается; новый remote build/deploy не явля
   never-analyzed и история без доказанного terminal time не удаляются.
   Targeted **12/12** PASS: 7 actual PG retention, 3 runner, 2 existing actual PG
   lifecycle; backend build, worker typecheck/scoped lint и migrate/repeat PASS.
-  S3 в тестах stubbed; живые объекты не удалялись. Добровольное удаление фото и
-  анализа по запросу пользователя всё ещё **отсутствует**. Новый срок хранения
+  S3 в тестах stubbed; живые объекты не удалялись. На этом историческом retention-checkpoint добровольное удаление ещё отсутствовало;
+  его текущая реализация описана ниже. Новый срок хранения
   never-analyzed uploads не вводился.
   Review закрыл P2: устаревший invalid HEAD/body больше не переводит новое
   available/deleted изображение в quarantine; UPDATE ограничен pendingUpload
   без deleted_at. Затронутые retention/lifecycle **13/13** PASS, backend
   typecheck/scoped lint PASS; независимый reviewer повторил **4/4 actual PG**.
   Это отдельные наборы, не новый суммарный full-worker count.
-- Следующий пакет удаления terminal фото/анализа по запросу пользователя
-  реализуется backend/frontend и **не принят**. Решение владельца 2026-09-24:
-  платный анализ фото, достоверно ещё не отправленный провайдеру, можно отменить
-  с полным возвратом резерва ровно один раз. Отсутствие provider ID не доказывает
-  отсутствие отправки; possibly-submitted/accepted/ambiguous исключены. Для
-  pre-ID неизвестного исхода goodwill/refund policy остаётся **TBD**. Это
-  утверждённое правило, не заявление о завершённой реализации.
+- Terminal deletion `b9a60be`: отдельные owner-scoped DELETE фото/результата,
+  безопасный status после tombstone, durable cleanup original/staging и очистка
+  content-bearing receipt/idempotency replay. Ledger и подтверждённая история
+  сохранены; ADR-012 разделяет удаляемое содержимое и неизменяемые метаданные.
+  **32/32** targeted PG/runner PASS; независимый reviewer не нашёл P1/P2 и
+  повторил **7/7 actual PG**. Это локально проверенный terminal-checkpoint,
+  не доказательство физического удаления или 24-часового SLA.
+- Known-unsent cancellation `5a08efb` **локально проверен независимым review;
+  remote/runtime acceptance НЕ закрыта**. Reviewer не нашёл конкретных P1/P2
+  и независимо повторил **10/10 actual PG**. Операция cancelled с отдельным cancellation reason и полным
+  aiRefund атомарно блокирует будущую отправку. Missing provider ID сам по себе
+  не разрешает возврат: submitting/accepted/ambiguous и любые признаки возможной
+  отправки дают409 без удаления/возврата. Pre-ID unknown goodwill остаётся TBD.
+  **41/41** в шести targeted suites; позднейший cancellation subset **10/10**
+  после strict-NULL/empty-ID и repeated-delete regressions. Эти числа перекрываются
+  и **не складываются**. Миграции0016/0017 и repeat PASS; backend/worker/API
+  typecheck, scoped lint, generated contracts и contracts:check PASS.
+- Food UI `1c6a234`: отдельные фото/результат controls, server-authoritative
+  cancellation/refund marker, reload/account-switch/polling guards.
+  **43/43** food tests, full web typecheck и scoped lint PASS. Browser/runtime
+  приёмка pending. Старые unconfirmed/technicalError analyses ещё нельзя найти
+  через отдельный список: controls доступны для текущего анализа и подтверждённой
+  истории, discoverability gap остаётся следующим пакетом.
 - Предыдущая локальная база доказательств: API **92/92**, worker **44/44**, включая реальные
   PostgreSQL lifecycle/concurrency проверки; provider-prompt tests **15/15**.
   Food UI на `d52eb9f`: **24/24**. Это отдельные зафиксированные наборы, а не

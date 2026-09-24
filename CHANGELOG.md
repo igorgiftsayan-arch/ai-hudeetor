@@ -21,19 +21,34 @@
   receipts, analysis results and confirmed history. Targeted **12/12** PASS
   (7 actual PG retention + 3 runner + 2 existing lifecycle); backend build,
   worker typecheck/scoped lint and migrate/repeat PASS. S3 transport is stubbed;
-  no live deletion occurred. Voluntary photo/analysis deletion remains absent.
+  no live deletion occurred. Voluntary deletion was absent at that historical checkpoint;
+  the current implementation is recorded below.
   Main/remote unchanged; real storage/GenAPI/browser/phone gates remain pending.
 - Retention review `3531480` closes P2 stale invalid-upload quarantine overwrite:
   only a still-pending, non-deleted image can become quarantined. Affected
   retention/lifecycle **13/13** PASS, backend typecheck/scoped lint PASS;
   independent reviewer **4/4 actual PostgreSQL** PASS. These remain scoped suites,
   not a new full-worker count. Integrated source is `ca24217`; no remote change.
-- User-requested terminal photo/analysis deletion is being designed by backend
-  and frontend, **not accepted**. Owner decision 2026-09-24 now allows cancellation
-  of a paid photo analysis proven not submitted, with the full reserve refunded
-  exactly once. Missing provider ID is insufficient proof; possibly submitted
-  states are excluded. Pre-ID unknown goodwill/refund policy remains TBD.
-  Implementation is underway; this entry records the decision, not completion.
+- Integrated local source `1c6a234` includes terminal deletion `b9a60be`,
+  known-unsent cancellation `5a08efb`, owner policy `e1472a7` and food UI.
+  Terminal deletion separates photo/result actions, hides erased content on replay,
+  preserves financial metadata/ledger and confirmed diary entries, and queues
+  durable original/staging cleanup. Targeted **32/32** PASS; independent review
+  found no P1/P2 and reran **7/7 actual PostgreSQL**.
+- Cancellation `5a08efb` is **locally independently reviewed; remote/runtime acceptance pending**.
+  Reviewer found no concrete P1/P2 and independently reran **10/10 actual PG**.
+  Proven-unsent requests atomically enter cancelled with a distinct cancellation
+  reason and one full refund; stale attempts cannot submit afterward. Possible-send
+  evidence rejects deletion/refund, even without provider ID. Targeted **41/41**
+  across six suites, followed by latest cancellation subset **10/10**; overlapping
+  counts must not be summed. Migrations0016/0017 and repeat, backend/worker/API
+  typecheck, scoped lint, generation and contracts:check PASS. Pre-ID unknown
+  goodwill policy remains TBD; no new remote deployment/deletion or main change.
+- Food privacy UI `1c6a234`: separate photo/result controls, authoritative refund
+  marker, reload/account-switch/polling safeguards; **43/43** food tests, full web
+  typecheck/scoped lint PASS. Historical unconfirmed/error analyses lack a listing,
+  so discoverability remains incomplete. Real S3/GenAPI/browser/phone delivery and
+  the 24-hour deletion SLA remain pending and are not established by local tests.
 - Earlier integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded
   scoped results, not a new all-suite run. Real storage/GenAPI food/browser/phone
