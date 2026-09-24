@@ -86,6 +86,12 @@ describeWithDatabase('AI outcome reconciliation PostgreSQL transaction', () => {
       [walletId, userId],
     );
     await database.query(
+      `insert into token_transactions
+        (id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id)
+       values($1,$2,$3,'starterGrant',100,'onboardingCompletion',$4)`,
+      [randomUUID(), walletId, userId, randomUUID()],
+    );
+    await database.query(
       'insert into ai_conversations(id,user_id) values($1,$2)',
       [conversationId, userId],
     );
