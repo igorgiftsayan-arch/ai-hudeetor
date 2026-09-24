@@ -13,7 +13,7 @@ CREATE TABLE ai_operation_request_receipts (
   submitted_at timestamptz,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT ck_ai_operation_request_receipts_submission_state
-    CHECK (submission_state IN ('prepared','submitting','accepted','ambiguous')),
+    CHECK (submission_state IN ('prepared','submitting','accepted','completed','ambiguous')),
   CONSTRAINT ck_ai_operation_request_receipts_hash
     CHECK (request_hash ~ '^[0-9a-f]{64}$'),
   CONSTRAINT ck_ai_operation_request_receipts_provider_reference
@@ -88,7 +88,7 @@ CREATE TABLE food_analysis_request_receipts (
   submitted_at timestamptz,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT ck_food_analysis_request_receipts_submission_state
-    CHECK (submission_state IN ('prepared','submitting','accepted','ambiguous')),
+    CHECK (submission_state IN ('prepared','submitting','accepted','completed','ambiguous')),
   CONSTRAINT ck_food_analysis_request_receipts_hash CHECK (request_hash ~ '^[0-9a-f]{64}$'),
   CONSTRAINT ck_food_analysis_request_receipts_provider_reference
     CHECK ((submission_state = 'accepted' AND provider_request_id IS NOT NULL) OR submission_state <> 'accepted')

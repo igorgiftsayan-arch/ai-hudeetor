@@ -79,6 +79,7 @@ export const apiConfigSchema = baseSchema
 
 export const workerConfigSchema = baseSchema
   .extend({
+    FOOD_FAKE_MODE: z.enum(['success', 'technicalError', 'outcomeUnknown']).default('success'),
     AI_FAKE_MODE: z
       .enum(['success', 'technicalError', 'outcomeUnknown'])
       .default('success'),

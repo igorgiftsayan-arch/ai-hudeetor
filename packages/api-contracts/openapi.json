@@ -1174,10 +1174,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "example": {
-                    "id": "uuid",
-                    "status": "available"
-                  }
+                  "$ref": "#/components/schemas/FoodUploadCompletionResourceDto"
                 }
               }
             }
@@ -1230,13 +1227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "example": {
-                    "id": "uuid",
-                    "status": "queued",
-                    "reservedTokens": 5,
-                    "priceVersion": 1,
-                    "pollingUrl": "/api/v1/food-analyses/uuid"
-                  }
+                  "$ref": "#/components/schemas/QueuedFoodAnalysisResourceDto"
                 }
               }
             }
@@ -3340,6 +3331,24 @@
           "requiredHeaders"
         ]
       },
+      "FoodUploadCompletionResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
       "CreateFoodAnalysisDto": {
         "type": "object",
         "properties": {
@@ -3357,6 +3366,36 @@
           "uploadedImageId",
           "expectedTokenPrice",
           "expectedPriceVersion"
+        ]
+      },
+      "QueuedFoodAnalysisResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued"
+            ]
+          },
+          "reservedTokens": {
+            "type": "number"
+          },
+          "priceVersion": {
+            "type": "number"
+          },
+          "pollingUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "reservedTokens",
+          "priceVersion",
+          "pollingUrl"
         ]
       },
       "FoodComponentDto": {
@@ -3387,7 +3426,8 @@
             ]
           },
           "dishName": {
-            "type": "object"
+            "type": "string",
+            "nullable": true
           },
           "items": {
             "type": "array",
@@ -3501,7 +3541,8 @@
             "$ref": "#/components/schemas/FoodCorrectionDto"
           },
           "errorCategory": {
-            "type": "object"
+            "type": "string",
+            "nullable": true
           },
           "consumptionStatus": {
             "type": "string"
@@ -3586,10 +3627,12 @@
             "type": "boolean"
           },
           "localTime": {
-            "type": "object"
+            "type": "string",
+            "nullable": true
           },
           "timezone": {
-            "type": "object"
+            "type": "string",
+            "nullable": true
           },
           "permissionState": {
             "type": "string",

@@ -21,7 +21,8 @@ export class OutboxPublisherService implements OnModuleInit {
         where published_at is null
           and event_type in (
             'ai-companion.quick_reply_requested.v1',
-            'ai-companion.memory_extraction_requested.v1'
+            'ai-companion.memory_extraction_requested.v1',
+            'food.analysis_requested.v1'
           )
         order by created_at limit 50`,
     );
@@ -29,7 +30,9 @@ export class OutboxPublisherService implements OnModuleInit {
       await this.queue.add(
         row.event_type === 'ai-companion.memory_extraction_requested.v1'
           ? 'memory-extraction'
-          : 'ai-operation',
+          : row.event_type === 'food.analysis_requested.v1'
+            ? 'food-analysis'
+            : 'ai-operation',
         { outboxId: row.id },
         {
           jobId: row.id,
