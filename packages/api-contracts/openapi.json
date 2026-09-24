@@ -1241,6 +1241,62 @@
         "tags": [
           "food"
         ]
+      },
+      "get": {
+        "operationId": "FoodController_analyses_api/v1",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "consumptionStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "notConfirmed"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodAnalysisPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
       }
     },
     "/api/v1/food-analyses/{id}": {
@@ -3701,6 +3757,115 @@
           "pollingUrl"
         ]
       },
+      "FoodDeletionStatusDto": {
+        "type": "object",
+        "properties": {
+          "analysisId": {
+            "type": "string"
+          },
+          "cancellationStatus": {
+            "type": "string",
+            "enum": [
+              "notCancelled",
+              "cancelledRefunded"
+            ]
+          },
+          "photoStatus": {
+            "type": "string",
+            "enum": [
+              "available",
+              "pending",
+              "deleted"
+            ]
+          },
+          "analysisStatus": {
+            "type": "string",
+            "enum": [
+              "available",
+              "deleted"
+            ]
+          }
+        },
+        "required": [
+          "analysisId",
+          "cancellationStatus",
+          "photoStatus",
+          "analysisStatus"
+        ]
+      },
+      "FoodAnalysisListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "uploadedImageId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "analyzed",
+              "technicalError",
+              "outcomeUnknown",
+              "deleted",
+              "cancelled"
+            ],
+            "description": "Presentation status; deleted does not change the financial operation status."
+          },
+          "runtimeAdapter": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "consumptionStatus": {
+            "type": "string",
+            "enum": [
+              "notConfirmed",
+              "consumed"
+            ]
+          },
+          "dishName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deletionStatus": {
+            "$ref": "#/components/schemas/FoodDeletionStatusDto"
+          }
+        },
+        "required": [
+          "id",
+          "uploadedImageId",
+          "status",
+          "runtimeAdapter",
+          "createdAt",
+          "consumptionStatus",
+          "dishName",
+          "deletionStatus"
+        ]
+      },
+      "FoodAnalysisPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodAnalysisListItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
       "FoodComponentDto": {
         "type": "object",
         "properties": {
@@ -3863,42 +4028,6 @@
           "runtimeAdapter",
           "consumptionStatus",
           "createdAt"
-        ]
-      },
-      "FoodDeletionStatusDto": {
-        "type": "object",
-        "properties": {
-          "analysisId": {
-            "type": "string"
-          },
-          "cancellationStatus": {
-            "type": "string",
-            "enum": [
-              "notCancelled",
-              "cancelledRefunded"
-            ]
-          },
-          "photoStatus": {
-            "type": "string",
-            "enum": [
-              "available",
-              "pending",
-              "deleted"
-            ]
-          },
-          "analysisStatus": {
-            "type": "string",
-            "enum": [
-              "available",
-              "deleted"
-            ]
-          }
-        },
-        "required": [
-          "analysisId",
-          "cancellationStatus",
-          "photoStatus",
-          "analysisStatus"
         ]
       },
       "ConfirmFoodConsumptionDto": {

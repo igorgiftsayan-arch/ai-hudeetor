@@ -1,12 +1,12 @@
-import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiAcceptedResponse, ApiCookieAuth, ApiCreatedResponse, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { IdentityError } from '../../identity/domain/identity-error';
 import { FoodService } from '../application/food.service';
 // Request DTO values are required by Nest's emitted design:paramtypes metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodCorrectionDto, UpdateFoodConsumptionDto } from './food.dto';
-import { FoodDeletionStatusDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto } from './food.dto';
+import { ListFoodAnalysesQueryDto, ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodCorrectionDto, UpdateFoodConsumptionDto } from './food.dto';
+import { FoodAnalysisPageDto, FoodDeletionStatusDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto } from './food.dto';
 
 @ApiTags('food')
 @ApiCookieAuth()
@@ -31,6 +31,10 @@ export class FoodController {
   @ApiHeader({ name: 'Idempotency-Key', required: true })
   @ApiAcceptedResponse({ type: QueuedFoodAnalysisResourceDto })
   createAnalysis(@Body() body: CreateFoodAnalysisDto, @Req() req: Request, @Headers('idempotency-key') key?: string) { return this.food.createAnalysis(token(req), requiredKey(key), body); }
+
+  @Get('food-analyses')
+  @ApiOkResponse({ type: FoodAnalysisPageDto })
+  analyses(@Query() query: ListFoodAnalysesQueryDto, @Req() req: Request) { return this.food.listAnalyses(token(req), query); }
 
   @Get('food-analyses/:id')
   @ApiOkResponse({ type: FoodAnalysisResourceDto })

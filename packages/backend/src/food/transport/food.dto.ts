@@ -120,3 +120,32 @@ export class FoodDeletionStatusDto {
   @ApiProperty({enum:['available','pending','deleted']}) photoStatus!: 'available'|'pending'|'deleted';
   @ApiProperty({enum:['available','deleted']}) analysisStatus!: 'available'|'deleted';
 }
+
+
+export class ListFoodAnalysesQueryDto {
+  @ApiPropertyOptional({ minimum: 1, maximum: 50, default: 20 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  limit?: number;
+  @ApiPropertyOptional({ maxLength: 512 })
+  @IsOptional() @IsString() @MaxLength(512)
+  cursor?: string;
+  @ApiPropertyOptional({ enum: ['notConfirmed'] })
+  @IsOptional() @IsIn(['notConfirmed'])
+  consumptionStatus?: 'notConfirmed';
+}
+
+export class FoodAnalysisListItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() uploadedImageId!: string;
+  @ApiProperty({ enum: ['queued','processing','analyzed','technicalError','outcomeUnknown','deleted','cancelled'], description: 'Presentation status; deleted does not change the financial operation status.' }) status!: string;
+  @ApiProperty() runtimeAdapter!: string;
+  @ApiProperty() createdAt!: string;
+  @ApiProperty({ enum: ['notConfirmed','consumed'] }) consumptionStatus!: string;
+  @ApiProperty({ type: String, nullable: true }) dishName!: string | null;
+  @ApiProperty({ type: FoodDeletionStatusDto }) deletionStatus!: FoodDeletionStatusDto;
+}
+
+export class FoodAnalysisPageDto {
+  @ApiProperty({ type: [FoodAnalysisListItemDto] }) items!: FoodAnalysisListItemDto[];
+  @ApiProperty({ type: String, nullable: true }) nextCursor!: string | null;
+}

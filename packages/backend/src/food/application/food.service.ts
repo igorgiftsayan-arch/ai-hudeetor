@@ -150,6 +150,48 @@ export class FoodService {
     });
   }
 
+  async listAnalyses(accessToken: string, query: { limit?: number; cursor?: string; consumptionStatus?: 'notConfirmed' } = {}) {
+    const user = await this.currentUser.execute(accessToken);
+    const limit = query.limit ?? 20;
+    const filter = query.consumptionStatus ?? 'all';
+    const invalid = () => new IdentityError('VALIDATION_ERROR', 422, 'Invalid food analysis pagination');
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50 || !['all', 'notConfirmed'].includes(filter)) throw invalid();
+    let cursor: { time: string; id: string } | null = null;
+    if (query.cursor !== undefined) {
+      try {
+        if (!/^[A-Za-z0-9_-]{1,512}$/.test(query.cursor)) throw invalid();
+        const decoded = JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8'));
+        if (decoded.version !== 1 || decoded.filter !== filter || decoded.order !== 'createdAtIdDesc' ||
+          typeof decoded.time !== 'string' || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[+-]\d{2}(?::\d{2})?$/.test(decoded.time) ||
+          !Number.isFinite(Date.parse(decoded.time)) || typeof decoded.id !== 'string' ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded.id)) throw invalid();
+        const [year,month,day] = decoded.time.slice(0,10).split('-').map(Number);
+        if (year < 1 || month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(year,month,0)).getUTCDate() ||
+          Number(decoded.time.slice(11,13)) > 23 || Number(decoded.time.slice(14,16)) > 59 || Number(decoded.time.slice(17,19)) > 59) throw invalid();
+        cursor = decoded;
+      } catch { throw invalid(); }
+    }
+    const result = await this.database.query<any>(`
+      select a.id,a.uploaded_image_id,a.status,a.runtime_adapter,a.created_at,a.created_at::text cursor_time,
+        case when a.deleted_at is null then coalesce(a.user_correction->>'dishName',a.recognized_result->>'dishName') else null end dish_name,
+        exists(select 1 from food_consumptions c where c.food_analysis_id=a.id and c.deleted_at is null) consumed,
+        case when i.status='deleted' then 'deleted' when i.deleted_at is not null then 'pending' else 'available' end photo_status,
+        case when a.deleted_at is null then 'available' else 'deleted' end analysis_status
+      from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id
+      where a.user_id=$1 and ($2::text='all' or not exists(select 1 from food_consumptions c where c.food_analysis_id=a.id and c.deleted_at is null))
+        and ($3::timestamptz is null or (a.created_at,a.id)<($3::timestamptz,$4::uuid))
+      order by a.created_at desc,a.id desc limit $5`, [user.userId,filter,cursor?.time ?? null,cursor?.id ?? null,limit + 1]);
+    const rows = result.rows.slice(0,limit);
+    const last = rows.at(-1);
+    return {
+      items: rows.map(row => ({ id:row.id,uploadedImageId:row.uploaded_image_id,
+        status:row.analysis_status === 'deleted' ? 'deleted' : row.status,runtimeAdapter:row.runtime_adapter,
+        createdAt:new Date(row.created_at).toISOString(),consumptionStatus:row.consumed ? 'consumed' : 'notConfirmed',dishName:row.dish_name,
+        deletionStatus:{analysisId:row.id,photoStatus:row.photo_status,analysisStatus:row.analysis_status,cancellationStatus:row.status === 'cancelled' ? 'cancelledRefunded' : 'notCancelled'} })),
+      nextCursor:result.rows.length > limit && last ? Buffer.from(JSON.stringify({version:1,filter,order:'createdAtIdDesc',time:last.cursor_time,id:last.id})).toString('base64url') : null,
+    };
+  }
+
   async getAnalysis(accessToken: string, analysisId: string) {
     const user = await this.currentUser.execute(accessToken);
     const result = await this.database.query<any>(`select a.id,a.uploaded_image_id,a.status,a.runtime_adapter,a.recognized_result,a.suitability_result,a.user_correction,a.error_category,a.created_at,exists(select 1 from food_consumptions c where c.food_analysis_id=a.id and c.deleted_at is null) consumed from food_analyses a where a.id=$1 and a.user_id=$2 and a.deleted_at is null`, [analysisId, user.userId]);

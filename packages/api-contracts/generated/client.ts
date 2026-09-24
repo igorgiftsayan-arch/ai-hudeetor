@@ -931,6 +931,81 @@ export interface QueuedFoodAnalysisResourceDto {
   pollingUrl: string;
 }
 
+export type FoodDeletionStatusDtoCancellationStatus = typeof FoodDeletionStatusDtoCancellationStatus[keyof typeof FoodDeletionStatusDtoCancellationStatus];
+
+
+export const FoodDeletionStatusDtoCancellationStatus = {
+  notCancelled: 'notCancelled',
+  cancelledRefunded: 'cancelledRefunded',
+} as const;
+
+export type FoodDeletionStatusDtoPhotoStatus = typeof FoodDeletionStatusDtoPhotoStatus[keyof typeof FoodDeletionStatusDtoPhotoStatus];
+
+
+export const FoodDeletionStatusDtoPhotoStatus = {
+  available: 'available',
+  pending: 'pending',
+  deleted: 'deleted',
+} as const;
+
+export type FoodDeletionStatusDtoAnalysisStatus = typeof FoodDeletionStatusDtoAnalysisStatus[keyof typeof FoodDeletionStatusDtoAnalysisStatus];
+
+
+export const FoodDeletionStatusDtoAnalysisStatus = {
+  available: 'available',
+  deleted: 'deleted',
+} as const;
+
+export interface FoodDeletionStatusDto {
+  analysisId: string;
+  cancellationStatus: FoodDeletionStatusDtoCancellationStatus;
+  photoStatus: FoodDeletionStatusDtoPhotoStatus;
+  analysisStatus: FoodDeletionStatusDtoAnalysisStatus;
+}
+
+/**
+ * Presentation status; deleted does not change the financial operation status.
+ */
+export type FoodAnalysisListItemDtoStatus = typeof FoodAnalysisListItemDtoStatus[keyof typeof FoodAnalysisListItemDtoStatus];
+
+
+export const FoodAnalysisListItemDtoStatus = {
+  queued: 'queued',
+  processing: 'processing',
+  analyzed: 'analyzed',
+  technicalError: 'technicalError',
+  outcomeUnknown: 'outcomeUnknown',
+  deleted: 'deleted',
+  cancelled: 'cancelled',
+} as const;
+
+export type FoodAnalysisListItemDtoConsumptionStatus = typeof FoodAnalysisListItemDtoConsumptionStatus[keyof typeof FoodAnalysisListItemDtoConsumptionStatus];
+
+
+export const FoodAnalysisListItemDtoConsumptionStatus = {
+  notConfirmed: 'notConfirmed',
+  consumed: 'consumed',
+} as const;
+
+export interface FoodAnalysisListItemDto {
+  id: string;
+  uploadedImageId: string;
+  /** Presentation status; deleted does not change the financial operation status. */
+  status: FoodAnalysisListItemDtoStatus;
+  runtimeAdapter: string;
+  createdAt: string;
+  consumptionStatus: FoodAnalysisListItemDtoConsumptionStatus;
+  /** @nullable */
+  dishName: string | null;
+  deletionStatus: FoodDeletionStatusDto;
+}
+
+export interface FoodAnalysisPageDto {
+  items: FoodAnalysisListItemDto[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
 export interface FoodComponentDto {
   name: string;
   /**
@@ -1017,38 +1092,6 @@ export interface FoodAnalysisResourceDto {
   createdAt: string;
 }
 
-export type FoodDeletionStatusDtoCancellationStatus = typeof FoodDeletionStatusDtoCancellationStatus[keyof typeof FoodDeletionStatusDtoCancellationStatus];
-
-
-export const FoodDeletionStatusDtoCancellationStatus = {
-  notCancelled: 'notCancelled',
-  cancelledRefunded: 'cancelledRefunded',
-} as const;
-
-export type FoodDeletionStatusDtoPhotoStatus = typeof FoodDeletionStatusDtoPhotoStatus[keyof typeof FoodDeletionStatusDtoPhotoStatus];
-
-
-export const FoodDeletionStatusDtoPhotoStatus = {
-  available: 'available',
-  pending: 'pending',
-  deleted: 'deleted',
-} as const;
-
-export type FoodDeletionStatusDtoAnalysisStatus = typeof FoodDeletionStatusDtoAnalysisStatus[keyof typeof FoodDeletionStatusDtoAnalysisStatus];
-
-
-export const FoodDeletionStatusDtoAnalysisStatus = {
-  available: 'available',
-  deleted: 'deleted',
-} as const;
-
-export interface FoodDeletionStatusDto {
-  analysisId: string;
-  cancellationStatus: FoodDeletionStatusDtoCancellationStatus;
-  photoStatus: FoodDeletionStatusDtoPhotoStatus;
-  analysisStatus: FoodDeletionStatusDtoAnalysisStatus;
-}
-
 export interface ConfirmFoodConsumptionDto {
   consumedAt: string;
   timezone: string;
@@ -1132,6 +1175,26 @@ export interface PushSubscriptionLookupResourceDto {
   /** @nullable */
   subscriptionId?: string | null;
 }
+
+export type FoodControllerAnalysesApiV1Params = {
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+/**
+ * @maxLength 512
+ */
+cursor?: string;
+consumptionStatus?: FoodControllerAnalysesApiV1ConsumptionStatus;
+};
+
+export type FoodControllerAnalysesApiV1ConsumptionStatus = typeof FoodControllerAnalysesApiV1ConsumptionStatus[keyof typeof FoodControllerAnalysesApiV1ConsumptionStatus];
+
+
+export const FoodControllerAnalysesApiV1ConsumptionStatus = {
+  notConfirmed: 'notConfirmed',
+} as const;
 
 export type healthControllerLivenessApiV1Response200 = {
   data: void
@@ -2659,6 +2722,53 @@ export const foodControllerCreateAnalysisApiV1 = async (createFoodAnalysisDto: C
 
   const data: foodControllerCreateAnalysisApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as foodControllerCreateAnalysisApiV1Response
+}
+
+
+
+export type foodControllerAnalysesApiV1Response200 = {
+  data: FoodAnalysisPageDto
+  status: 200
+}
+
+export type foodControllerAnalysesApiV1ResponseSuccess = (foodControllerAnalysesApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerAnalysesApiV1Response = (foodControllerAnalysesApiV1ResponseSuccess)
+
+export const getFoodControllerAnalysesApiV1Url = (params?: FoodControllerAnalysesApiV1Params,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/food-analyses?${stringifiedParams}` : `/api/v1/food-analyses`
+}
+
+export const foodControllerAnalysesApiV1 = async (params?: FoodControllerAnalysesApiV1Params, options?: RequestInit): Promise<foodControllerAnalysesApiV1Response> => {
+
+  const res = await fetch(getFoodControllerAnalysesApiV1Url(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerAnalysesApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerAnalysesApiV1Response
 }
 
 
