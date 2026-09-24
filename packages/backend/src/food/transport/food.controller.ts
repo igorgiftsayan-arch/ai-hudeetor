@@ -6,7 +6,7 @@ import { FoodService } from '../application/food.service';
 // Request DTO values are required by Nest's emitted design:paramtypes metadata.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ConfirmFoodConsumptionDto, CreateFoodAnalysisDto, CreateFoodUploadIntentDto, FoodCorrectionDto, UpdateFoodConsumptionDto } from './food.dto';
-import { FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto } from './food.dto';
+import { FoodDeletionStatusDto, FoodActionPriceDto, FoodAnalysisResourceDto, FoodConsumptionPageDto, FoodConsumptionResourceDto, FoodUploadCompletionResourceDto, FoodUploadIntentResourceDto, QueuedFoodAnalysisResourceDto } from './food.dto';
 
 @ApiTags('food')
 @ApiCookieAuth()
@@ -35,6 +35,18 @@ export class FoodController {
   @Get('food-analyses/:id')
   @ApiOkResponse({ type: FoodAnalysisResourceDto })
   analysis(@Param('id') id: string, @Req() req: Request) { return this.food.getAnalysis(token(req), id); }
+
+  @Get('food-analyses/:id/deletion-status')
+  @ApiOkResponse({type:FoodDeletionStatusDto})
+  deletionStatus(@Param('id') id:string,@Req() req:Request){return this.food.deletionStatus(token(req),id);}
+
+  @Delete('food-analyses/:id/photo') @HttpCode(202)
+  @ApiHeader({name:'Idempotency-Key',required:true}) @ApiAcceptedResponse({type:FoodDeletionStatusDto})
+  deletePhoto(@Param('id') id:string,@Req() req:Request,@Headers('idempotency-key') key?:string){return this.food.deletePhoto(token(req),requiredKey(key),id);}
+
+  @Delete('food-analyses/:id') @HttpCode(202)
+  @ApiHeader({name:'Idempotency-Key',required:true}) @ApiAcceptedResponse({type:FoodDeletionStatusDto})
+  deleteAnalysis(@Param('id') id:string,@Req() req:Request,@Headers('idempotency-key') key?:string){return this.food.deleteAnalysis(token(req),requiredKey(key),id);}
 
   @Patch('food-analyses/:id/correction')
   @ApiOkResponse({ type: FoodAnalysisResourceDto })

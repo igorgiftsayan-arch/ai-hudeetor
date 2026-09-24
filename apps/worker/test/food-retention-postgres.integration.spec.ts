@@ -25,11 +25,12 @@ withDatabase('Terminal food photo retention on actual PostgreSQL', () => {
     url.searchParams.set('options', `-c search_path=${schema},public`);
     db = new DatabaseService(url.toString());
     const dir = resolve(__dirname, '../../../database/migrations');
+    migration = '';
     for (const name of (await readdir(dir))
       .filter((n) => n.endsWith('.sql'))
       .sort()) {
       const sql = await readFile(resolve(dir, name), 'utf8');
-      if (name === '0015_food_photo_retention.sql') migration = sql;
+      if (name >= '0015_food_photo_retention.sql') migration += '\n' + sql;
       else await db.query(sql);
     }
     userId = randomUUID();

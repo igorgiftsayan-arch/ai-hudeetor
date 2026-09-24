@@ -1276,6 +1276,141 @@
         "tags": [
           "food"
         ]
+      },
+      "delete": {
+        "operationId": "FoodController_deleteAnalysis_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodDeletionStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-analyses/{id}/deletion-status": {
+      "get": {
+        "operationId": "FoodController_deletionStatus_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodDeletionStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
+      }
+    },
+    "/api/v1/food-analyses/{id}/photo": {
+      "delete": {
+        "operationId": "FoodController_deletePhoto_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodDeletionStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "food"
+        ]
       }
     },
     "/api/v1/food-analyses/{id}/correction": {
@@ -3727,6 +3862,34 @@
           "runtimeAdapter",
           "consumptionStatus",
           "createdAt"
+        ]
+      },
+      "FoodDeletionStatusDto": {
+        "type": "object",
+        "properties": {
+          "analysisId": {
+            "type": "string"
+          },
+          "photoStatus": {
+            "type": "string",
+            "enum": [
+              "available",
+              "pending",
+              "deleted"
+            ]
+          },
+          "analysisStatus": {
+            "type": "string",
+            "enum": [
+              "available",
+              "deleted"
+            ]
+          }
+        },
+        "required": [
+          "analysisId",
+          "photoStatus",
+          "analysisStatus"
         ]
       },
       "ConfirmFoodConsumptionDto": {

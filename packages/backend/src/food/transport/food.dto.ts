@@ -113,3 +113,9 @@ export class FoodConsumptionResourceDto {
 export class FoodConsumptionPageDto {
   @ApiProperty({ type: [FoodConsumptionResourceDto] }) items!: FoodConsumptionResourceDto[];
 }
+
+export class FoodDeletionStatusDto {
+  @ApiProperty() analysisId!: string;
+  @ApiProperty({enum:['available','pending','deleted']}) photoStatus!: 'available'|'pending'|'deleted';
+  @ApiProperty({enum:['available','deleted']}) analysisStatus!: 'available'|'deleted';
+}
