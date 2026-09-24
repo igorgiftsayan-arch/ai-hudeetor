@@ -7,6 +7,7 @@ import {
   FoodConfirmation,
   type ConfirmedFoodDraft,
 } from '../../features/food/food-confirmation';
+import { mergeFoodDeletionStatus } from '../../features/food/food-deletion-state';
 import { FoodAnalysisHistory } from '../../features/food/food-analysis-history';
 import { FoodDeletion } from '../../features/food/food-deletion';
 import { FoodHistoryEntry } from '../../features/food/food-history-entry';
@@ -66,6 +67,12 @@ export default function FoodPage() {
   const [selectedFile, setSelectedFile] = useState<File>();
   const [analysis, setAnalysis] = useState<FoodAnalysisResourceDto>();
   const [deletedAnalysisId, setDeletedAnalysisId] = useState<string>();
+  const [confirmedAnalysisIds, setConfirmedAnalysisIds] = useState<string[]>(
+    [],
+  );
+  const [deletionStates, setDeletionStates] = useState<
+    Record<string, FoodDeletionStatus>
+  >({});
   const [photoRevision, setPhotoRevision] = useState(0);
   const [starting, setStarting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -119,6 +126,8 @@ export default function FoodPage() {
         setHistoryMessage(undefined);
         setAnalysis(undefined);
         setDeletedAnalysisId(undefined);
+        setDeletionStates({});
+        setConfirmedAnalysisIds([]);
         setPhotoRevision((value) => value + 1);
         activeAnalysisId.current = undefined;
         const raw = window.sessionStorage.getItem(key);
@@ -147,6 +156,7 @@ export default function FoodPage() {
               return;
             if (deletion.analysisStatus !== 'deleted') throw cause;
             setDeletedAnalysisId(id);
+            setDeletionStates({ [id]: deletion });
             activeAnalysisId.current = undefined;
             pendingConfirmation.current = undefined;
             persist({ analysisId: id });
@@ -338,6 +348,9 @@ export default function FoodPage() {
       if (generation.current !== version) return;
       persist({ analysisId: analysis.id });
       pendingConfirmation.current = undefined;
+      setConfirmedAnalysisIds((previous) => [
+        ...new Set([...previous, analysis.id]),
+      ]);
       setAnalysis((current) =>
         current ? { ...current, consumptionStatus: 'consumed' } : current,
       );
@@ -365,6 +378,13 @@ export default function FoodPage() {
   }
 
   function deletionChanged(status: FoodDeletionStatus) {
+    setDeletionStates((previous) => ({
+      ...previous,
+      [status.analysisId]: mergeFoodDeletionStatus(
+        previous[status.analysisId],
+        status,
+      ),
+    }));
     if (status.analysisId !== (analysis?.id ?? deletedAnalysisId)) return;
     if (status.photoStatus !== 'available') {
       setSelectedFile(undefined);
@@ -600,6 +620,11 @@ export default function FoodPage() {
             timezone={data.timezone}
             onSessionExpired={() => replace('/login')}
             onDeletionStatus={deletionChanged}
+            deletionStates={deletionStates}
+            confirmedAnalysisIds={[
+              ...confirmedAnalysisIds,
+              ...data.consumptions.map((item) => item.foodAnalysisId),
+            ]}
           />
         )}
       </div>

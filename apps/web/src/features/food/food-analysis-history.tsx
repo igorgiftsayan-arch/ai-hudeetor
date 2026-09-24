@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../shared/api';
+import { mergeFoodDeletionStatus } from './food-deletion-state';
 import { FoodDeletion } from './food-deletion';
 import {
   loadPastFoodAnalyses,
@@ -23,8 +24,12 @@ export function FoodAnalysisHistory({
   timezone,
   onDeletionStatus,
   onSessionExpired,
+  deletionStates,
+  confirmedAnalysisIds,
 }: {
   ownerScope: string;
+  confirmedAnalysisIds: readonly string[];
+  deletionStates: Readonly<Record<string, FoodDeletionStatus>>;
   csrfToken: string;
   timezone: string;
   onDeletionStatus: (status: FoodDeletionStatus) => void;
@@ -97,6 +102,25 @@ export function FoodAnalysisHistory({
     );
     onDeletionStatus(status);
   }
+  const visibleItems = items
+    .filter((item) => !confirmedAnalysisIds.includes(item.id))
+    .map((item) => {
+      const deletion = mergeFoodDeletionStatus(
+        deletionStates[item.id],
+        item.deletionStatus,
+      );
+      return {
+        ...item,
+        deletionStatus: deletion,
+        status:
+          deletion.analysisStatus === 'deleted'
+            ? ('deleted' as const)
+            : deletion.cancellationStatus === 'cancelledRefunded'
+              ? ('cancelled' as const)
+              : item.status,
+        dishName: deletion.analysisStatus === 'deleted' ? null : item.dishName,
+      };
+    });
   return (
     <section className="food-history" aria-labelledby="past-food-title">
       <h2 id="past-food-title">Прошлые разборы</h2>
@@ -104,9 +128,9 @@ export function FoodAnalysisHistory({
         Разборы, не добавленные в дневник. Здесь можно отдельно удалить исходное
         фото и результат анализа.
       </p>
-      {items.length > 0 && (
+      {visibleItems.length > 0 && (
         <ol aria-label="Прошлые разборы">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.id}>
               <time dateTime={item.createdAt}>
                 {new Intl.DateTimeFormat('ru-RU', {
@@ -138,7 +162,7 @@ export function FoodAnalysisHistory({
           ))}
         </ol>
       )}
-      {started && items.length === 0 && (
+      {started && visibleItems.length === 0 && (
         <p>Прошлых неподтверждённых разборов пока нет.</p>
       )}
       {loading && <p role="status">Загружаем прошлые разборы…</p>}

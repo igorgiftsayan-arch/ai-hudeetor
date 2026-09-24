@@ -192,3 +192,130 @@ it('ignores an old owner list response after logout and loading another account'
   expect(screen.queryByText('Показать ещё разборы')).not.toBeInTheDocument();
   expect(sessionStorage.length).toBe(0);
 });
+
+it.each(['rendered', 'inFlight'] as const)(
+  'keeps a %s past card tombstoned when the current analysis is deleted',
+  async (timing) => {
+    sessionStorage.setItem(
+      'food-operation:user-1',
+      JSON.stringify({ analysisId: 'old-1' }),
+    );
+    let release!: (value: Response) => void;
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.endsWith('/food-analyses/old-1/deletion-status'))
+          return json(deletion);
+        if (url.endsWith('/food-analyses/old-1')) {
+          if (init?.method === 'DELETE')
+            return json({ ...deletion, analysisStatus: 'deleted' });
+          return json({
+            ...item('old-1'),
+            recognizedResult: { items: [{ name: 'Текущий состав' }] },
+          });
+        }
+        if (url.includes('/food-analyses?')) {
+          if (new URL(url, 'https://local.test').searchParams.has('cursor'))
+            return json({ items: [item('old-2')], nextCursor: null });
+          if (timing === 'inFlight')
+            return new Promise<Response>((resolve) => {
+              release = resolve;
+            });
+          return json({ items: [item('old-1')], nextCursor: 'next' });
+        }
+        return baseResponse(url);
+      },
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<FoodPage />);
+    await screen.findByRole('heading', { name: 'Фото блюда', level: 1 });
+    fireEvent.click(screen.getByText('Показать прошлые разборы'));
+    if (timing === 'rendered') await screen.findByText('Блюдо old-1');
+    else await waitFor(() => expect(release).toBeTypeOf('function'));
+    fireEvent.click(screen.getAllByText('Фото и анализ')[0]!);
+    fireEvent.click(await screen.findByText('Удалить результат анализа'));
+    fireEvent.click(screen.getByText('Подтвердить удаление анализа'));
+    await screen.findByText(
+      'Результат анализа удалён. Подтверждённая запись о еде сохранена.',
+    );
+    if (timing === 'inFlight')
+      await act(async () =>
+        release(json({ items: [item('old-1')], nextCursor: 'next' })),
+      );
+    expect(screen.queryByText('Блюдо old-1')).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole('list', { name: 'Прошлые разборы' })).getByText(
+        'Результат разбора удалён',
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Показать ещё разборы'));
+    await screen.findByText('Блюдо old-2');
+    expect(screen.queryByText('Блюдо old-1')).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.filter(([, init]) => init?.method === 'DELETE'),
+    ).toHaveLength(1);
+  },
+);
+
+it('suppresses a confirmed analysis in an older list response while retaining other list entries', async () => {
+  sessionStorage.setItem(
+    'food-operation:user-1',
+    JSON.stringify({ analysisId: 'old-1' }),
+  );
+  let confirmed = false;
+  let release!: (value: Response) => void;
+  const meal = {
+    id: 'new-meal',
+    foodAnalysisId: 'old-1',
+    consumedAt: '2026-09-24T10:00:00Z',
+    localDate: '2026-09-24',
+    timezone: 'UTC',
+    confirmedResult: { items: [{ name: 'Подтверждённый состав' }] },
+  };
+  const fetchMock = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (
+        url.endsWith('/food-analyses/old-1') ||
+        url.endsWith('/food-analyses/old-1/correction')
+      )
+        return json({
+          ...item('old-1'),
+          recognizedResult: { items: [{ name: 'Текущий состав' }] },
+        });
+      if (url.endsWith('/food-analyses/old-1/consumption-confirmations')) {
+        expect(init?.method).toBe('POST');
+        confirmed = true;
+        return json(meal);
+      }
+      if (url.endsWith('/food-consumptions') && confirmed)
+        return json({ items: [meal] });
+      if (url.includes('/food-analyses?'))
+        return new Promise<Response>((resolve) => {
+          release = resolve;
+        });
+      return baseResponse(url);
+    },
+  );
+  vi.stubGlobal('fetch', fetchMock);
+  render(<FoodPage />);
+  await screen.findByRole('heading', { name: 'Фото блюда', level: 1 });
+  fireEvent.click(screen.getByText('Показать прошлые разборы'));
+  await waitFor(() => expect(release).toBeTypeOf('function'));
+  fireEvent.click(screen.getByText('Съели это?'));
+  fireEvent.click(screen.getByText('Подтвердить употребление'));
+  await screen.findByText('Подтверждённый состав');
+  await act(async () =>
+    release(json({ items: [item('old-1'), item('old-2')], nextCursor: null })),
+  );
+  expect(screen.queryByText('Блюдо old-1')).not.toBeInTheDocument();
+  expect(screen.getByText('Блюдо old-2')).toBeInTheDocument();
+  expect(screen.getAllByText('Подтверждённый состав')).toHaveLength(1);
+  expect(
+    fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        String(url).endsWith('/consumption-confirmations') &&
+        init?.method === 'POST',
+    ),
+  ).toHaveLength(1);
+});
