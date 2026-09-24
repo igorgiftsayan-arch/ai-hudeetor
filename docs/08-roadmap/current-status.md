@@ -2,7 +2,7 @@
 
 ## Актуальный срез — локальная разработка продолжается, 2026-09-24
 
-Текущий общий интеграционный checkpoint: `1c6a234`, включает backend `b9a60be`/`5a08efb`, policy `e1472a7` и предыдущие `ca24217`/`3531480`/`fa13d8d` (включает предыдущую базу
+Текущий общий интеграционный checkpoint: `f360290`, включает список `a355311`/`6bc9292`, review-fixes `74a20d7`/`f360290` и backend `b9a60be`/`5a08efb`, policy `e1472a7` и предыдущие `ca24217`/`3531480`/`fa13d8d` (включает предыдущую базу
 `1ffd048` и исправления worker `ca3d612`). Пользователь разрешил продолжать
 разработку и проверки локально, пока увеличивает RAM/storage сервера. Расширение
 remote capacity ожидается; новый remote build/deploy не является результатом
@@ -58,9 +58,23 @@ remote capacity ожидается; новый remote build/deploy не явля
 - Food UI `1c6a234`: отдельные фото/результат controls, server-authoritative
   cancellation/refund marker, reload/account-switch/polling guards.
   **43/43** food tests, full web typecheck и scoped lint PASS. Browser/runtime
-  приёмка pending. Старые unconfirmed/technicalError analyses ещё нельзя найти
-  через отдельный список: controls доступны для текущего анализа и подтверждённой
-  истории, discoverability gap остаётся следующим пакетом.
+  приёмка pending. Это предыдущий UI checkpoint; следующий пакет ниже добавляет
+  доступ к старым неподтверждённым разборам.
+- Список прошлых анализов `a355311` + `6bc9292`, с review-fixes `74a20d7` +
+  `f360290`: owner-scoped GET с ограничением размера страницы и cursor по
+  `(created_at,id)`, точностью до микросекунд; tombstone не возвращает dishName
+  или полный результат. UI показывает прошлые неподтверждённые/ошибочные анализы,
+  сохраняет retry cursor и отдельные controls для оставшегося фото.
+  Первые targeted API **6/6 actual PG** и UI **46/46** были до двух P2 review-fixes.
+  После исправлений: API **7/7 actual PG**, food UI **49/49**, backend/web
+  typecheck и scoped lint PASS. Независимый reviewer повторил ровно новую
+  cursor-regression **1/1 PG** и три stale-list regressions **3/3 UI**; остальные
+  тесты в этих независимых runs намеренно пропущены. Не новый full API/web suite.
+  P2 закрыты: неподдерживаемый offset возвращает422 вместо PG22009/500;
+  поздний список не раскрывает удалённое название и не дублирует подтверждённую
+  еду. Owner switch сбрасывает состояние; проверенный scope без оставшихся
+  конкретных P1/P2. Never-analyzed uploads и удаление possibly-submitted анализа
+  остаются вне этой реализации; external-provider deletion не обещается.
 - Предыдущая локальная база доказательств: API **92/92**, worker **44/44**, включая реальные
   PostgreSQL lifecycle/concurrency проверки; provider-prompt tests **15/15**.
   Food UI на `d52eb9f`: **24/24**. Это отдельные зафиксированные наборы, а не

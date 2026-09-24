@@ -6,6 +6,19 @@
 
 ### Current checkpoint — 2026-09-24
 
+- Current integrated source **`f360290`** adds owner-scoped paginated analysis
+  discovery (`a355311`/`6bc9292`) and independently reviewed fixes
+  `74a20d7`/`f360290`. Historical unconfirmed/error analyses and tombstones with
+  remaining photos are discoverable; deleted content is excluded.
+  Original scoped API **6/6 actual PG** and food UI **46/46** preceded review.
+  Fixed results: API **7/7 actual PG**, food UI **49/49**, backend/web typecheck
+  and scoped lint PASS. Independent targeted reruns: cursor **1/1 PG**, stale
+  list **3/3 UI** (other cases intentionally skipped); counts overlap, not a
+  new full-suite total. Both P2 findings are closed: malformed offset becomes422,
+  and stale list reads cannot restore deleted names or duplicate confirmed food.
+  No remaining concrete P1/P2 in the reviewed scope; real runtime/storage/provider/
+  phone/SLA gates remain pending. Never-analyzed uploads and possibly-submitted
+  deletion remain outside this implementation; no provider-side deletion claim.
 - Integrated checkpoint **`fa13d8d`** includes food account-switch fence
   `f231fed` (food **33/33**, web typecheck/lint PASS), push `e226448`/`156a138`
   (midnight catch-up and separate scheduled occurrence, actual PostgreSQL
@@ -46,8 +59,8 @@
   goodwill policy remains TBD; no new remote deployment/deletion or main change.
 - Food privacy UI `1c6a234`: separate photo/result controls, authoritative refund
   marker, reload/account-switch/polling safeguards; **43/43** food tests, full web
-  typecheck/scoped lint PASS. Historical unconfirmed/error analyses lack a listing,
-  so discoverability remains incomplete. Real S3/GenAPI/browser/phone delivery and
+  typecheck/scoped lint PASS. Historical unconfirmed/error analyses lacked a listing at that checkpoint;
+  the new discovery package above closes that access gap locally. Real S3/GenAPI/browser/phone delivery and
   the 24-hour deletion SLA remain pending and are not established by local tests.
 - Earlier integrated head `1ffd048`: local API 92/92, worker 44/44 (actual PostgreSQL
   included), provider-prompt 15/15; food UI 24/24 on `d52eb9f`. These are recorded

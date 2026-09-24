@@ -1,6 +1,6 @@
 # GERBI local ledger/recovery checkpoint — 2026-09-24
 
-## Current checkpoint: integrated `1c6a234`, cancellation locally independently reviewed
+## Current checkpoint: integrated `f360290`, deletion/list fixes locally independently reviewed
 
 The user approved continuing local development while increasing server RAM and
 storage. Remote capacity is pending. This update changes documentation only;
@@ -45,11 +45,41 @@ Evidence in backend worktree `work/gerbi-backend-verification/`:
 and corresponding `*-migration.log`, `*-migration-repeat.log`, `*-typecheck.log`,
 `*-lint.log`. No remote objects were deleted; main/remote remain unchanged.
 
-The UI exposes controls for the current analysis and confirmed history. Old
-unconfirmed/technicalError analyses still lack an owner-scoped listing, so complete
-deletion discoverability remains unfinished. Real storage round trip/deletion,
-GenAPI food, browser/runtime and physical phone delivery remain **PENDING / NOT
-ACCEPTED**. Local tests do not prove the24-hour physical-deletion SLA.
+### Owner-scoped prior-analysis discovery and review fixes
+
+`a355311` adds GET `/food-analyses` before the existing exact-id route. All data
+queries retain owner filtering and parameterized values. Keyset pagination uses
+PostgreSQL timestamp text (microseconds retained) plus UUID and bounded page sizes;
+confirmed-diary filtering happens before pagination. Tombstones remain discoverable
+for independent photo cleanup but have no dishName/full result/storage keys.
+`6bc9292` adds on-demand paginated UI with same-cursor retry and owner remount guards.
+
+Initial scoped gates were API **6/6 actual PG**, food UI **46/46**. Independent
+review found two P2 issues, fixed before this checkpoint:
+
+- `74a20d7`: cursor offsets beyond PostgreSQL's supported range passed Date.parse
+  and caused22009/500. Explicit offset bounds now reject malformed cursors422 while
+  preserving microsecond text. API **7/7 actual PG**, backend typecheck/scoped lint
+  PASS; independent reviewer reran only the new offset test **1/1 PG PASS** with
+  six other tests intentionally skipped.
+- `f360290`: current-result deletion could leave a rendered history title or let an
+  in-flight list response restore it. Parent owner-scoped monotone deletion state
+  now overlays every history render; confirmed IDs suppress stale notConfirmed
+  rows after confirmation. Cursor continuation is preserved. Three regressions
+  reproduced the old behavior before the fix; food UI **49/49**, web typecheck/
+  scoped lint PASS. Independent reviewer reran these **3/3 UI PASS**, with three
+  unrelated file tests intentionally skipped.
+
+No concrete P1/P2 remains in the requested route/owner/cursor/tombstone/account-switch/
+mutation scope. These are overlapping scoped test counts, not repeated full API/web
+suites or proof of runtime acceptance. The previous lack of a list for old unconfirmed/
+technicalError analyses is closed locally. Never-analyzed upload cleanup, deletion
+while provider submission may have occurred, and pre-ID unknown goodwill remain
+outside this completed scope; external-provider deletion is not implemented or claimed.
+
+Real storage round trip/deletion, GenAPI food, browser/runtime and physical phone
+delivery remain **PENDING / NOT ACCEPTED**. Local tests do not establish the24-hour
+physical-deletion SLA. Main/remote remained unchanged throughout this review.
 
 ### Earlier scoped checkpoints
 
