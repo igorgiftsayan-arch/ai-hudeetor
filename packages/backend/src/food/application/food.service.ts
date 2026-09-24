@@ -180,20 +180,34 @@ export class FoodService {
       await client.query(`insert into idempotency_records(id,user_id,operation_scope,idempotency_key,request_hash,state) values($1,$2,$3,$4,$5,'processing') on conflict do nothing`, [randomUUID(),user.userId,scope,key,hash]);
       const idem = (await client.query<{request_hash:string}>(`select request_hash from idempotency_records where user_id=$1 and operation_scope=$2 and idempotency_key=$3 for update`,[user.userId,scope,key])).rows[0]!;
       if (idem.request_hash !== hash) throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request');
-      const found = (await client.query<{status:string;uploaded_image_id:string;object_key:string}>(`select a.status,a.uploaded_image_id,i.object_key from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.id=$1 and a.user_id=$2`,[analysisId,user.userId])).rows[0];
+      const found = (await client.query<{status:string;provider_reference:string|null;uploaded_image_id:string;object_key:string}>(`select a.status,a.provider_reference,a.uploaded_image_id,i.object_key from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.id=$1 and a.user_id=$2 for update of a`,[analysisId,user.userId])).rows[0];
       if (!found) throw new IdentityError('FOOD_ANALYSIS_NOT_FOUND',404,'Food analysis not found');
-      if (!['analyzed','technicalError'].includes(found.status)) throw new IdentityError('FOOD_ANALYSIS_NOT_TERMINAL',409,'Only terminal analyses can be deleted');
+      if (!['analyzed','technicalError','cancelled'].includes(found.status)) {
+        // The operation row is the same fence used by claim, submit and finalize.
+        // Missing provider ID alone never proves the request was not sent.
+        const receipt = (await client.query<{submission_state:string;submitted_at:Date|null;provider_request_id:string|null}>(`select submission_state,submitted_at,provider_request_id from food_analysis_request_receipts where food_analysis_id=$1 for update`,[analysisId])).rows[0];
+        const unsent = found.provider_reference === null && (
+          (!receipt && found.status === 'queued') ||
+          (['queued','processing'].includes(found.status) && receipt?.submission_state === 'prepared' && receipt.submitted_at === null && receipt.provider_request_id === null)
+        );
+        if (!unsent) throw new IdentityError('FOOD_ANALYSIS_ALREADY_SUBMITTED',409,'The analysis may have been submitted; wait for its result');
+        const reservation = (await client.query<{id:string;wallet_id:string;amount_tokens:number}>(`select id,wallet_id,amount_tokens from token_transactions where food_analysis_id=$1 and entry_type='aiReservation' for update`,[analysisId])).rows[0];
+        if (!reservation) throw new IdentityError('FOOD_RESERVATION_NOT_FOUND',409,'The reservation could not be verified');
+        await client.query(`insert into token_transactions(id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id,food_analysis_id,reservation_id) values(gen_random_uuid(),$1,$2,'aiRefund',$3,'foodAnalysisCancellation',$4,$4,$5)`,[reservation.wallet_id,user.userId,-reservation.amount_tokens,analysisId,reservation.id]);
+        await client.query(`update food_analyses set status='cancelled',cancellation_reason='knownUnsentUserRequest',processing_attempt_id=null,updated_at=now() where id=$1`,[analysisId]);
+        await client.query(`update food_analysis_request_receipts set submission_state='cancelled',updated_at=now() where food_analysis_id=$1`,[analysisId]);
+      }
       if (target === 'photo') {
         // Match cleanup's job -> image order; preserve any live lease and first deadline.
         await client.query(`insert into food_image_cleanup_jobs(image_id,original_object_key,staging_object_key,reason,requested_at,deadline_at)
           values($1,$2,$3,'userRequest',now(),now()+interval '24 hours')
           on conflict(image_id) do update set reason='userRequest',requested_at=coalesce(food_image_cleanup_jobs.requested_at,now()),deadline_at=coalesce(food_image_cleanup_jobs.deadline_at,now()+interval '24 hours'),available_at=least(food_image_cleanup_jobs.available_at,now())`,[found.uploaded_image_id,found.object_key,`food-staging/${user.userId}/${found.uploaded_image_id}`]);
         await client.query(`select id from uploaded_images where id=$1 for update`,[found.uploaded_image_id]);
-        const unsafe = await client.query(`select 1 from food_analyses where uploaded_image_id=$1 and status not in ('analyzed','technicalError')`,[found.uploaded_image_id]);
+        const unsafe = await client.query(`select 1 from food_analyses where uploaded_image_id=$1 and status not in ('analyzed','technicalError','cancelled')`,[found.uploaded_image_id]);
         if (unsafe.rowCount) throw new IdentityError('FOOD_ANALYSIS_NOT_TERMINAL',409,'Only terminal analyses can be deleted');
         await client.query(`update uploaded_images set deleted_at=coalesce(deleted_at,now()) where id=$1`,[found.uploaded_image_id]);
       } else {
-        await client.query(`update food_analyses set deleted_at=coalesce(deleted_at,now()),recognized_result=null,suitability_result=null,user_correction=null,updated_at=now() where id=$1 and user_id=$2 and status in ('analyzed','technicalError')`,[analysisId,user.userId]);
+        await client.query(`update food_analyses set deleted_at=coalesce(deleted_at,now()),recognized_result=null,suitability_result=null,user_correction=null,updated_at=now() where id=$1 and user_id=$2 and status in ('analyzed','technicalError','cancelled')`,[analysisId,user.userId]);
         await client.query(`update food_analysis_request_receipts set request_payload=null,content_deleted_at=now() where food_analysis_id=$1 and content_deleted_at is null`,[analysisId]);
         await client.query(`update idempotency_records set response_body='{"contentDeleted":true}'::jsonb where user_id=$1 and
           ((operation_scope in ('foodConsumptionConfirm','foodConsumptionUpdate') and response_body->>'foodAnalysisId'=$2) or
@@ -281,7 +295,7 @@ function replayFoodResponse(response: any) {
   return response;
 }
 async function readDeletionStatus(db: { query(text: string, values: any[]): Promise<{rows: any[]}> }, userId: string, analysisId: string) {
-  const row = (await db.query(`select case when i.status='deleted' then 'deleted' when i.deleted_at is not null then 'pending' else 'available' end photo_status,case when a.deleted_at is null then 'available' else 'deleted' end analysis_status from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.id=$1 and a.user_id=$2`,[analysisId,userId])).rows[0];
+  const row = (await db.query(`select case when i.status='deleted' then 'deleted' when i.deleted_at is not null then 'pending' else 'available' end photo_status,case when a.deleted_at is null then 'available' else 'deleted' end analysis_status,case when a.status='cancelled' then 'cancelledRefunded' else 'notCancelled' end cancellation_status from food_analyses a join uploaded_images i on i.id=a.uploaded_image_id where a.id=$1 and a.user_id=$2`,[analysisId,userId])).rows[0];
   if (!row) throw new IdentityError('FOOD_ANALYSIS_NOT_FOUND',404,'Food analysis not found');
-  return {analysisId,photoStatus:row.photo_status,analysisStatus:row.analysis_status};
+  return {analysisId,photoStatus:row.photo_status,analysisStatus:row.analysis_status,cancellationStatus:row.cancellation_status};
 }

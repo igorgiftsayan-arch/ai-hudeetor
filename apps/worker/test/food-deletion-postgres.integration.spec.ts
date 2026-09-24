@@ -115,7 +115,7 @@ describeWithDatabase(
       const before = (await database.query('select * from token_transactions order by id')).rows;
       const receipt = (await database.query('select * from food_analysis_request_receipts where food_analysis_id=$1',[created.id])).rows[0]!;
       const key = randomUUID();
-      expect(await service.deleteAnalysis('owner',key,created.id)).toEqual({analysisId:created.id,analysisStatus:'deleted',photoStatus:'available'});
+      expect(await service.deleteAnalysis('owner',key,created.id)).toEqual({analysisId:created.id,analysisStatus:'deleted',photoStatus:'available',cancellationStatus:'notCancelled'});
       expect(await service.deleteAnalysis('owner',key,created.id)).toEqual(await service.deletionStatus('owner',created.id));
       await expect(service.getAnalysis('owner',created.id)).rejects.toMatchObject({code:'FOOD_ANALYSIS_NOT_FOUND'});
       await expect(service.confirmConsumption('owner',confirmKey,created.id,consumedAt,'UTC')).rejects.toMatchObject({code:'FOOD_CONTENT_DELETED',status:410});
@@ -134,7 +134,7 @@ describeWithDatabase(
       const now = new Date();
       await database.query("update uploaded_images set uploaded_at=now()-interval '11 minutes',created_at=now()-interval '11 minutes' where id=$1",[imageId]);
       const key=randomUUID();
-      expect(await service.deletePhoto('owner',key,created.id)).toEqual({analysisId:created.id,photoStatus:'pending',analysisStatus:'available'});
+      expect(await service.deletePhoto('owner',key,created.id)).toEqual({analysisId:created.id,photoStatus:'pending',analysisStatus:'available',cancellationStatus:'notCancelled'});
       expect((await service.getAnalysis('owner',created.id)).status).toBe(mode==='success'?'analyzed':'technicalError');
       await expect(service.completeUpload('owner',imageId)).rejects.toMatchObject({code:'FOOD_IMAGE_NOT_FOUND'});
       const initial=(await database.query('select * from food_image_cleanup_jobs where image_id=$1',[imageId])).rows[0]!;
@@ -146,16 +146,17 @@ describeWithDatabase(
       await service.deletePhoto('owner',key,created.id);
       expect((await database.query('select deadline_at from food_image_cleanup_jobs where image_id=$1',[imageId])).rows[0]!.deadline_at).toEqual(initial.deadline_at);
       await new FoodImageRetentionService(database,{deleteObject:remove}).processOne(new Date(now.valueOf()+61000));
-      expect(await service.deletePhoto('owner',key,created.id)).toEqual({analysisId:created.id,photoStatus:'deleted',analysisStatus:'available'});
+      expect(await service.deletePhoto('owner',key,created.id)).toEqual({analysisId:created.id,photoStatus:'deleted',analysisStatus:'available',cancellationStatus:'notCancelled'});
       expect(remove.mock.calls.map(call=>call[0])).toEqual([`test/${imageId}`,`test/${imageId}`,`food-staging/${userId}/${imageId}`]);
       expect((await database.query('select count(*)::int count from food_image_cleanup_jobs')).rows[0]!.count).toBe(1);
     });
 
-    it('rejects pending and other-owner deletion without durable effects',async()=>{
+    it('rejects possibly submitted and other-owner deletion without durable effects',async()=>{
       const price=await service.price('owner');
       const {id}=await service.createAnalysis('owner',randomUUID(),{uploadedImageId:imageId,expectedTokenPrice:price.tokenPrice,expectedPriceVersion:price.priceVersion});
-      await expect(service.deletePhoto('owner',randomUUID(),id)).rejects.toMatchObject({code:'FOOD_ANALYSIS_NOT_TERMINAL',status:409});
-      await expect(service.deleteAnalysis('owner',randomUUID(),id)).rejects.toMatchObject({code:'FOOD_ANALYSIS_NOT_TERMINAL',status:409});
+      await database.query("update food_analyses set status='outcomeUnknown' where id=$1",[id]);
+      await expect(service.deletePhoto('owner',randomUUID(),id)).rejects.toMatchObject({code:'FOOD_ANALYSIS_ALREADY_SUBMITTED',status:409});
+      await expect(service.deleteAnalysis('owner',randomUUID(),id)).rejects.toMatchObject({code:'FOOD_ANALYSIS_ALREADY_SUBMITTED',status:409});
       const other=new FoodService(database,{execute:async()=>({userId:randomUUID()})} as never,config);
       await expect(other.deletionStatus('other',id)).rejects.toMatchObject({code:'FOOD_ANALYSIS_NOT_FOUND'});
       // Use another existing owner so the idempotency FK cannot mask ownership behavior.
@@ -212,7 +213,7 @@ describeWithDatabase(
       expect(await cleanup.processOne()).toBe(false);
       expect(remove).not.toHaveBeenCalled();
       expect(await cleanup.processOne(new Date(Date.now()+601000))).toBe(true);
-      expect(await service.deletionStatus('owner',created.id)).toEqual({analysisId:created.id,analysisStatus:'deleted',photoStatus:'deleted'});
+      expect(await service.deletionStatus('owner',created.id)).toEqual({analysisId:created.id,analysisStatus:'deleted',photoStatus:'deleted',cancellationStatus:'notCancelled'});
     });
   },
 );
