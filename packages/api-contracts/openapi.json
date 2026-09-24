@@ -1609,6 +1609,42 @@
         ]
       }
     },
+    "/api/v1/notification-preferences/push/subscription-lookups": {
+      "post": {
+        "operationId": "NotificationsController_lookup_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokePushSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushSubscriptionLookupResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
     "/api/v1/notification-preferences/push/subscription-revocations": {
       "post": {
         "operationId": "NotificationsController_unsubscribeByEndpoint_api/v1",
@@ -3887,6 +3923,21 @@
         },
         "required": [
           "endpoint"
+        ]
+      },
+      "PushSubscriptionLookupResourceDto": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean"
+          },
+          "subscriptionId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "connected"
         ]
       }
     }

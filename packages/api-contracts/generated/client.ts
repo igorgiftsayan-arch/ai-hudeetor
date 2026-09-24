@@ -1094,6 +1094,12 @@ export interface RevokePushSubscriptionDto {
   endpoint: string;
 }
 
+export interface PushSubscriptionLookupResourceDto {
+  connected: boolean;
+  /** @nullable */
+  subscriptionId?: string | null;
+}
+
 export type healthControllerLivenessApiV1Response200 = {
   data: void
   status: 200
@@ -2983,6 +2989,46 @@ export const notificationsControllerSubscribeApiV1 = async (savePushSubscription
 
   const data: notificationsControllerSubscribeApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as notificationsControllerSubscribeApiV1Response
+}
+
+
+
+export type notificationsControllerLookupApiV1Response200 = {
+  data: PushSubscriptionLookupResourceDto
+  status: 200
+}
+
+export type notificationsControllerLookupApiV1ResponseSuccess = (notificationsControllerLookupApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerLookupApiV1Response = (notificationsControllerLookupApiV1ResponseSuccess)
+
+export const getNotificationsControllerLookupApiV1Url = () => {
+
+
+
+
+  return `/api/v1/notification-preferences/push/subscription-lookups`
+}
+
+export const notificationsControllerLookupApiV1 = async (revokePushSubscriptionDto: RevokePushSubscriptionDto, options?: RequestInit): Promise<notificationsControllerLookupApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerLookupApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(revokePushSubscriptionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerLookupApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as notificationsControllerLookupApiV1Response
 }
 
 

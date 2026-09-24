@@ -43,6 +43,13 @@ export class PushNotificationsService {
     const endpointHash=createHash('sha256').update(endpoint).digest('hex');
     await this.db.query(`update push_subscriptions set status='revoked',revoked_at=now(),updated_at=now() where user_id=$1 and endpoint_hash=$2 and status='active'`,[user.userId,endpointHash]);
   }
+
+  async lookupSubscription(accessToken:string,endpoint:string) {
+    const user=await this.current.execute(accessToken);
+    const endpointHash=createHash('sha256').update(endpoint).digest('hex');
+    const found=(await this.db.query<{id:string}>(`select id from push_subscriptions where user_id=$1 and endpoint_hash=$2 and status='active'`,[user.userId,endpointHash])).rows[0];
+    return { connected:Boolean(found), subscriptionId:found?.id ?? null };
+  }
 }
 
 function validateTimezone(value: string) { try { new Intl.DateTimeFormat('en-US',{timeZone:value}).format(); } catch { throw new IdentityError('PROFILE_TIMEZONE_INVALID',422,'Timezone is invalid'); } }

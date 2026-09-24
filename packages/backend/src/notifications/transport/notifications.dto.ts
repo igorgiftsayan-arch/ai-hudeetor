@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, IsUrl, Matches, MaxLength } from 'class-validator';
 
 export class SavePushPreferenceDto {
   @ApiProperty() @IsBoolean() enabled!: boolean;
@@ -32,5 +32,10 @@ export class PushSubscriptionResourceDto {
 }
 
 export class RevokePushSubscriptionDto {
-  @ApiProperty() @IsString() endpoint!: string;
+  @ApiProperty() @IsString() @IsUrl({protocols:['https'],require_protocol:true}) @MaxLength(2048) endpoint!: string;
+}
+
+export class PushSubscriptionLookupResourceDto {
+  @ApiProperty() connected!: boolean;
+  @ApiPropertyOptional({type:String,nullable:true}) subscriptionId!: string|null;
 }
