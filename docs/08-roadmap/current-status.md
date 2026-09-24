@@ -4,7 +4,7 @@
 
 - Recovery and initial submission now share operation-row locks; a stale sweeper cannot overwrite a newer provider receipt. Real PostgreSQL concurrency regressions pass.
 - Food reservation/confirmation/refund use existing ledger columns; no schema workaround. FoodService create/replay → worker result → correction → explicit consumption/replay → edit/read → delete/replay is verified on actual migrations, with separate technical-error refund and owner-read isolation. PostgreSQL dates remain `YYYY-MM-DD`.
-- Isolated runtime preparation: source `aee4755` transferred; compatible Linux dependencies verified, local Node 24 builds ready. Runtime start blocked by 656MB disk / ~476MB available RAM and pinned MinIO manifest access denial; other projects preserved.
+- Isolated runtime preparation: source `aee4755` transferred; compatible Linux dependencies verified, local Node 24 builds ready. Runtime start blocked by 656MB disk / ~476MB available RAM ; other projects preserved. DockerHub references were corrected to verified public official Quay digests; no owner registry credentials are needed, no images pulled.
 - Local gates and limits: [verification evidence](../07-deployment/gerbi-local-ledger-recovery-checkpoint.md). This is local synthetic/provider-stub evidence; real GenAPI image, physical phone push and isolated runtime acceptance remain pending.
 
 ## Расширенный пилот — промежуточная интеграция 2026-09-24

@@ -40,3 +40,17 @@ Runtime remains blocked:
 - Other projects were preserved; `atlas-v01` and `atlas-ui-001` remained healthy in the final snapshot. No cache, image or volume pruning was performed.
 
 Raw local evidence: `work/gerbi-backend-verification/runtime-capacity.log` plus `{web,api,worker}-build.log`. Server manifest error: `/opt/projects/ai-hudeetor-gerbi-expanded-runtime/minio-manifest-error.log`. There is no new browser URL or real GenAPI photo acceptance from this checkpoint.
+
+
+## Subsequent review fixes
+
+Both GenAPI chat and food-photo system prompts now explicitly forbid attributing weight gain/loss to a food or meal based on correlations or individual changes. They require stating insufficient or temporally incomparable evidence. Targeted tests inspect the actual serialized provider messages with confirmed meal/weight context and synthetic photo submission: **15/15 passed**, scoped lint PASS. This verifies prompt delivery, not generated-model behavior.
+
+The earlier `aee4755` runtime artifact is now **stale** after these review fixes and subsequent frontend integration. It must not be presented as the final integrated build.
+
+MinIO access diagnosis was narrowed through anonymous manifest reads: the exact release tags exist in official Quay and return Linux amd64 manifests without credentials. [Official MinIO container instructions](https://min.io/docs/minio/container/operations/install-deploy-manage/deploy-minio-single-node-single-drive.html) identify `quay.io/minio/minio`. DockerHub denial does not establish missing owner credentials or a nonexistent release. Compose now pins the same releases on official Quay, with explicit `linux/amd64` matching the test server:
+
+- MinIO: `quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:3f97c5651cb6662b880c787a232b6b34fec8d8922e08d6617b25d241a21164bb` (manifest layers 61.0MB compressed).
+- mc: `quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:2582c2f48b1e31545143ba5285c67d7b38c8b8f6912142d0630686dc7aaac28b` (28.2MB compressed).
+
+No images were pulled. These compressed sizes do not establish unpacked/runtime disk requirements. The active deployment blocker is resource headroom; owner registry credentials are not required by the verified public manifests.

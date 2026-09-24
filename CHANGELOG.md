@@ -6,6 +6,8 @@
 
 ### Added
 
+- GERBI review: chat/photo prompts prohibit food-to-weight causal claims and require acknowledging insufficient comparable data; provider-message tests pass 15/15. Expanded Compose uses publicly verified official Quay MinIO/mc releases pinned to Linux amd64 digests; no images pulled, resource gate remains open.
+
 - GERBI runtime preparation: current source transferred to isolated checkout and local Node 24 runtime artifacts built against matching Linux dependency lockfile. Deployment held at verified resource/storage-image blockers; no expanded containers started and stable projects preserved.
 
 - GERBI local PostgreSQL recovery checkpoint: common operation-row lock serializes submit/acceptance with recovery; food ledger inserts match existing migrations, and diary dates return `YYYY-MM-DD` consistently across initial response and replay. Added real-migration FoodService lifecycle/ledger tests. API noEmit typecheck no longer inherits incompatible composite source boundaries. Full pilot acceptance still requires real GenAPI image/runtime and phone push.

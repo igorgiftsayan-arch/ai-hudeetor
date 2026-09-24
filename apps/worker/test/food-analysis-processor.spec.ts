@@ -1,7 +1,32 @@
+import { S3Client } from '@aws-sdk/client-s3';
 import { FoodAnalysisProcessor } from '../src/food-analysis.processor';
 
 describe('FoodAnalysisProcessor reconciliation', () => {
   afterEach(() => jest.restoreAllMocks());
+
+  it('sends explicit food/weight causality and missing-data limits to the photo provider', async () => {
+    let receiptHash = '';
+    const query = jest.fn(async (sql: string, values?: unknown[]) => {
+      if (sql.includes("set status='processing'")) return { rows: [{ id: 'analysis-1', user_id: 'user-1', runtime_adapter: 'genapi' }], rowCount: 1 };
+      if (sql.includes('select i.object_key')) return { rows: [{ object_key: 'private/test.jpg', sha256: 'test', target_weight_kg: null, facts: [] }], rowCount: 1 };
+      if (sql.includes('insert into food_analysis_request_receipts')) receiptHash = String(values?.[5]);
+      if (sql.includes('select request_hash')) return { rows: [{ request_hash: receiptHash, submission_state: 'prepared' }], rowCount: 1 };
+      if (sql.includes('select id,user_id')) return { rows: [{ id: 'analysis-1', user_id: 'user-1' }], rowCount: 1 };
+      if (sql.includes('select id,wallet_id')) return { rows: [{ id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -5 }], rowCount: 1 };
+      return { rows: [], rowCount: 1 };
+    });
+    const database = { query: jest.fn().mockResolvedValue({ rows: [{ payload: { analysisId: 'analysis-1' } }] }), transaction: async (callback: (client: { query: typeof query }) => Promise<unknown>) => callback({ query }) };
+    jest.spyOn(S3Client.prototype, 'send').mockImplementation((async () => ({ ContentType: 'image/jpeg', Body: { transformToByteArray: async () => new Uint8Array([255,216,255]) } })) as never);
+    const fetcher = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('synthetic transport interruption'));
+    const processor = new FoodAnalysisProcessor(database as never, { provider: 'genapi', fakeMode: 'success', apiKey: 'test', nativeBaseUrl: 'https://provider.example/api/v1', networkId: 'gpt-4o', modelVersion: 'test', timeoutMs: 1000, s3: { endpoint: 'http://127.0.0.1:1', region: 'test', bucket: 'test', accessKeyId: 'test', secretAccessKey: 'test', forcePathStyle: true } });
+    await processor.process({ data: { outboxId: 'outbox-1' } } as never);
+    const payload = JSON.parse(String(fetcher.mock.calls[0]![1]?.body));
+    expect(payload.messages[0].role).toBe('system');
+    expect(payload.messages[0].content).toContain('Food/weight correlations and individual weight changes do not establish causation');
+    expect(payload.messages[0].content).toContain('Never claim a food or meal caused weight gain or loss');
+    expect(payload.messages[0].content).toContain('not temporally comparable, explicitly state that limitation');
+    expect(payload.messages[0].content).toContain('If insufficient, use status insufficientData');
+  });
 
   it('confirms a known provider request exactly once when reconciliation succeeds', async () => {
     const client = {

@@ -83,6 +83,21 @@ describe('GenApiAiProviderAdapter', () => {
     expect(JSON.stringify(logs)).not.toContain('secret-key');
   });
 
+  it('keeps food/weight causality limits in the provider system message alongside confirmed history', async () => {
+    const fetcher = jest.fn().mockResolvedValue(response({ choices: [{ message: { content: 'Недостаточно сопоставимых данных.' } }] }));
+    const adapter = new GenApiAiProviderAdapter({ apiKey: 'test', baseUrl: 'https://proxy.gen-api.ru/v1', model: 'grok-4-5', timeoutMs: 1000 }, fetcher);
+    const foodContext = 'Подтверждённый приём пищи: рис 23 сентября. Вес 24 сентября: +0,3 кг; предыдущих сопоставимых записей нет.';
+    await adapter.execute({ ...request, memoryContext: foodContext, messages: [{ role: 'user', content: 'Значит, рис вызвал привес?' }] });
+    const payload = JSON.parse(String((fetcher.mock.calls[0]![1] as RequestInit).body));
+    const system = payload.messages[0];
+    expect(system.role).toBe('system');
+    expect(system.content).toContain(foodContext);
+    expect(system.content).toContain('корреляции и единичные изменения веса не доказывают причинность');
+    expect(system.content).toContain('Не объявляй продукт или приём пищи причиной привеса или отвеса');
+    expect(system.content).toContain('нет записей питания и веса за сопоставимые периоды, прямо скажи об этом');
+    expect(payload.messages[1]).toEqual({ role: 'user', content: 'Значит, рис вызвал привес?' });
+  });
+
   it.each([401, 403, 404, 429])(
     'maps HTTP %s to a refundable technical error',
     async (status) => {
