@@ -1,9 +1,0 @@
-[
-  {
-    "AllowedOrigins": ["*"],
-    "AllowedMethods": ["PUT"],
-    "AllowedHeaders": ["content-type", "x-amz-meta-sha256", "x-amz-*"],
-    "ExposeHeaders": ["etag"],
-    "MaxAgeSeconds": 600
-  }
-]

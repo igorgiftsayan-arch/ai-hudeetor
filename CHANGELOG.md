@@ -6,6 +6,12 @@
 
 ### Current checkpoint — 2026-09-24
 
+- Expanded MinIO initialization now uses same-origin gateway uploads without the
+  invalid JSON `mc cors set` step. Bucket creation and anonymous-access denial
+  remain required; init failures are not ignored. Cross-origin uploads are not
+  enabled by this configuration. Runtime signed-upload/private-object acceptance
+  is a separate deployment gate.
+
 - Real native vision probe `54112506` used one unchanged synthetic food image and
   an explicit vegetarian profile, with no dish labels in request text. The model
   recognized chicken/lettuce/tomato/cucumber (`dishName=null`) and returned
