@@ -1,5 +1,15 @@
 # GERBI local ledger/recovery checkpoint — 2026-09-24
 
+## Later real runtime checkpoint — 2026-09-25
+
+Two authorized real food operations each have1reservation(-5),1confirmation(0),
+0refund; wallet100→90. Second operation recovered after a durable known-ID pending
+worker crash with sameID/hash; first deletion preserved ledger and physicalS3 purge
+returned404 for original/staging. These actual runtime facts complement, not inflate,
+the local test denominators below. See [full runtime evidence](gerbi-full-food-runtime.md)
+for exact timestamps, IDs, component hashes and outstanding HTTPS/phone/pre-ID limits.
+
+
 ## Current checkpoint: integrated `f360290`, deletion/list fixes locally independently reviewed
 
 The user approved continuing local development while increasing server RAM and

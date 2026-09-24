@@ -4,7 +4,7 @@
 
 One active stack: atlas-gerbi-expanded on the existing2GB server; old Daily Coach
 containers stopped, all historical volumes preserved. Main unchanged. API and
-worker chat=fake, food=genapi, PUSH_ENABLED=false. Web969dd85, API backendd9ba57c;
+worker chat=fake, food=genapi, PUSH_ENABLED=false. Web8a0e72d, API backend141b784;
 worker/base applicationda9e837. See constrained-runtime provenance for dependency
 images, private MinIO locally built upstream binaries and resource caps.
 
@@ -12,8 +12,8 @@ Public HTTP Safari lacks crypto.subtle. The failed preflight created no upload,
 reservation or provider request. Desktop acceptance used an SSH forward bound only
 127.0.0.1:13114 to server127.0.0.1:3114, with temporary API_CORS_ORIGIN and
 S3_PUBLIC_ENDPOINT=http://localhost:13114. Same gateway, database, storage and
-provider; no mock or weaker checksum. The temporary origin must be restored after
-browser acceptance. This is not physical-phone HTTPS or push acceptance.
+provider; no mock or weaker checksum. The public origin was restored after browser acceptance and the exact owned SSH
+process34180 was stopped; port13114 no longer listens. This is not physical-phone HTTPS or push acceptance.
 
 ## Defects found by the real path
 
@@ -28,8 +28,9 @@ browser acceptance. This is not physical-phone HTTPS or push acceptance.
   GET403 retained. RealSDK regression2red→3/3green, APItypecheck/lint and independent
   3/3 review PASS. Original failed pendingUpload intent retained; no paid call then.
 - Correction969dd85 retains authoritative PATCH result through confirmation.
-  Independent23/23 targeted PASS. Live regression uses the second authorized
-  operation; final browser result is recorded below when complete.
+  Independent23/23 targeted PASS. Live second-operation correction→confirm→full reload PASS; corrected composition
+  retained and stale suitability suppressed. Second photo/result/one consumption
+  preserved. No third food generation.
 
 ## Exactly two authorized full-app provider operations
 
@@ -74,10 +75,61 @@ HEAD returned404 for BOTH original and staging keys. No manual timestamp change 
 external-provider deletion claim. The earlier failed never-analyzed pending upload
 is retained; no retention policy was invented for it.
 
-## Core acceptance in progress
+## Core acceptance completed (bounded synthetic checks)
 
 Existing API created a clearly synthetic25–26Sep2026 marathon/team and assigned
 the same synthetic owner captain. Bootstrap was temporarily allowlisted only for
 that owner, then verified disabled with empty allowlist. Current-day captain task
-created through existing API. Browser weight/wellness/task reload checks remain
-pending; no yesterday delta will be claimed without a supported dated entry.
+created through existing API. First fixture captain task completed in UI and persisted; team Tasks view reflected it.
+First-day wellness correctly refused yesterday outside the marathon period.
+Owner then authorized a second clearly synthetic24–26Sep fixture through the same
+create API (no date update endpoint exists); old fixture/task retained. Temporary
+allowlist again restored false/empty. UI yesterday wellness saved4/8, survived
+reload, and team displayed4. Current fixture name: Synthetic yesterday wellness
+acceptance, team Synthetic wellness team. These are test dates, not launch dates.
+
+Daily weight first80.50 succeeded; edit80.4 exposed binary-float multiplication
+validation. Fix141b784 uses exact decimal round-trip; isolated realPG7/7 plus
+APItypecheck/lint and independent7/7 review PASS. Real browser edit and full reload
+then displayed80.4 with exactly one current history row for25Sep. No yesterday
+weight delta is claimed. No paid AI call was used for these core checks.
+
+Actual team API recursive inspection found no raw weightKg/currentWeightKg/
+startWeightKg/targetWeightKg, chat/messages, memory or cumulativeTotals fields.
+A separate synthetic account was registered through the API (no starter grant or
+AI): foreign analysis/detail-deletion-state each404, analysis list and consumption
+list200 with zero items. Owner food data and wallet remained unchanged.
+
+Final notifications UI8a0e72d shows disabled unavailable state and sender-not-
+configured explanation; no spinner/permission prompt. Independent9/9 review,
+production build/typecheck/lint passed. This is truthful unavailability, not delivery.
+
+## Final deployed components and operational cleanup
+
+- Web8a0e72d BuildID0-gRA0yVTCt9m3OtlWFXN, artifact SHA256
+  4e7ea5a4c96c21fc372278a2e01698cbf038159d3fda8ec8014dfec5532fe132.
+- API backend141b784 compiled Node24.18.0/pnpm11.14.0, artifact SHA256
+  3dd116c4e6fe6ea2a770c04c5e64ad45caedbfe567be8d56c9f380bbc515f0a0.
+- API composition and worker/base applicationda9e837; only API backend and web
+  read-only mounts changed after initial cutover. Dependency images unchanged.
+- Running API origin and S3 signer restored http://5.42.126.71:3114;
+  bootstrap=false, allowlist empty. Own localhost SSH tunnel closed.
+- Final public login/APIready200. Exactly7expanded services healthy, OOMKilled=false,
+  automatic restartCount0; intentional graceful/crash stop/start separately recorded.
+- Snapshot availableRAM1024MiB/1967, disk3882MiB; final observed RSS about487MiB.
+  Resource caps unchanged. This is bounded acceptance, not a concurrency/load test.
+- Server root-only compose-current.sh preserves base+expanded+artifact, current
+  web-revision/api-revision and disabled bootstrap overlays. It deliberately omits
+  desktop-origin.yaml. Config validates quietly; operators must use current mounts.
+  Old artifacts, old stack volumes and backup are preserved; no broad prune/delete.
+
+## Remaining limits
+
+Public HTTP Safari cannot prepare photoSHA256; the full food desktop proof used
+localhost secure context through the real SSH tunnel. A real HTTPS hostname and
+phone browser acceptance are still required for participant use and Web Push.
+Current chat is fake; current food is realGenAPI. No broad real-model quality claim.
+Pre-ID unknown/possibly-sent goodwill-refund policy remains owner-dependent; known-
+unsent cancellation is a different approved rule. No automatic refund promise is
+made for ambiguous provider submission. Prior local recovery/cancellation tests
+remain separate from these two observed runtime operations.

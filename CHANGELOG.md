@@ -6,9 +6,16 @@
 
 ### Runtime checkpoint — 2026-09-25
 
+- Final current components web8a0e72d/API backend141b784/workerda9e837.
+  Second food correction/confirm/reload and core weight/wellness/captain checks
+  passed through browser+API+PG; owner-negative lists/details do not leak data.
+  Public origin restored, owned SSH tunnel closed, bootstrap disabled.
+  PublicHTTP WebCrypto and real phoneHTTPS/push remain explicit readiness gaps.
+
+
 - Fixed valid daily weights such as80.4 rejected by floating-point multiplication.
   Decimal round-trip preserves strict2decimal precision/ranges. Actual isolatedPG
-  regression red→green; dailyweight7/7, APItypecheck/scopedlint PASS. Deploypendingreview.
+  regression red→green; dailyweight7/7, APItypecheck/scopedlint PASS. Independently reviewed7/7; API deployed and actual80.4 edit/reload PASS.
 
 
 - Actual full-app food analyses2/2 completed with exactly one reservation and
@@ -29,8 +36,8 @@
 - One constrained expanded test stack replaces Daily Coach on the existing2GB host.
   Current compiled artifacts, private MinIO source-build fallback, resource caps,
   backup/rollback and real signed-upload403/200 checks are recorded in
-  `docs/07-deployment/gerbi-constrained-runtime.md`. Browser/full food acceptance
-  remains pending; no new provider call or phone push claim.
+  `docs/07-deployment/gerbi-constrained-runtime.md`. Later bounded food/core acceptance is recorded in gerbi-full-food-runtime.md;
+  physical phone HTTPS/push remains pending.
 
 
 ### Current checkpoint — 2026-09-24

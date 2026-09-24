@@ -2,34 +2,32 @@
 
 ## Runtime checkpoint — 2026-09-25
 
-Core browser found valid80.4 rejected by binary-float precision check. Minimal
-round-trip validation fix verified on isolated actualPG (same-day replacement,
-replay, >2decimal/range rejection; dailyweight7/7), APItypecheck/lint PASS; awaiting
-independent review/deployment. No food/ledger changes.
+Один активный expanded стенд на прежнем2GB сервере; main не менялся. Web8a0e72d,
+API backend141b784, worker/base da9e837. Public3114 login/APIready200;7сервисов healthy,
+resourceOOMfalse, автоматических restarts0. Старые volumes/backup сохранены.
 
+- Два разрешённых full-app food анализа:54129307/54130142, по1reservation(-5) и
+  1confirmation,0refund; wallet100→90. Второй восстановился после реального stop0:
+  acceptedID/hash подтверждены пока worker остановлен и совпали при завершении.
+- Первый photo/result/diary delete проверен отдельно; durable physical purge
+  completed, original/stagingHEAD404, ledger сохранён. Второй correction→confirm→
+  fullreload PASS; сохранены фото, результат и одна запись питания. Третьего анализа нет.
+- Actual owner isolation: foreign details404, чужие списки analysis/consumption empty.
+- Core UI/API/PG: onboarding и1starterGrant; weight80.50→80.40 и reload одной записи;
+  wellness4/8 и reload/team4; captain task completion. Bootstrap синтетических
+  fixtures через API затем disabled/allowlistempty. Командный API не раскрывает rawweight/context.
+- Исправления runtime-пути прошли focused tests и независимые review: onboarding,
+  preview, checksum signing, corrected display, decimalweight, notifications label.
 
-Один active expanded стенд на прежнем2GB сервере; main не менялся. Web969dd85,
-API backendd9ba57c, workerbase da9e837. Все7сервисов healthy, resource OOM не было.
-Chat=fake, food=genapi, push=false. Старые стенды остановлены, volumes сохранены.
+[Точные версии, hashes, timestamps, доказательства и ограничения](../07-deployment/gerbi-full-food-runtime.md).
+Chat=fake, food=genapi, push=false. PublicHTTP Safari не имеет crypto.subtle: desktop
+food acceptance выполнен через localhostSSH к реальному стеку. Теперь publicorigin
+восстановлен, собственный tunnel закрыт. Реальный HTTPS/телефон/push всё ещё pending;
+этот стенд не объявляется готовым для участников. Pre-ID unknown goodwill/refund
+policy остаётся отдельным решением владельца. Нагрузочное тестирование не выполнялось.
 
-Два разрешённых full-app food анализа завершены: provider54129307 и54130142,
-по1reservation(-5)+1confirmation,0refund; wallet100→90. Второй действительно
-восстановился после stop0 worker: accepted ID/hash подтверждены пока worker
-остановлен и совпали при завершении. Третий запрос не разрешён/не выполнялся.
-Первый photo/result/diary delete проверен по отдельности; физический purge completed,
-original/stagingHEAD404, ledger сохранён. Второй correction/confirm/reload и core
-browser gates завершаются. Подробные факты, timestamps и границы:
-[Full food runtime](../07-deployment/gerbi-full-food-runtime.md).
-
-PublicHTTP Safari не имеет crypto.subtle: desktop acceptance идёт через localhost
-SSH tunnel к тому же реальному стеку с временным origin override. HTTPS для телефона
-и реальный push остаются неподтверждёнными. После browser gates требуется вернуть
-public origin и закрыть собственный tunnel. Synthetic marathon создан существующим
-API; временный bootstrap уже disabled/allowlist empty. Проверки wellness/weight/task
-ещё не объявлены завершёнными.
-
-Ниже исторический локальный срез; его ожидание расширения сервера и старые runtime
-адреса не описывают текущий единственный стенд.
+Ниже исторический локальный срез; старые runtime адреса/ожидание расширения сервера
+не описывают текущий единственный стенд.
 
 ## Актуальный срез — локальная разработка продолжается, 2026-09-24
 
