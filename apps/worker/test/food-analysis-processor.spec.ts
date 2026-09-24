@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { S3Client } from '@aws-sdk/client-s3';
 import { FoodAnalysisProcessor } from '../src/food-analysis.processor';
 
@@ -72,6 +74,28 @@ describe('FoodAnalysisProcessor reconciliation', () => {
       expect.stringContaining("'aiRefund'"),
       expect.anything(),
     );
+  });
+
+  it.each(['result', 'full_response'])('confirms the observed native %s choice-array envelope without refund', async (field) => {
+    // Sanitized real synthetic-image response: no request parameters, image, profile or identifiers.
+    const fixture = JSON.parse(readFileSync(resolve(__dirname, 'fixtures/genapi-food-native-choices.json'), 'utf8'));
+    const expected = JSON.parse(fixture.result[0].message.content);
+    const client = { query: jest.fn()
+      .mockResolvedValueOnce({rows:[{id:'analysis-1',user_id:'user-1'}]})
+      .mockResolvedValueOnce({rows:[{id:'reservation-1',wallet_id:'wallet-1',amount_tokens:-5}]})
+      .mockResolvedValue({rows:[]}) };
+    const database = { query: jest.fn()
+      .mockResolvedValueOnce({rows:[{payload:{analysisId:'analysis-1'}}]})
+      .mockResolvedValueOnce({rows:[{provider_request_id:'known-request'}]}),
+      transaction: async (callback: (value: typeof client) => unknown) => callback(client) };
+    const fetcher = jest.spyOn(global, 'fetch').mockResolvedValue(new Response(JSON.stringify({status:fixture.status,[field]:fixture.result}), {status:200}));
+    const processor = new FoodAnalysisProcessor(database as never, {provider:'genapi',fakeMode:'success',apiKey:'test',nativeBaseUrl:'https://provider.example/api/v1',networkId:'gpt-4o',modelVersion:'gpt-4o-2024-08-06',timeoutMs:1000});
+    await processor.reconcile({data:{outboxId:'outbox-1'}} as never);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0]![0]).toBe('https://provider.example/api/v1/request/get/known-request');
+    expect(client.query).toHaveBeenCalledWith(expect.stringContaining("set status='analyzed'"), ['analysis-1',JSON.stringify(expected.recognized),JSON.stringify(expected.suitability),'known-request']);
+    expect(client.query).toHaveBeenCalledWith(expect.stringContaining("'aiConfirmation'"), ['wallet-1','user-1','analysis-1','reservation-1']);
+    expect(client.query).not.toHaveBeenCalledWith(expect.stringContaining("'aiRefund'"),expect.anything());
   });
 
   it('schedules another reconciliation without a financial effect while provider is processing', async () => {

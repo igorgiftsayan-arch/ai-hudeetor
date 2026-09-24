@@ -6,6 +6,19 @@
 
 ### Current checkpoint — 2026-09-24
 
+- Real native vision probe `54112506` used one unchanged synthetic food image and
+  an explicit vegetarian profile, with no dish labels in request text. The model
+  recognized chicken/lettuce/tomato/cucumber (`dishName=null`) and returned
+  `doesNotMatch`/`profile` because chicken conflicts with that restriction.
+  This verifies one protocol/image/profile-semantic example, not full-stack quality.
+- Fixed food parser for the observed native choice arrays at
+  `result[0].message.content` and `full_response[0].message.content`.
+  Sanitized regressions first failed2/2; processor tests now **5/5**, worker
+  typecheck/scoped lint PASS. Exact production extraction/validation also passed
+  offline against the saved real envelope. Independent parser review pending.
+  One POST only; bounded follow-up GETs reused its ID. Reported raw cost1.0444
+  has unverified units; usage unavailable. No full adapter/ledger/storage/browser/
+  phone or deployment acceptance is implied.
 - Current integrated source **`f360290`** adds owner-scoped paginated analysis
   discovery (`a355311`/`6bc9292`) and independently reviewed fixes
   `74a20d7`/`f360290`. Historical unconfirmed/error analyses and tombstones with

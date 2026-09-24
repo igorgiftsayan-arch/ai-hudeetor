@@ -8,6 +8,24 @@
 remote capacity ожидается; новый remote build/deploy не является результатом
 этого документального обновления. Продуктовый scope сохранён, `main` не менялся.
 
+- Один реальный native GenAPI vision probe: request `54112506`,
+  `gpt-4o` / `gpt-4o-2024-08-06`, неизменённый синтетический PNG без личных
+  данных. В тексте запроса не назывались компоненты блюда; профиль задавал только
+  вегетарианское ограничение. Ответ распознал chicken/lettuce/tomato/cucumber,
+  `dishName=null`; suitability `doesNotMatch`, source `profile`, явно из-за курицы.
+  `uncertaintyNotes=[]`. Узкий protocol/image/profile-semantics gate подтверждён
+  одним примером, не общей оценкой качества модели.
+  Выявлен и локально исправлен parser mismatch: native `result`/`full_response`
+  содержат массив choice-объектов с `message.content`. Две новые regressions
+  сначала FAIL, затем processor **5/5** PASS; worker typecheck/scoped lint PASS.
+  Точные production extraction+validation helpers офлайн приняли сохранённый
+  реальный envelope, без нового HTTP. Независимый review этого parser-fix ожидается.
+  Всего один POST; шесть первоначальных GET, затем по отдельным разрешениям один
+  reconciliation GET и один diagnostic GET того же ID. Первоначальный probe
+  упирался в свой лимит ответа1MiB; увеличенное bounded чтение завершило диагностику.
+  Raw reported cost `1.0444`, единица не проверена, usage не возвращён.
+  Full adapter/ledger, реальный S3 upload/delete, browser и phone gates не закрыты;
+  deployment/restart не выполнялись, provider-side deletion не заявляется.
 - Новые локальные gates, вошедшие в `fa13d8d`, учитываются **по отдельным suites**:
   - Food UI `f231fed`: защита от устаревших ответов при смене аккаунта;
     food **33/33**, web typecheck/scoped lint PASS.
@@ -110,7 +128,7 @@ remote capacity ожидается; новый remote build/deploy не явля
   **24 running контейнера**, их состав не изменён этой очисткой. Доступная RAM
   около **510 MiB**, swap около **1.5 GiB используется**. Очистка диска не
   подтверждает достаточность памяти и не означает восстановление API/worker.
-- Real storage round trip, реальный GenAPI food, новый browser/runtime путь и
+- Real storage round trip, полный путь GenAPI food через adapter/ledger, новый browser/runtime путь и
   физический phone push остаются **PENDING / NOT ACCEPTED**. Домен/HTTPS и
   телефонная приёмка также не закрыты. Старые standalone/core-marathon проверки
   не принимают за них расширенный пилот.

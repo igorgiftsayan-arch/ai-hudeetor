@@ -7,6 +7,53 @@ storage. Remote capacity is pending. This update changes documentation only;
 product scope and `main` are unchanged. Local progress does not establish remote
 runtime acceptance.
 
+### One real native vision sample and observed parser correction
+
+Request54112506 used network `gpt-4o`, model `gpt-4o-2024-08-06`, original
+builtin-generated synthetic PNG1254×1254,2653194bytes. Image SHA256
+`5f368ad92ce83aed127aa044b006e1f404cd296b3cba149ff9f62f03e3fad051` and payload SHA256
+`0ee32779510c278d07c213f5d65169847e18ad1cdaaa72768b5f7726434ffe1a` match the approved
+unchanged bytes. The request supplied no dish labels, only a synthetic vegetarian
+restriction. No real-user data or credentials were printed/copied.
+
+The model returned chicken, lettuce, tomato and cucumber; **dishName is null**.
+Suitability is `doesNotMatch`, source `profile`, explicitly because chicken does
+not match the vegetarian preference. Uncertainty notes and missingData are empty.
+The current structured validator accepts the output. This closes the narrow
+protocol/image/profile-semantic sample gate, not full adapter/financial/storage/
+browser/phone acceptance or general model-quality evaluation.
+
+The live response revealed a real parser mismatch: both `result` and
+`full_response` are arrays of choice objects, with content directly at
+`[0].message.content`. The old extractor searched other wrappers/string results
+and missed valid output. The minimal fix adds exactly these observed paths.
+The sanitized fixture contains only model output choice structure, no request
+parameters, image, raw profile, provider identifiers or secret values.
+Two regressions failed before the fix; processor **5/5** PASS after, worker
+ typecheck/scoped lint PASS. TypeScript-transpiled production extraction and
+validation helpers ran offline against the complete saved envelope and passed,
+without another provider call. Fixed processor source SHA256:
+`418f4d0ed14fcfda91eef185eb2102574b7563c48c3da178c461e067ce2acd33`.
+Independent parser review is pending.
+
+Exactly one POST was accepted and its ID durably persisted before polling.
+Six initial GETs hit the probe's1MiB response limit (the envelope includes input).
+One separately authorized reconciliation GET with8MiB cap established provider
+success; one diagnostic GET saved the complete envelope root-only600 for offline
+work. There was no second POST. Raw cost field is1.0444, units not verified;
+usage was absent. Do not label this value as a currency or estimate a charge.
+
+Artifacts remain root-only beneath
+`/opt/projects/ai-hudeetor-gerbi-expanded-runtime/vision-probe/run-01/`:
+receipt.json, diagnostic-envelope.json, result.json, safe-report.json and
+production-parser-report.json. The original result.json/safe-report.json record
+the pre-fix null extraction; production-parser-report.json records the corrected
+offline result. Never print the diagnostic envelope: it contains the input image.
+Local evidence is `work/gerbi-backend-verification/vision-probe/`, including
+outcome.md and parser-{red,green,typecheck,lint}.log. Preflight dryrun under96MiB
+address-space cap peaked about39.5MiB RSS; no install/build/container start/restart
+was used. Application runtime remains undeployed; secrets stayed server-local.
+
 ### User-requested deletion and known-unsent cancellation
 
 | Checkpoint | Local evidence | Acceptance boundary |
