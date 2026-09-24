@@ -6,6 +6,8 @@
 
 ### Added
 
+- GERBI-MARATHON-PILOT completion audit (`629f576`): focused PostgreSQL `9/9`, calendar `2/2` and reconciliation matcher `2/2` подтвердили cross-team isolation, captain create/edit vs participant deny, safe team DTO и first-day/last-day/rollover; frontend browser gate отдельно подтвердил восстановленный assistant reply и доступный composer без нового AI-запроса.
+- GERBI-MARATHON-PILOT operator handoff: добавлен fail-closed GenAPI reconciliation runbook с verify-before-write, safe replay и post-write проверками. Изолированный synthetic pilot подготовлен к ручной приёмке владельцем, но не считается production/stable accepted; automatic pre-ID recovery и immutable request snapshot для защиты от context drift остаются открытыми, timeout не менялся.
 - GERBI-MARATHON-PILOT: additive migration `0012`, marathon/team/membership, owner-scoped wellness report, captain daily task/completion, safe daily team read model and explicit current-version provider consent boundary.
 - GERBI-MARATHON-PILOT verification: repeatable migrations through `0013`, PostgreSQL 8/8, API 44/44, worker 32/32, isolated shared browser/mobile daily flow and shared browser GenAPI consent/two-message/ledger acceptance; safe context-builder and log/outbox privacy evidence recorded while `main` and stable remain unchanged.
 - GERBI-MARATHON-PILOT manual acceptance and food-vision dependency assessment; real marathon dates, team composition and captain assignments remain external pilot inputs.
