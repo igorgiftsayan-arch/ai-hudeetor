@@ -14,6 +14,7 @@ import {
 import { MemoryExtractionProcessor } from './memory-extraction.processor';
 import { FoodAnalysisProcessor } from './food-analysis.processor';
 import { createHash } from 'node:crypto';
+import { PushReminderService } from './push-reminder.service';
 
 @Processor('atlas-system')
 export class AiOperationProcessor extends WorkerHost {
@@ -27,6 +28,8 @@ export class AiOperationProcessor extends WorkerHost {
     private readonly consentVersion: string = 'v1',
     @Inject(FoodAnalysisProcessor)
     private readonly foodAnalysis?: FoodAnalysisProcessor,
+    @Inject(PushReminderService)
+    private readonly pushReminder?: PushReminderService,
   ) {
     super();
   }
@@ -38,6 +41,10 @@ export class AiOperationProcessor extends WorkerHost {
     }
     if (job.name === 'food-analysis') {
       if (this.foodAnalysis) await this.foodAnalysis.process(job);
+      return;
+    }
+    if (job.name === 'push-delivery') {
+      if (this.pushReminder) await this.pushReminder.process(job);
       return;
     }
     const event = await this.database.query<{

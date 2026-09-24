@@ -157,6 +157,9 @@ importers:
       '@atlas/backend':
         specifier: workspace:*
         version: link:../../packages/backend
+      '@aws-sdk/client-s3':
+        specifier: 3.922.0
+        version: 3.922.0
       '@nestjs/bullmq':
         specifier: 11.0.4
         version: 11.0.4(@nestjs/common@11.1.17(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.17)(bullmq@5.80.8(supports-color@8.1.1))
@@ -178,6 +181,9 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+      web-push:
+        specifier: 3.6.7
+        version: 3.6.7(supports-color@8.1.1)
       zod:
         specifier: 4.0.4
         version: 4.0.4
@@ -188,6 +194,9 @@ importers:
       '@types/jest':
         specifier: 30.0.0
         version: 30.0.0
+      '@types/web-push':
+        specifier: 3.6.4
+        version: 3.6.4
       jest:
         specifier: 30.4.2
         version: 30.4.2(@types/node@26.1.1)(supports-color@8.1.1)

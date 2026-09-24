@@ -6,16 +6,18 @@ export interface MemoryContextDependencies {
   profile(userId: string): Promise<CompanionProfileContext>;
   weight(userId: string): Promise<CompanionWeightContext>;
   memories(userId: string): Promise<AiMemory[]>;
+  confirmedFood?(userId: string): Promise<Array<{ consumedAt: string; summary: string }>>;
 }
 
 export class MemoryContextBuilder {
   constructor(private readonly dependencies: MemoryContextDependencies) {}
 
   async build(userId: string, query: string): Promise<string> {
-    const [profile, weight, stored] = await Promise.all([
+    const [profile, weight, stored, confirmedFood] = await Promise.all([
       this.dependencies.profile(userId),
       this.dependencies.weight(userId),
       this.dependencies.memories(userId),
+      this.dependencies.confirmedFood?.(userId) ?? Promise.resolve([]),
     ]);
     const lines = [
       `Часовой пояс: ${profile.timezone}`,
@@ -53,6 +55,10 @@ export class MemoryContextBuilder {
     if (facts.length) {
       lines.push('Устойчивые факты:');
       lines.push(...facts.map((fact) => `- ${fact.value}`));
+    }
+    if (confirmedFood.length) {
+      lines.push('Подтверждённо съедено пользователем:');
+      lines.push(...confirmedFood.slice(0,5).map((item)=>`- ${item.consumedAt}: ${item.summary}`));
     }
     return truncateCodePoints(lines.join('\n'), 1600);
   }
