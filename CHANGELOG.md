@@ -1,5 +1,16 @@
 # Changelog
 
+## Observed native chat model reconciliation
+
+One GET of successful existing request54133216 established network `grok-4-5`,
+parameters.model `grok-4.5`, result[0].model `x-ai/grok-4.5`. Reconciliation accepts
+only this exact additional mapping; ID/network/ordered messages/timestamp checks
+remain mandatory. Sanitized regression red→green,9/9 including six correlation
+negatives; worker typecheck/scoped lint PASS. No second provider POST, no rewriting
+of successful or refunded records. A successful chat reply is not a claim that a
+real interrupted chat operation has been recovered.
+
+
 ## Chat history recovery — local checkpoint
 
 Conversation input messages now carry their owner-bound operation summary; GET

@@ -51,7 +51,9 @@ export class GenApiOutcomeReconciliationClient {
       throw new Error('GenAPI request parameters mismatch');
 
     const result = Array.isArray(body.result) ? body.result[0] : null;
-    if (!isRecord(result) || result.model !== this.config.model)
+    const observedGrokAlias = isRecord(result) && this.config.model === 'grok-4-5'
+      && body.parameters.model === 'grok-4.5' && result.model === 'x-ai/grok-4.5';
+    if (!isRecord(result) || (result.model !== this.config.model && !observedGrokAlias))
       throw new Error('GenAPI result model mismatch');
     const resultCreatedMs =
       typeof result.created === 'number' ? result.created * 1000 : NaN;
