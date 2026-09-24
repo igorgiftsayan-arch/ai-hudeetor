@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import FoodPage from './page';
 
@@ -154,6 +154,8 @@ describe('food screen', () => {
   });
   it('shows real food consent with fake chat and only enables explicit start after accepting', async () => {
     let accepted = false;
+    let releaseRefresh!: () => void;
+    const refreshPending = new Promise<void>((resolve) => { releaseRefresh = resolve; });
     vi.stubGlobal('URL', {
       createObjectURL: vi.fn(() => 'blob:food'),
       revokeObjectURL: vi.fn(),
@@ -162,12 +164,14 @@ describe('food screen', () => {
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
         if (url === `${api}/users/me`) return json({ userId: 'user-1' });
-        if (url === `${api}/users/me/onboarding`)
+        if (url === `${api}/users/me/onboarding`) {
+          if (accepted) await refreshPending;
           return json({
             status: 'completed',
             csrfToken: 'csrf',
             profile: { timezone: 'UTC' },
           });
+        }
         if (url === `${api}/ai-action-prices/food-photo-analysis`)
           return json({
             actionType: 'foodPhotoAnalysis',
@@ -216,9 +220,15 @@ describe('food screen', () => {
       screen.queryByText('AI сейчас работает в тестовом режиме.'),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Разрешить обработку'));
+    await waitFor(() => expect(accepted).toBe(true));
+    expect(screen.getByText('Начать анализ')).toBeDisabled();
+    expect(screen.getByText('food.jpg')).toBeInTheDocument();
+    await act(async () => releaseRefresh());
     await waitFor(() =>
       expect(screen.getByText('Начать анализ')).not.toBeDisabled(),
     );
+    expect(screen.getByText('food.jpg')).toBeInTheDocument();
+    expect(screen.getByAltText('Предпросмотр выбранного фото')).toBeInTheDocument();
     expect(
       fetchMock.mock.calls.some(([url]) =>
         /food-images|\/food-analyses/.test(String(url)),

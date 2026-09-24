@@ -61,6 +61,8 @@ const photoPolicy = {
 
 export default function FoodPage() {
   const { replace } = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
   const [viewState, setViewState] = useState<ViewState>('loading');
   const [data, setData] = useState<FoodScreenData>();
   const [providerConsent, setProviderConsent] = useState<ProviderConsent>();
@@ -100,9 +102,11 @@ export default function FoodPage() {
     recovery.current = next;
   }
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (preserveDraft = false) => {
     const sequence = ++loadSequence.current;
-    setViewState('loading');
+    refreshingRef.current = true;
+    setRefreshing(true);
+    if (!preserveDraft) setViewState('loading');
     setError(undefined);
     try {
       const [screen, consent, identity] = await Promise.all([
@@ -186,6 +190,11 @@ export default function FoodPage() {
       else if (cause instanceof ApiError && cause.kind === 'onboarding')
         setViewState('onboarding');
       else setViewState('error');
+    } finally {
+      if (sequence === loadSequence.current) {
+        refreshingRef.current = false;
+        setRefreshing(false);
+      }
     }
   }, [replace]);
 
@@ -245,6 +254,7 @@ export default function FoodPage() {
   }
 
   async function start() {
+    if (refreshingRef.current) return;
     if (!data || busy.current || !canUseFoodAi(providerConsent)) return;
     const pending = pendingAnalysis.current;
     if (!pending) return;
@@ -427,6 +437,7 @@ export default function FoodPage() {
 
         <fieldset
           disabled={
+            refreshing ||
             starting ||
             recoverable ||
             confirming ||
@@ -460,14 +471,14 @@ export default function FoodPage() {
                 consent={providerConsent}
                 csrfToken={data.csrfToken}
                 disclosure="Фото блюда и необходимый контекст будут переданы внешнему сервису GenAPI для разбора."
-                onAccepted={load}
+                onAccepted={() => load(true)}
                 onSessionExpired={() => replace('/login')}
               />
             )}
             <button
               type="button"
               className="food-primary-action"
-              disabled={starting || !canUseFoodAi(providerConsent)}
+              disabled={refreshing || starting || !canUseFoodAi(providerConsent)}
               onClick={() => void start()}
             >
               {starting
