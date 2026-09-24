@@ -335,12 +335,13 @@ export default function FoodPage() {
     setError(undefined);
     try {
       if (!pendingConfirmation.current) {
-        await saveFoodCorrection({
+        const corrected = await saveFoodCorrection({
           analysisId: analysis.id,
           csrfToken: data.csrfToken,
           correction: { items: draft.items.map((name) => ({ name })) },
         });
         if (generation.current !== version) return;
+        setAnalysis(corrected);
         const pending = {
           analysisId: analysis.id,
           idempotencyKey: newIdempotencyKey(),

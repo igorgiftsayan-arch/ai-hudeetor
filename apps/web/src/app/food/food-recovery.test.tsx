@@ -94,6 +94,7 @@ beforeEach(() => {
     status: 'queued',
   } as Awaited<ReturnType<typeof food.createFoodAnalysis>>);
   vi.mocked(food.loadFoodAnalysis).mockResolvedValue(analyzed);
+  vi.mocked(food.saveFoodCorrection).mockResolvedValue(analyzed);
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -199,6 +200,7 @@ it('bounds unknown-outcome polling and can recover a later result on explicit st
   await tick(100_000);
   expect(food.loadFoodAnalysis).toHaveBeenCalledTimes(31);
   vi.mocked(food.loadFoodAnalysis).mockResolvedValue(analyzed);
+  vi.mocked(food.saveFoodCorrection).mockResolvedValue(analyzed);
   fireEvent.click(screen.getByText('Проверить статус'));
   await tick();
   expect(screen.getByText('Что на фото')).toBeInTheDocument();
@@ -226,6 +228,37 @@ it('unlocks a consumed analysis recovered after reload without repeating any mut
   expect(screen.getByText('Выбрать фото')).not.toBeDisabled();
   expect(food.confirmFoodConsumption).not.toHaveBeenCalled();
   expect(food.saveFoodCorrection).not.toHaveBeenCalled();
+});
+
+it('keeps the acknowledged correction and suppresses old suitability after confirmation refresh', async () => {
+  saved({ analysisId: 'analysis-1' });
+  const result: FoodAnalysisResourceDto = {
+    ...analyzed,
+    suitabilityResult: { status: 'matches', source: 'profile', observations: ['Рис соответствует профилю.'], missingData: [] },
+  };
+  vi.mocked(food.loadFoodAnalysis).mockResolvedValue(result);
+  vi.mocked(food.saveFoodCorrection).mockResolvedValue({ ...result, userCorrection: { items: [{ name: 'рыба' }] } });
+  vi.mocked(food.confirmFoodConsumption).mockResolvedValue({} as never);
+  let releaseRefresh!: (value: Awaited<ReturnType<typeof food.loadFoodScreen>>) => void;
+  const refreshPending = new Promise<Awaited<ReturnType<typeof food.loadFoodScreen>>>((resolve) => { releaseRefresh = resolve; });
+  vi.mocked(food.loadFoodScreen).mockResolvedValueOnce({ csrfToken: 'secret', timezone: 'UTC', price, consumptions: [] }).mockReturnValueOnce(refreshPending);
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Исправить состав'));
+  fireEvent.change(screen.getByLabelText('Состав блюда'), { target: { value: 'рыба' } });
+  fireEvent.click(screen.getByText('Готово'));
+  fireEvent.click(screen.getByText('Съели это?'));
+  fireEvent.click(screen.getByText('Подтвердить употребление'));
+  await screen.findByText('Открываем дневник питания…');
+  await act(async () => releaseRefresh({ csrfToken: 'secret', timezone: 'UTC', price, consumptions: [] }));
+  await screen.findByText('Добавлено в дневник');
+  expect(screen.getByText('рыба')).toBeInTheDocument();
+  expect(screen.queryByText('рис')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Рис соответствует профилю/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Исправленный состав пока не оценён/)).toBeInTheDocument();
+  expect(food.saveFoodCorrection).toHaveBeenCalledTimes(1);
+  expect(food.confirmFoodConsumption).toHaveBeenCalledTimes(1);
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
 });
 
 it('does not present saved corrections with the original suitability or start another paid analysis', async () => {
