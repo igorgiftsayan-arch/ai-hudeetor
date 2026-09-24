@@ -1,5 +1,11 @@
 # Текущий статус
 
+## Expanded pilot local PostgreSQL checkpoint — 2026-09-24
+
+- Recovery and initial submission now share operation-row locks; a stale sweeper cannot overwrite a newer provider receipt. Real PostgreSQL concurrency regressions pass.
+- Food reservation/confirmation/refund use existing ledger columns; no schema workaround. FoodService create/replay → worker result → correction → explicit consumption/replay → edit/read → delete/replay is verified on actual migrations, with separate technical-error refund and owner-read isolation. PostgreSQL dates remain `YYYY-MM-DD`.
+- Local gates and limits: [verification evidence](../07-deployment/gerbi-local-ledger-recovery-checkpoint.md). This is local synthetic/provider-stub evidence; real GenAPI image, physical phone push and isolated runtime acceptance remain pending.
+
 ## Расширенный пилот — промежуточная интеграция 2026-09-24
 
 - Конституция и scope синхронизированы в `e6874de`. Общий backend/UI checkpoint `31fd0c8`: локальные builds/lint/contracts PASS, worker 40/40, API 46/46 и web 94/94 по отчёту исполнителя; 46 PostgreSQL-проверок локально пропущены. Повторный review оставляет late-provider/sweep race незакрытой до следующего исправления. Test server SSH без banner, прежние HTTP-стенды недоступны; причина не подтверждена, owner console запрошена. Runtime и физический phone push НЕ приняты.

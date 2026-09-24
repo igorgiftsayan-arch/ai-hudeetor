@@ -3,8 +3,10 @@ import { AutomaticRecoveryService } from '../src/automatic-recovery.service';
 describe('AutomaticRecoveryService',()=>{
   it('moves accepted crash-boundary operations to reconciliation without refund or resubmit',async()=>{
     const client={query:jest.fn(async(statement:string)=>{
-      if(statement.includes("r.submission_state='accepted'")&&statement.includes('food_analyses'))return{rows:[{id:'food-1'}]};
-      if(statement.includes("r.submission_state='accepted'")&&statement.includes('ai_operations'))return{rows:[{id:'ai-1'}]};
+      if(statement.includes("from food_analyses where status='processing'"))return{rows:[{id:'food-1'}]};
+      if(statement.includes('from food_analysis_request_receipts where food_analysis_id'))return{rows:[{submission_state:'accepted',provider_request_id:'food-provider-1'}]};
+      if(statement.includes("from ai_operations where status='processing'"))return{rows:[{id:'ai-1'}]};
+      if(statement.includes('from ai_operation_request_receipts where operation_id'))return{rows:[{submission_state:'accepted',provider_request_id:'ai-provider-1'}]};
       return{rows:[]};
     })};
     const database={transaction:jest.fn(async(callback:(value:typeof client)=>unknown)=>callback(client))};

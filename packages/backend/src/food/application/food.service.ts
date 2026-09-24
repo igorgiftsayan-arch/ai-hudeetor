@@ -134,7 +134,7 @@ export class FoodService {
       const analysisId = randomUUID();
       const reservationId = randomUUID();
       await client.query(`insert into food_analyses (id,user_id,uploaded_image_id,status,runtime_adapter) values ($1,$2,$3,'queued',$4)`, [analysisId, user.userId, image.id, this.config.runtimeAdapter]);
-      await client.query(`insert into token_transactions (id,wallet_id,user_id,entry_type,amount_tokens,reason,food_analysis_id) values ($1,$2,$3,'aiReservation',$4,'foodPhotoAnalysis',$5)`, [reservationId, wallet.id, user.userId, -price.price_tokens, analysisId]);
+      await client.query(`insert into token_transactions (id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id,food_analysis_id) values ($1,$2,$3,'aiReservation',$4,'foodAnalysis',$5,$5)`, [reservationId, wallet.id, user.userId, -price.price_tokens, analysisId]);
       await client.query(`insert into outbox_messages (id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) values ($1,'food.analysis_requested.v1','foodAnalysis',$2,$3::jsonb,now(),now(),0)`, [randomUUID(), analysisId, JSON.stringify({ analysisId })]);
       const response = { id: analysisId, status: 'queued', reservedTokens: price.price_tokens, priceVersion: price.version, pollingUrl: `/api/v1/food-analyses/${analysisId}` };
       await client.query(`update idempotency_records set state='completed',response_status=202,response_body=$1::jsonb,completed_at=now() where user_id=$2 and operation_scope='foodAnalysisCreate' and idempotency_key=$3`, [JSON.stringify(response), user.userId, idempotencyKey]);
@@ -172,7 +172,7 @@ export class FoodService {
       const analysis = (await client.query<any>(`select id,coalesce(user_correction,recognized_result) confirmed_result from food_analyses where id=$1 and user_id=$2 and status='analyzed' and deleted_at is null for update`, [analysisId, user.userId])).rows[0];
       if (!analysis) throw new IdentityError('FOOD_ANALYSIS_NOT_CONFIRMABLE', 409, 'Analysis is not ready for confirmation');
       const id = randomUUID();
-      const saved = (await client.query<any>(`insert into food_consumptions (id,user_id,food_analysis_id,consumed_at,local_date,timezone,confirmed_result) values ($1,$2,$3,$4,$5,$6,$7::jsonb) on conflict (food_analysis_id) where deleted_at is null do update set updated_at=food_consumptions.updated_at returning id,food_analysis_id,consumed_at,local_date,timezone,confirmed_result`, [id, user.userId, analysisId, instant, localDate, timezone, JSON.stringify(analysis.confirmed_result)])).rows[0]!;
+      const saved = (await client.query<any>(`insert into food_consumptions (id,user_id,food_analysis_id,consumed_at,local_date,timezone,confirmed_result) values ($1,$2,$3,$4,$5,$6,$7::jsonb) on conflict (food_analysis_id) where deleted_at is null do update set updated_at=food_consumptions.updated_at returning id,food_analysis_id,consumed_at,local_date::text,timezone,confirmed_result`, [id, user.userId, analysisId, instant, localDate, timezone, JSON.stringify(analysis.confirmed_result)])).rows[0]!;
       const response = mapConsumption(saved);
       await client.query(`update idempotency_records set state='completed',response_status=201,response_body=$1::jsonb,completed_at=now() where user_id=$2 and operation_scope='foodConsumptionConfirm' and idempotency_key=$3`, [JSON.stringify(response), user.userId, idempotencyKey]);
       return response;
@@ -181,7 +181,7 @@ export class FoodService {
 
   async listConsumptions(accessToken: string) {
     const user = await this.currentUser.execute(accessToken);
-    const result = await this.database.query<any>(`select id,food_analysis_id,consumed_at,local_date,timezone,confirmed_result from food_consumptions where user_id=$1 and deleted_at is null order by consumed_at desc,id desc limit 100`, [user.userId]);
+    const result = await this.database.query<any>(`select id,food_analysis_id,consumed_at,local_date::text,timezone,confirmed_result from food_consumptions where user_id=$1 and deleted_at is null order by consumed_at desc,id desc limit 100`, [user.userId]);
     return { items: result.rows.map(mapConsumption) };
   }
 
@@ -192,7 +192,7 @@ export class FoodService {
       await client.query(`insert into idempotency_records (id,user_id,operation_scope,idempotency_key,request_hash,state) values ($1,$2,'foodConsumptionUpdate',$3,$4,'processing') on conflict do nothing`,[randomUUID(),user.userId,idempotencyKey,hash]);
       const idem=(await client.query<any>(`select request_hash,state,response_body from idempotency_records where user_id=$1 and operation_scope='foodConsumptionUpdate' and idempotency_key=$2 for update`,[user.userId,idempotencyKey])).rows[0]!;
       if(idem.request_hash!==hash)throw new IdentityError('IDEMPOTENCY_KEY_REUSED',409,'The idempotency key was used with another request'); if(idem.state==='completed')return idem.response_body;
-      const saved=(await client.query<any>(`update food_consumptions set consumed_at=$1,local_date=$2,timezone=$3,confirmed_result=$4::jsonb,updated_at=now() where id=$5 and user_id=$6 and deleted_at is null returning id,food_analysis_id,consumed_at,local_date,timezone,confirmed_result`,[instant,localDate,input.timezone,JSON.stringify(input.confirmedResult),id,user.userId])).rows[0];
+      const saved=(await client.query<any>(`update food_consumptions set consumed_at=$1,local_date=$2,timezone=$3,confirmed_result=$4::jsonb,updated_at=now() where id=$5 and user_id=$6 and deleted_at is null returning id,food_analysis_id,consumed_at,local_date::text,timezone,confirmed_result`,[instant,localDate,input.timezone,JSON.stringify(input.confirmedResult),id,user.userId])).rows[0];
       if(!saved)throw new IdentityError('FOOD_CONSUMPTION_NOT_FOUND',404,'Food consumption not found'); const response=mapConsumption(saved);
       await client.query(`update idempotency_records set state='completed',response_status=200,response_body=$1::jsonb,completed_at=now() where user_id=$2 and operation_scope='foodConsumptionUpdate' and idempotency_key=$3`,[JSON.stringify(response),user.userId,idempotencyKey]); return response;
     });

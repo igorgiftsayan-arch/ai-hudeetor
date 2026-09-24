@@ -115,6 +115,7 @@ export class AiOperationProcessor extends WorkerHost {
     const requestPayload = JSON.stringify(providerRequest);
     const requestHash = createHash('sha256').update(requestPayload).digest('hex');
     const receiptClaimed=await this.database.transaction(async (client) => {
+      const operation=await client.query(`select 1 from ai_operations where id=$1 and status='processing' and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return false;
       await client.query(
         `insert into ai_operation_request_receipts
           (operation_id,user_id,provider,model,prompt_id,prompt_version,request_payload,request_hash,submission_state)
@@ -135,7 +136,8 @@ export class AiOperationProcessor extends WorkerHost {
     const result = consent
       ? await this.adapter.execute(providerRequest,{onAccepted:async(providerRequestId)=>{
           await this.database.transaction(async(client)=>{
-            await client.query(`update ai_operation_request_receipts r set submission_state='accepted',provider_request_id=$2,updated_at=now() from ai_operations a where r.operation_id=$1 and r.operation_id=a.id and r.submission_state in ('submitting','ambiguous') and a.processing_attempt_id=$3`,[operationId,providerRequestId,attemptId]);
+            const operation=await client.query(`select 1 from ai_operations where id=$1 and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return;
+            await client.query(`update ai_operation_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where operation_id=$1 and submission_state in ('submitting','ambiguous')`,[operationId,providerRequestId]);
             await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'ai-companion.operation_reconciliation_requested.v1','aiOperation',$1,jsonb_build_object('operationId',($1::uuid)::text),now(),now()+interval '15 seconds',0 where exists(select 1 from ai_operations where id=$1 and status='outcomeUnknown') and not exists(select 1 from outbox_messages where event_type='ai-companion.operation_reconciliation_requested.v1' and aggregate_id=$1 and published_at is null)`,[operationId]);
           });
         }})

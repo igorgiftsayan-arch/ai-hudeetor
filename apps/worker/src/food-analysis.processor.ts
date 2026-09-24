@@ -89,10 +89,10 @@ export class FoodAnalysisProcessor {
       const reservation = (await client.query<any>(`select id,wallet_id,amount_tokens from token_transactions where food_analysis_id=$1 and entry_type='aiReservation' for update`,[analysisId])).rows[0];
       if (result.kind === 'success') {
         await client.query(`update food_analyses set status='analyzed',recognized_result=$2::jsonb,suitability_result=$3::jsonb,provider_reference=$4,analyzed_at=now(),updated_at=now() where id=$1`,[analysisId,JSON.stringify(result.recognized),JSON.stringify(result.suitability),result.providerReference ?? null]);
-        await client.query(`insert into token_transactions (id,wallet_id,user_id,entry_type,amount_tokens,reason,reference_type,reference_id,food_analysis_id,reservation_id) values (gen_random_uuid(),$1,$2,'aiConfirmation',0,'foodPhotoAnalysis','foodAnalysis',$3,$3,$4)`,[reservation.wallet_id,operation.user_id,analysisId,reservation.id]);
+        await client.query(`insert into token_transactions (id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id,food_analysis_id,reservation_id) values (gen_random_uuid(),$1,$2,'aiConfirmation',0,'foodAnalysis',$3,$3,$4)`,[reservation.wallet_id,operation.user_id,analysisId,reservation.id]);
         await client.query(`update food_analysis_request_receipts set submission_state='completed',updated_at=now() where food_analysis_id=$1`,[analysisId]);
       } else if (result.kind === 'technicalError') {
-        await client.query(`insert into token_transactions (id,wallet_id,user_id,entry_type,amount_tokens,reason,reference_type,reference_id,food_analysis_id,reservation_id) values (gen_random_uuid(),$1,$2,'aiRefund',$3,'foodPhotoAnalysis','foodAnalysis',$4,$4,$5)`,[reservation.wallet_id,operation.user_id,-reservation.amount_tokens,analysisId,reservation.id]);
+        await client.query(`insert into token_transactions (id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id,food_analysis_id,reservation_id) values (gen_random_uuid(),$1,$2,'aiRefund',$3,'foodAnalysis',$4,$4,$5)`,[reservation.wallet_id,operation.user_id,-reservation.amount_tokens,analysisId,reservation.id]);
         await client.query(`update food_analyses set status='technicalError',error_category=$2,updated_at=now() where id=$1`,[analysisId,result.errorCategory]);
         await client.query(`update food_analysis_request_receipts set submission_state='completed',updated_at=now() where food_analysis_id=$1`,[analysisId]);
       } else {
@@ -138,8 +138,11 @@ export class FoodAnalysisProcessor {
     let object;let bytes:Buffer;
     try{object=await this.storage.send(new GetObjectCommand({Bucket:this.config.s3.bucket,Key:claimed.payload.objectKey}));bytes=object.Body?Buffer.from(await object.Body.transformToByteArray()):Buffer.alloc(0);}catch{return{kind:'technicalError',errorCategory:'imageUnavailable'};}
     if(!bytes.length||bytes.length>10_485_760) return {kind:'technicalError',errorCategory:'imageUnavailable'};
-    const submitting=await this.db.query(`update food_analysis_request_receipts r set submission_state='submitting',submitted_at=now(),updated_at=now() from food_analyses a where r.food_analysis_id=$1 and r.food_analysis_id=a.id and r.submission_state='prepared' and a.status='processing' and a.processing_attempt_id=$2`,[claimed.id,claimed.attemptId]);
-    if(!submitting.rowCount)return{kind:'staleAttempt'};
+    const submissionClaimed=await this.db.transaction(async(client)=>{
+      const operation=await client.query(`select 1 from food_analyses where id=$1 and status='processing' and processing_attempt_id=$2 for update`,[claimed.id,claimed.attemptId]);if(!operation.rowCount)return false;
+      const submitting=await client.query(`update food_analysis_request_receipts set submission_state='submitting',submitted_at=now(),updated_at=now() where food_analysis_id=$1 and submission_state='prepared'`,[claimed.id]);return Boolean(submitting.rowCount);
+    });
+    if(!submissionClaimed)return{kind:'staleAttempt'};
     const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),this.config.timeoutMs);
     let response:Response;
     const requestBody={is_sync:false,model:this.config.modelVersion,response_format:{type:'json_object'},messages:[{role:'system',content:'Return strict JSON only. Recognize visible food without inventing hidden ingredients. Use only supplied known profile facts for suitability. If insufficient, use status insufficientData.'},{role:'user',content:[{type:'text',text:`Known profile JSON: ${JSON.stringify(claimed.payload.knownProfile)}. Required JSON: {recognized:{kind:food|nonFood|ambiguous,dishName:string|null,items:[{name,confidence}],uncertaintyNotes:string[]},suitability:{status:matches|doesNotMatch|mixed|insufficientData,source:profile|none,observations:string[],missingData:string[]}}`},{type:'image_url',image_url:{url:`data:${object.ContentType ?? 'image/jpeg'};base64,${bytes.toString('base64')}`}}]}]};
@@ -150,7 +153,8 @@ export class FoodAnalysisProcessor {
     if(typeof requestId!=='string'&&typeof requestId!=='number')return{kind:'technicalError',errorCategory:'invalidProviderResponse'};
     const providerReference=String(requestId);
     await this.db.transaction(async(client)=>{
-      await client.query(`update food_analysis_request_receipts r set submission_state='accepted',provider_request_id=$2,updated_at=now() from food_analyses a where r.food_analysis_id=$1 and r.food_analysis_id=a.id and r.submission_state in ('submitting','ambiguous') and a.processing_attempt_id=$3`,[claimed.id,providerReference,claimed.attemptId]);
+      const operation=await client.query(`select 1 from food_analyses where id=$1 and processing_attempt_id=$2 for update`,[claimed.id,claimed.attemptId]);if(!operation.rowCount)return;
+      await client.query(`update food_analysis_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where food_analysis_id=$1 and submission_state in ('submitting','ambiguous')`,[claimed.id,providerReference]);
       await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'food.analysis_reconciliation_requested.v1','foodAnalysis',$1,jsonb_build_object('analysisId',($1::uuid)::text),now(),now()+interval '15 seconds',0 where exists(select 1 from food_analyses where id=$1 and status='outcomeUnknown') and not exists(select 1 from outbox_messages where event_type='food.analysis_reconciliation_requested.v1' and aggregate_id=$1 and published_at is null)`,[claimed.id]);
     });
     while(!controller.signal.aborted){
