@@ -612,3 +612,38 @@ it.each([
     expect(food.prepareFoodImage).not.toHaveBeenCalled();
   },
 );
+
+it.each(['refunded', 'notRefunded'] as const)(
+  'restores expired food analysis with %s ledger marker without resubmit',
+  async (refundStatus) => {
+    saved({ analysisId: 'analysis-1' });
+    vi.mocked(food.loadFoodAnalysis).mockResolvedValue({
+      ...analyzed,
+      status: 'technicalError',
+      errorCategory: 'recoveryDeadlineExceeded',
+      refundStatus,
+    });
+    render(<FoodPage />);
+    expect(
+      await screen.findByText(/Разбор не удалось восстановить за 5 минут/),
+    ).toHaveTextContent(
+      refundStatus === 'refunded'
+        ? 'Все зарезервированные токены возвращены.'
+        : 'Возврат токенов пока не подтверждён.',
+    );
+    expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+    expect(screen.queryByText('Проверить статус')).not.toBeInTheDocument();
+  },
+);
+it('does not infer a food refund from technical error without a ledger marker', async () => {
+  saved({ analysisId: 'analysis-1' });
+  vi.mocked(food.loadFoodAnalysis).mockResolvedValue({
+    ...analyzed,
+    status: 'technicalError',
+  });
+  render(<FoodPage />);
+  expect(await screen.findByText(/Разбор не завершился/)).toHaveTextContent(
+    'Возврат токенов пока не подтверждён.',
+  );
+  expect(food.createFoodAnalysis).not.toHaveBeenCalled();
+});

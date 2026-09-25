@@ -1,5 +1,7 @@
 'use client';
 
+import { aiFailureMessage } from '../../features/ai-companion/ai-failure-message';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '../mobile-navigation';
@@ -293,6 +295,7 @@ export default function FoodPage() {
         uploadedImageId: pending.uploadedImageId,
         status: queued.status,
         runtimeAdapter: 'pending',
+        refundStatus: 'notRefunded',
         consumptionStatus: 'notConfirmed',
         createdAt: new Date().toISOString(),
       });
@@ -542,7 +545,9 @@ export default function FoodPage() {
 
         {analysis?.status === 'technicalError' && (
           <section className="food-analysis-progress" role="alert">
-            <p>Разбор не завершился. Зарезервированные токены возвращены.</p>
+            <p>
+              {aiFailureMessage('food', analysis.errorCategory, analysis.refundStatus)}
+            </p>
           </section>
         )}
         {analysis?.status === 'outcomeUnknown' && (
