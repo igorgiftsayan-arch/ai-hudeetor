@@ -92,7 +92,7 @@
    техническую ошибку/refund и затем сохранить late success с неверной экономикой.
 4. При неоднозначном initial submit без ID нет слепого resubmit и автоматического
    refund; виден `outcomeUnknown`/соответствующий неопределённый исход. Отдельная
-   goodwill policy остаётся `TBD`, тест не придумывает её.
+   owner-approved300s full-refund policy applies; no blind resubmission.
 5. Подтверждённая техническая ошибка возвращает резерв один раз; business failure
    корректного результата не подменяется техническим refund. Реальный provider
    contract и durable state должны подтверждать каждое восстановление.
@@ -109,7 +109,7 @@ Core onboarding/weight/wellness/captain проверены на synthetic fixtur
 Это не автоматическая отметка обо всём списке: phone delivery/HTTPS ещё NOT RUN,
 реальное interrupted chat recovery не заявляется. Desktop localhost SSH tunnel
 не заменяет phoneHTTPS/PWA. Реальные даты/команды марафона не задаются без владельца;
-дополнительные Герби-правила и pre-ID goodwill — TBD.
+additional Gerbi rules remain TBD; five-minute project-funded compensation is approved.
 
 ## Исторический результат 2026-09-24
 

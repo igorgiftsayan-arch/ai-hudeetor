@@ -3852,6 +3852,17 @@
       "FoodAnalysisListItemDto": {
         "type": "object",
         "properties": {
+          "refundStatus": {
+            "type": "string",
+            "enum": [
+              "notRefunded",
+              "refunded"
+            ]
+          },
+          "errorCategory": {
+            "type": "string",
+            "nullable": true
+          },
           "id": {
             "type": "string"
           },
@@ -3893,6 +3904,8 @@
           }
         },
         "required": [
+          "refundStatus",
+          "errorCategory",
           "id",
           "uploadedImageId",
           "status",
@@ -4036,6 +4049,13 @@
       "FoodAnalysisResourceDto": {
         "type": "object",
         "properties": {
+          "refundStatus": {
+            "type": "string",
+            "enum": [
+              "notRefunded",
+              "refunded"
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -4078,6 +4098,7 @@
           }
         },
         "required": [
+          "refundStatus",
           "id",
           "uploadedImageId",
           "status",

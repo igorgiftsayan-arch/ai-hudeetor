@@ -1009,6 +1009,14 @@ export interface FoodDeletionStatusDto {
   analysisStatus: FoodDeletionStatusDtoAnalysisStatus;
 }
 
+export type FoodAnalysisListItemDtoRefundStatus = typeof FoodAnalysisListItemDtoRefundStatus[keyof typeof FoodAnalysisListItemDtoRefundStatus];
+
+
+export const FoodAnalysisListItemDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
 /**
  * Presentation status; deleted does not change the financial operation status.
  */
@@ -1034,6 +1042,9 @@ export const FoodAnalysisListItemDtoConsumptionStatus = {
 } as const;
 
 export interface FoodAnalysisListItemDto {
+  refundStatus: FoodAnalysisListItemDtoRefundStatus;
+  /** @nullable */
+  errorCategory: string | null;
   id: string;
   uploadedImageId: string;
   /** Presentation status; deleted does not change the financial operation status. */
@@ -1111,6 +1122,14 @@ export interface FoodCorrectionDto {
   note?: string;
 }
 
+export type FoodAnalysisResourceDtoRefundStatus = typeof FoodAnalysisResourceDtoRefundStatus[keyof typeof FoodAnalysisResourceDtoRefundStatus];
+
+
+export const FoodAnalysisResourceDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
 export type FoodAnalysisResourceDtoStatus = typeof FoodAnalysisResourceDtoStatus[keyof typeof FoodAnalysisResourceDtoStatus];
 
 
@@ -1125,6 +1144,7 @@ export const FoodAnalysisResourceDtoStatus = {
 } as const;
 
 export interface FoodAnalysisResourceDto {
+  refundStatus: FoodAnalysisResourceDtoRefundStatus;
   id: string;
   uploadedImageId: string;
   status: FoodAnalysisResourceDtoStatus;

@@ -173,7 +173,7 @@ export class FoodService {
       } catch { throw invalid(); }
     }
     const result = await this.database.query<any>(`
-      select a.id,a.uploaded_image_id,a.status,a.runtime_adapter,a.created_at,a.created_at::text cursor_time,
+      select a.id,a.uploaded_image_id,a.status,a.runtime_adapter,a.error_category,exists(select 1 from token_transactions t join token_transactions r on r.id=t.reservation_id where t.food_analysis_id=a.id and t.user_id=a.user_id and t.entry_type='aiRefund' and r.food_analysis_id=a.id and r.user_id=a.user_id and r.entry_type='aiReservation' and t.amount_tokens=-r.amount_tokens) refunded,a.created_at,a.created_at::text cursor_time,
         case when a.deleted_at is null then coalesce(a.user_correction->>'dishName',a.recognized_result->>'dishName') else null end dish_name,
         exists(select 1 from food_consumptions c where c.food_analysis_id=a.id and c.deleted_at is null) consumed,
         case when i.status='deleted' then 'deleted' when i.deleted_at is not null then 'pending' else 'available' end photo_status,
@@ -187,7 +187,7 @@ export class FoodService {
     return {
       items: rows.map(row => ({ id:row.id,uploadedImageId:row.uploaded_image_id,
         status:row.analysis_status === 'deleted' ? 'deleted' : row.status,runtimeAdapter:row.runtime_adapter,
-        createdAt:new Date(row.created_at).toISOString(),consumptionStatus:row.consumed ? 'consumed' : 'notConfirmed',dishName:row.dish_name,
+        errorCategory:row.error_category,refundStatus:row.refunded ? 'refunded' : 'notRefunded',createdAt:new Date(row.created_at).toISOString(),consumptionStatus:row.consumed ? 'consumed' : 'notConfirmed',dishName:row.dish_name,
         deletionStatus:{analysisId:row.id,photoStatus:row.photo_status,analysisStatus:row.analysis_status,cancellationStatus:row.status === 'cancelled' ? 'cancelledRefunded' : 'notCancelled'} })),
       nextCursor:result.rows.length > limit && last ? Buffer.from(JSON.stringify({version:1,filter,order:'createdAtIdDesc',time:last.cursor_time,id:last.id})).toString('base64url') : null,
     };
@@ -195,7 +195,7 @@ export class FoodService {
 
   async getAnalysis(accessToken: string, analysisId: string) {
     const user = await this.currentUser.execute(accessToken);
-    const result = await this.database.query<any>(`select a.id,a.uploaded_image_id,a.status,a.runtime_adapter,a.recognized_result,a.suitability_result,a.user_correction,a.error_category,a.created_at,exists(select 1 from food_consumptions c where c.food_analysis_id=a.id and c.deleted_at is null) consumed from food_analyses a where a.id=$1 and a.user_id=$2 and a.deleted_at is null`, [analysisId, user.userId]);
+    const result = await this.database.query<any>(`select a.id,a.uploaded_image_id,a.status,a.runtime_adapter,a.recognized_result,a.suitability_result,a.user_correction,a.error_category,a.created_at,exists(select 1 from token_transactions t join token_transactions r on r.id=t.reservation_id where t.food_analysis_id=a.id and t.user_id=a.user_id and t.entry_type='aiRefund' and r.food_analysis_id=a.id and r.user_id=a.user_id and r.entry_type='aiReservation' and t.amount_tokens=-r.amount_tokens) refunded,exists(select 1 from food_consumptions c where c.food_analysis_id=a.id and c.deleted_at is null) consumed from food_analyses a where a.id=$1 and a.user_id=$2 and a.deleted_at is null`, [analysisId, user.userId]);
     const row = result.rows[0];
     if (!row) throw new IdentityError('FOOD_ANALYSIS_NOT_FOUND', 404, 'Food analysis not found');
     return mapAnalysis(row);
@@ -325,7 +325,7 @@ export class FoodService {
   }
 }
 
-function mapAnalysis(row: any) { return { id: row.id, uploadedImageId: row.uploaded_image_id, status: row.status, runtimeAdapter: row.runtime_adapter, recognizedResult: row.recognized_result, suitabilityResult: row.suitability_result, userCorrection: row.user_correction, errorCategory: row.error_category, consumptionStatus: row.consumed ? 'consumed' : 'notConfirmed', createdAt: new Date(row.created_at).toISOString() }; }
+function mapAnalysis(row: any) { return { id: row.id, uploadedImageId: row.uploaded_image_id, status: row.status, runtimeAdapter: row.runtime_adapter, recognizedResult: row.recognized_result, suitabilityResult: row.suitability_result, userCorrection: row.user_correction, errorCategory: row.error_category, refundStatus: row.refunded ? 'refunded' : 'notRefunded', consumptionStatus: row.consumed ? 'consumed' : 'notConfirmed', createdAt: new Date(row.created_at).toISOString() }; }
 function mapConsumption(row: any) { return { id: row.id, foodAnalysisId: row.food_analysis_id, consumedAt: new Date(row.consumed_at).toISOString(), localDate: String(row.local_date), timezone: row.timezone, confirmedResult: row.confirmed_result }; }
 function localCalendarDate(value: Date, timezone: string) { try { const parts = new Intl.DateTimeFormat('en-CA',{ timeZone: timezone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(value); const get=(t:string)=>parts.find((p)=>p.type===t)?.value; return `${get('year')}-${get('month')}-${get('day')}`; } catch { throw new IdentityError('PROFILE_TIMEZONE_INVALID',409,'Timezone is invalid'); } }
 function matchesMagic(body: Buffer, type: string) { if (type === 'image/jpeg') return body[0]===0xff && body[1]===0xd8 && body[2]===0xff; if (type === 'image/png') return body.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])); if (type === 'image/webp') return body.subarray(0,4).toString()==='RIFF' && body.subarray(8,12).toString()==='WEBP'; return false; }

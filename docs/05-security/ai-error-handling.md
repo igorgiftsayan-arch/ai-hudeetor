@@ -31,3 +31,18 @@
 Backend-код, а не frontend или текст провайдера, присваивает terminal-статус. Повтор с тем же идемпотентным ключом не создаёт новое списание или возврат. Ошибки безопасности и модерации, при которых безопасный ответ не может быть показан, классифицируются технически для экономики токенов и не раскрывают детали пользователю.
 
 Правила резерва описаны в [token-economics-model.md](../02-domain/token-economics-model.md), формат API — в [error-format.md](../03-api/error-format.md).
+
+## Owner decision 2026-09-25: five-minute project-funded compensation
+
+If no usable result is recovered within five minutes from durable server request
+acceptance (operation creation in the reservation transaction), refund the entire
+reservation exactly once at the project's expense, even if the provider accepted
+and charged for the request. Applies equally to chat, food and pre-ID unknown.
+Retries/restarts do not extend this deadline. No blind provider resubmission.
+
+The DB clock decides eligibility; the automatic sweep may apply the refund on
+its next bounded pass. Submission/finalization boundaries enforce the same rule.
+The compensation reason is recoveryDeadlineExceeded, not evidence that the
+provider failed or did not charge. Keep provider receipt identity/cost evidence.
+After compensation a late result cannot debit the user or create another refund.
+Successful terminal operations already committed before expiry remain charged.

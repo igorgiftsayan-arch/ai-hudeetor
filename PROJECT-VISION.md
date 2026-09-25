@@ -1,5 +1,14 @@
 # PROJECT-VISION — операционная конституция AI-худеетора
 
+## Superseding owner decision: 2026-09-25
+
+A paid AI request without a recovered usable result after five minutes receives
+a full exactly-once refund at project expense, even if the provider accepted or
+charged for it. The deadline starts at durable operation creation/reservation;
+Retry/restart never resets it. Applies to chat, food and pre-ID unknown. No blind
+resubmission or later automatic re-debit; known-unsent user cancellation is separate.
+
+
 **Статус:** рабочий документ для новых Codex-сессий. **Срез проверки:** историческая база 2026-09-23; expanded pilot update 2026-09-24. **Репозиторий:** `ai-hudeetor`. **Язык продукта:** русский. Документ описывает принятые решения и порядок работы; разделы с `TBD` не дают разрешения реализовывать или выпускать функцию.
 
 ## 0. Как читать и применять
@@ -43,16 +52,19 @@
 
 Фото блюда сначала создаёт результат анализа: распознанное блюдо/продукты, неопределённость и оценку соответствия только тем целям, ограничениям и правилам, источник которых реально известен системе. При недостатке данных результат обязан сообщить `insufficientData`, а не универсальную оценку «полезно/вредно». Пользователь может исправить распознавание до подтверждения. Анализ фотографии сам по себе **не** является фактом употребления: отдельный вопрос «Съели ли вы это?» создаёт owner-scoped запись дневника только после явного подтверждения с составом и локальными датой и временем. Анализ для принимаемого пилота выполняется реальным GenAPI с действующим consent; fake не заменяет приёмку. Подтверждённую историю пользователь может исправить и удалить с сохранением после reload. Только подтверждённые записи участвуют в индивидуальной динамике питания и сравнении с рядом веса; такие будущие результаты являются наблюдаемыми ассоциациями, а не причинным или медицинским выводом. Реализованная история не означает готовность аналитического экрана; его точный объём остаётся `TBD`.
 
-Push-напоминания требуют отдельного opt-in, разрешения браузера/устройства, активной subscription и выбранного пользователем расписания в его timezone. Реальные уведомления нельзя отправлять без этого согласия. `Notification.permission` проверяется на текущем устройстве независимо от числа подписок аккаунта; есть отдельные подключение/отключение устройства и `enabled`/`localTime`/`timezone`. Для телефона нужен доверенный HTTPS, для iPhone — поддерживаемая PWA на экране «Домой». Смена аккаунта/logout не сохраняют доставку прежнего аккаунта на устройстве. Автоматическое AI recovery должно использовать неизменный request receipt/snapshot и не допускает слепой повтор или автоматический refund при неразрешимой неопределённости initial submit. Известный provider request ID допускает reconciliation после restart с единственным результатом и ledger effect. Политика goodwill-компенсации до получения ID остаётся `TBD`.
+Phone push still requires explicit opt-in, device permission, active subscription,
+user-selected local time/timezone and trusted HTTPS (installed PWA on iPhone).
+Account changes must not retain the previous account's delivery registration.
+AI recovery uses immutable request receipts and never blindly resubmits a possibly
+accepted request. Owner decision2026-09-25: after300seconds from durable operation
+creation without a usable recovered result, refund the full reserve exactly once
+at project expense, including pre-ID uncertainty and possible provider charges.
+Retries/restarts do not extend the deadline; the bounded sweep applies overdue
+compensation, while submit/finalize boundaries check it immediately under lock.
 
-**Решение владельца от 2026-09-24:** пользователь может отменить платный анализ
-фото, если достоверно доказано, что запрос ещё не отправлялся провайдеру. При
-такой отмене вся зарезервированная сумма токенов возвращается **ровно один раз**.
-Отсутствие provider ID само по себе не доказывает отсутствие отправки. Состояния
-с возможной или подтверждённой отправкой исключены; правило не разрешает refund
-или resubmit для pre-ID `outcomeUnknown`/`ambiguous`. Политика goodwill для
-неопределённого исхода остаётся `TBD`. Backend/frontend реализуют это решение;
-готовность кода и приёмка здесь не заявлены.
+Known-unsent user cancellation remains separate: cancel only when non-submission
+is proven and refund exactly once. No ID alone is not proof of non-submission.
+Possibly sent requests instead follow recovery and the approved five-minute rule.
 
 ## 1. Миссия, пользователь и критерий ценности
 
@@ -121,10 +133,9 @@ actual PostgreSQL проверки описаны в
 [ledger/recovery checkpoint](docs/07-deployment/gerbi-local-ledger-recovery-checkpoint.md).
 Этот старый finding не следует читать как текущий открытый дефект.
 
-Ожидаются домен владельца → `5.42.126.71` с доверенным HTTPS и тип телефона;
-дополнительные правила Герби сверх известного профиля; отдельное решение о
-pre-request-ID goodwill-компенсации. Все три вопроса — `TBD`, без придуманных
-продуктовых решений. Полный актуальный scope и acceptance:
+Owner inputs still needed: trusted HTTPS domain/phone and additional Gerbi rules.
+The five-minute project-funded compensation rule is approved; local implementation
+and runtime acceptance are tracked separately. Current scope and acceptance:
 [пилот](docs/00-product/gerbi-marathon-pilot.md),
 [ручная проверка](docs/06-development/gerbi-marathon-manual-acceptance.md).
 
@@ -293,7 +304,6 @@ pre-request-ID goodwill-компенсации. Все три вопроса —
 | PWA vs App Store/Google Play          | Канал публикации и требования магазинов не выбраны.                                                                                                                               |
 | GenAPI для обычных пользователей      | Нужны consent-flow, раскрытия, качество, reconciliation и отдельная приёмка/merge/deploy.                                                                                         |
 | AI Character и инициативные сообщения | AI-003 backend не содержит промптов, сообщений, расписания и frontend. Частота, триггеры и opt-out не утверждены.                                                                 |
-| Расширенный food/push/recovery pilot  | Обязательный scope принят; real food/runtime/restart и физический телефон ещё не приняты. Домен/тип телефона, дополнительные правила Герби и pre-ID goodwill policy остаются TBD. |
 | Платежи                               | Провайдер, пакеты, рублёвые цены, налог/чеки/возвраты и юридическая схема не выбраны.                                                                                             |
 | Production                            | Топология, RPO/RTO, каналы поддержки, CI/CD, юридические тексты, доступность и store strategy открыты.                                                                            |
 

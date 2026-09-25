@@ -37,3 +37,8 @@
 Цена фиксируется в момент транзакционного резерва. Успех подтверждает расход. Техническая ошибка полностью возвращает резерв на тот же кошелёк; частичный автоматический возврат не используется. Бизнес-неуспех не возвращает токены автоматически. Ручная компенсация возможна администратором с причиной и аудитом. Возврат токенов и возврат денежного платежа — разные операции.
 
 Классификация ошибок определена в [ai-error-handling.md](../05-security/ai-error-handling.md), базовые цены — в [token-economy.md](token-economy.md).
+
+Owner decision2026-09-25: if a usable AI result is not recovered within300seconds
+from request creation/reservation, refund the entire reservation once at project
+expense, even if the provider billed the request. Preserve actual provider cost
+separately; no late automatic re-debit. No partial automatic refund or blind POST.

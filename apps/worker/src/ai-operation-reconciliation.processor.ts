@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import {
+  compensateExpiredAiRequest,
   DatabaseService as DatabaseToken,
   FinalizeReconciledAiOutcomeUseCase,
   GenApiOutcomeReconciliationClient,
@@ -16,6 +17,7 @@ export class AiOperationReconciliationProcessor {
     if(this.config.provider!=='genapi'||!this.config.apiKey||!this.config.model)return;
     const event=await this.database.query<{payload:{operationId:string}}>(`select payload from outbox_messages where id=$1 and event_type='ai-companion.operation_reconciliation_requested.v1'`,[job.data.outboxId]);
     const operationId=event.rows[0]?.payload.operationId;if(!operationId)return;
+    if(await this.database.transaction(client=>compensateExpiredAiRequest(client,'chat',operationId)))return;
     const found=await this.database.query<any>(`select a.id,a.created_at,a.updated_at,r.provider_request_id,r.request_payload from ai_operations a join ai_operation_request_receipts r on r.operation_id=a.id where a.id=$1 and a.status='outcomeUnknown' and r.submission_state='accepted' and r.provider_request_id is not null`,[operationId]);
     const row=found.rows[0];if(!row)return;
     const status=await this.lookup(row.provider_request_id);
@@ -35,6 +37,7 @@ export class AiOperationReconciliationProcessor {
   }
 
   private async refund(operationId:string):Promise<void>{await this.database.transaction(async(client)=>{
+    if(await compensateExpiredAiRequest(client,'chat',operationId))return;
     const operation=(await client.query<{user_id:string}>(`select user_id from ai_operations where id=$1 and status='outcomeUnknown' for update`,[operationId])).rows[0];if(!operation)return;
     const reservation=(await client.query<any>(`select id,wallet_id,amount_tokens from token_transactions where operation_id=$1 and entry_type='aiReservation' for update`,[operationId])).rows[0];
     const terminal=await client.query(`select 1 from token_transactions where operation_id=$1 and entry_type in ('aiConfirmation','aiRefund')`,[operationId]);if(terminal.rowCount)return;

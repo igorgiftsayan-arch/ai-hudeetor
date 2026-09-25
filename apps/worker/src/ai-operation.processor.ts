@@ -8,6 +8,7 @@ import type {
   MemoryContextBuilder,
 } from '@atlas/backend';
 import {
+  compensateExpiredAiRequest,
   AiProviderAdapter as AiProviderAdapterToken,
   DatabaseService as DatabaseToken,
   MemoryContextBuilder as MemoryContextBuilderToken,
@@ -69,6 +70,7 @@ export class AiOperationProcessor extends WorkerHost {
     if (!operationId) return;
     const attemptId=randomUUID();
     const claimed = await this.database.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'chat',operationId)) return null;
       const result = await client.query<{
         persona_id: string;
         user_id: string;
@@ -129,6 +131,7 @@ export class AiOperationProcessor extends WorkerHost {
     // Preserve the original hash: JSONB may return keys in a different order.
     const requestHash = claimed.saved_hash ?? createHash('sha256').update(requestPayload).digest('hex');
     const receiptClaimed=await this.database.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'chat',operationId)) return false;
       const operation=await client.query(`select 1 from ai_operations where id=$1 and status='processing' and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return false;
       await client.query(
         `insert into ai_operation_request_receipts
@@ -150,7 +153,10 @@ export class AiOperationProcessor extends WorkerHost {
     const result = consent
       ? await this.adapter.execute(providerRequest,{onAccepted:async(providerRequestId)=>{
           await this.database.transaction(async(client)=>{
-            const operation=await client.query(`select 1 from ai_operations where id=$1 and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return;
+            await compensateExpiredAiRequest(client,'chat',operationId);
+            const operation=await client.query<{status:string;error_class:string}>(`select status,error_class from ai_operations where id=$1 and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return;
+            if(operation.rows[0]?.status==='technicalError' && operation.rows[0]?.error_class==='recoveryDeadlineExceeded'){await client.query(`update ai_operation_request_receipts set provider_request_id=coalesce(provider_request_id,$2) where operation_id=$1`,[operationId,providerRequestId]);return;}
+            if(!['processing','outcomeUnknown'].includes(operation.rows[0]!.status))return;
             await client.query(`update ai_operation_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where operation_id=$1 and submission_state in ('submitting','ambiguous')`,[operationId,providerRequestId]);
             await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'ai-companion.operation_reconciliation_requested.v1','aiOperation',$1,jsonb_build_object('operationId',($1::uuid)::text),now(),now()+interval '15 seconds',0 where exists(select 1 from ai_operations where id=$1 and status='outcomeUnknown') and not exists(select 1 from outbox_messages where event_type='ai-companion.operation_reconciliation_requested.v1' and aggregate_id=$1 and published_at is null)`,[operationId]);
           });
@@ -158,6 +164,7 @@ export class AiOperationProcessor extends WorkerHost {
       : ({ kind: 'technicalError', errorClass: 'safetyRejected' } as const);
     const latencyMs = Date.now() - startedAt;
     await this.database.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'chat',operationId)) return;
       const operation = await client.query<{
         user_id: string;
         conversation_id: string;

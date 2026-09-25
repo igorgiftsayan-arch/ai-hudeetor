@@ -1,5 +1,16 @@
 # Текущий статус
 
+## Five-minute recovery compensation — local implementation
+
+Owner approved full project-funded refund after300seconds from durable request
+creation, including possibly charged/pre-ID cases. Retries/restarts never extend
+the deadline. Migration0018 protects the anchor and immutable economic audit.
+Operation/reservation locks serialize submit/finalize/refund; late ID preserved
+without receipt revival or extra debit/refund. Food detail/list use ledger-derived
+refundStatus. Local actualPG22/22, scoped recovery/worker tests and typechecks
+passed; independent review and deployment are still pending. No paid AI calls.
+
+
 ## Реальный chat checkpoint — 2026-09-25
 
 Chat и food работают через GenAPI. Один разрешённый реальный chat54133216
@@ -28,7 +39,7 @@ original/staging HEAD404. Финальные7services healthy/OOMfalse/restarts0
 Основной account wallet89/второй food результат сохранены. ContextPG6c9b1b4 actual1/1 PASS через production factory/SQL/receipt: own corrected
 confirmed food/time/weight включены, unconfirmed/deleted/foreign исключены.
 Это sparse fixture, не гарантия всех фактов при лимите1600 символов.
-PhoneHTTPS/push и pre-ID policy остаются открытыми.
+PhoneHTTPS/push remain open; the300s compensation policy is approved.
 
 ## Runtime checkpoint — 2026-09-25
 
@@ -53,8 +64,7 @@ Chat=genapi, food=genapi, push=false. One real chat54133216 reply/reload passed;
 prior locally rejected/refunded chat remains separately visible in evidence. PublicHTTP Safari не имеет crypto.subtle: desktop
 food acceptance выполнен через localhostSSH к реальному стеку. Теперь publicorigin
 восстановлен, собственный tunnel закрыт. Реальный HTTPS/телефон/push всё ещё pending;
-этот стенд не объявляется готовым для участников. Pre-ID unknown goodwill/refund
-policy остаётся отдельным решением владельца. Нагрузочное тестирование не выполнялось.
+этот стенд не объявляется готовым для участников. The approved300s project-funded compensation is being implemented separately. Нагрузочное тестирование не выполнялось.
 
 Ниже исторический локальный срез; старые runtime адреса/ожидание расширения сервера
 не описывают текущий единственный стенд.

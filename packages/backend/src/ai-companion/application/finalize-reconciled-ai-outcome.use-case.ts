@@ -1,3 +1,4 @@
+import { compensateExpiredAiRequest } from '../../token-economy/application/compensate-expired-ai-request';
 import { randomUUID } from 'node:crypto';
 import type { DatabaseService } from '../../infrastructure/database/database.service';
 
@@ -20,8 +21,9 @@ export class FinalizeReconciledAiOutcomeUseCase {
 
   execute(
     input: ReconciledAiSuccess,
-  ): Promise<{ status: 'succeeded'; replay: boolean }> {
+  ): Promise<{ status: 'succeeded' | 'technicalError'; replay: boolean }> {
     return this.database.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'chat',input.operationId)) return {status:'technicalError' as const,replay:false};
       const operation = await client.query<{
         status: string;
         provider_reference: string | null;

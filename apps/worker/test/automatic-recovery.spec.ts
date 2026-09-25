@@ -9,7 +9,7 @@ describe('AutomaticRecoveryService',()=>{
       if(statement.includes('from ai_operation_request_receipts where operation_id'))return{rows:[{submission_state:'accepted',provider_request_id:'ai-provider-1'}]};
       return{rows:[]};
     })};
-    const database={transaction:jest.fn(async(callback:(value:typeof client)=>unknown)=>callback(client))};
+    const database={query:client.query,transaction:jest.fn(async(callback:(value:typeof client)=>unknown)=>callback(client))};
     const service=new AutomaticRecoveryService(database as never);
 
     await service.sweep();

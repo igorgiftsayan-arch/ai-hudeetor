@@ -88,6 +88,7 @@ export class UpdateFoodConsumptionDto extends ConfirmFoodConsumptionDto {
 }
 
 export class FoodAnalysisResourceDto {
+  @ApiProperty({ enum: ['notRefunded','refunded'] }) refundStatus!: 'notRefunded'|'refunded';
   @ApiProperty() id!: string;
   @ApiProperty() uploadedImageId!: string;
   @ApiProperty({ enum: ['queued','processing','analyzed','technicalError','outcomeUnknown','deleted','cancelled'] })
@@ -135,6 +136,8 @@ export class ListFoodAnalysesQueryDto {
 }
 
 export class FoodAnalysisListItemDto {
+  @ApiProperty({ enum: ['notRefunded','refunded'] }) refundStatus!: 'notRefunded'|'refunded';
+  @ApiProperty({ type: String, nullable: true }) errorCategory!: string | null;
   @ApiProperty() id!: string;
   @ApiProperty() uploadedImageId!: string;
   @ApiProperty({ enum: ['queued','processing','analyzed','technicalError','outcomeUnknown','deleted','cancelled'], description: 'Presentation status; deleted does not change the financial operation status.' }) status!: string;

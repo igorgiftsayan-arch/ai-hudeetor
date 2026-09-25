@@ -130,3 +130,4 @@ export {
 
 export { FoodImageRetentionService, type FoodImageDeletionPort } from './food/application/food-image-retention.service';
 export { S3FoodImageDeletion } from './food/infrastructure/s3-food-image-deletion';
+export { AiRecoveryDeadlineService, compensateExpiredAiRequest } from './token-economy/application/compensate-expired-ai-request';

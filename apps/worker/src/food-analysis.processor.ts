@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import type { DatabaseService } from '@atlas/backend';
-import { DatabaseService as DatabaseToken } from '@atlas/backend';
+import { compensateExpiredAiRequest, DatabaseService as DatabaseToken } from '@atlas/backend';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 type VisionResult =
@@ -27,6 +27,7 @@ export class FoodAnalysisProcessor {
     if (!analysisId) return;
     const attemptId=randomUUID();
     const claimed = await this.db.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'food',analysisId)) return null;
       const row = (await client.query<any>(`update food_analyses set status='processing',processing_attempt_id=$2,updated_at=now() where id=$1 and status='queued' returning id,user_id,runtime_adapter,(select request_payload from food_analysis_request_receipts where food_analysis_id=food_analyses.id) saved_request,(select request_hash from food_analysis_request_receipts where food_analysis_id=food_analyses.id) saved_hash`,[analysisId,attemptId])).rows[0];
       if (!row) return null;
       let payload = row.saved_request;
@@ -56,6 +57,7 @@ export class FoodAnalysisProcessor {
     );
     const analysisId = event.rows[0]?.payload.analysisId;
     if (!analysisId || this.config.provider !== 'genapi' || !this.config.apiKey) return;
+    if(await this.db.transaction(client=>compensateExpiredAiRequest(client,'food',analysisId)))return;
     const found = await this.db.query<{provider_request_id:string}>(
       `select r.provider_request_id
          from food_analyses a
@@ -88,6 +90,7 @@ export class FoodAnalysisProcessor {
     attemptId?:string,
   ):Promise<void> {
     await this.db.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'food',analysisId)) return;
       const operation = (await client.query<any>(`select id,user_id from food_analyses where id=$1 and status in ($2,'outcomeUnknown') and ($3::uuid is null or processing_attempt_id=$3) for update`,[analysisId,expectedStatus,attemptId ?? null])).rows[0];
       if (!operation) return;
       const reservation = (await client.query<any>(`select id,wallet_id,amount_tokens from token_transactions where food_analysis_id=$1 and entry_type='aiReservation' for update`,[analysisId])).rows[0];
@@ -143,6 +146,7 @@ export class FoodAnalysisProcessor {
     try{object=await this.storage.send(new GetObjectCommand({Bucket:this.config.s3.bucket,Key:claimed.payload.objectKey}));bytes=object.Body?Buffer.from(await object.Body.transformToByteArray()):Buffer.alloc(0);}catch{return{kind:'technicalError',errorCategory:'imageUnavailable'};}
     if(!bytes.length||bytes.length>10_485_760) return {kind:'technicalError',errorCategory:'imageUnavailable'};
     const submissionClaimed=await this.db.transaction(async(client)=>{
+      if(await compensateExpiredAiRequest(client,'food',claimed.id))return false;
       const operation=await client.query(`select 1 from food_analyses where id=$1 and status='processing' and processing_attempt_id=$2 for update`,[claimed.id,claimed.attemptId]);if(!operation.rowCount)return false;
       const submitting=await client.query(`update food_analysis_request_receipts set submission_state='submitting',submitted_at=now(),updated_at=now() where food_analysis_id=$1 and submission_state='prepared'`,[claimed.id]);return Boolean(submitting.rowCount);
     });
@@ -157,7 +161,10 @@ export class FoodAnalysisProcessor {
     if(typeof requestId!=='string'&&typeof requestId!=='number')return{kind:'technicalError',errorCategory:'invalidProviderResponse'};
     const providerReference=String(requestId);
     await this.db.transaction(async(client)=>{
-      const operation=await client.query(`select 1 from food_analyses where id=$1 and processing_attempt_id=$2 for update`,[claimed.id,claimed.attemptId]);if(!operation.rowCount)return;
+      await compensateExpiredAiRequest(client,'food',claimed.id);
+      const operation=await client.query<{status:string;error_category:string}>(`select status,error_category from food_analyses where id=$1 and processing_attempt_id=$2 for update`,[claimed.id,claimed.attemptId]);if(!operation.rowCount)return;
+      if(operation.rows[0]?.status==='technicalError' && operation.rows[0]?.error_category==='recoveryDeadlineExceeded'){await client.query(`update food_analysis_request_receipts set provider_request_id=coalesce(provider_request_id,$2) where food_analysis_id=$1`,[claimed.id,providerReference]);return;}
+      if(!['processing','outcomeUnknown'].includes(operation.rows[0]!.status))return;
       await client.query(`update food_analysis_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where food_analysis_id=$1 and submission_state in ('submitting','ambiguous')`,[claimed.id,providerReference]);
       await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'food.analysis_reconciliation_requested.v1','foodAnalysis',$1,jsonb_build_object('analysisId',($1::uuid)::text),now(),now()+interval '15 seconds',0 where exists(select 1 from food_analyses where id=$1 and status='outcomeUnknown') and not exists(select 1 from outbox_messages where event_type='food.analysis_reconciliation_requested.v1' and aggregate_id=$1 and published_at is null)`,[claimed.id]);
     });

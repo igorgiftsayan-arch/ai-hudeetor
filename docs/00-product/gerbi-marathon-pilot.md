@@ -87,7 +87,7 @@ Fake adapter сохраняется. Timeout после возможной пе�
   Тип телефона и фактическая iOS/Android проверка: `TBD`.
 - Дополнительные правила питания Герби сверх уже известного профиля: `TBD`.
   Их отсутствие не заменяется придуманной программой питания.
-- Политика goodwill-компенсации при неразрешимом pre-request-ID исходе: `TBD`.
+- Project-funded full refund after300seconds without recovered result: approved2026-09-25.
   До отдельного ответа она не разрешает автоматический refund или resubmit.
 
 ## Food vision — обязательный объём расширенного пилота
@@ -125,7 +125,12 @@ Fake adapter сохраняется. Timeout после возможной пе�
 
 ## Автоматическое AI recovery — обязательный объём расширенного пилота
 
-Recovery использует immutable request receipt/snapshot, provider request reference и идемпотентную reconciliation. Известный provider request разрешено безопасно опрашивать и завершать один раз, включая restart worker между отправкой, сохранением provider ID и финализацией. Для каждой границы сбоя требуется подтверждённый durable state; невозможность восстановить ID не является разрешением отправить запрос заново. Слепой повтор initial submit, двойной ledger effect и автоматический refund при неизвестном факте принятия провайдером запрещены. Неразрешимая pre-request-ID ambiguity остаётся явным состоянием до отдельного продуктового правила или документированного provider contract.
+Recovery uses immutable request receipts and known-ID reconciliation; blind
+initial POST and duplicate financial effects remain forbidden. Owner decision
+2026-09-25: a usable result not recovered within300seconds from durable acceptance
+receives one full project-funded refund, even with provider charge/pre-ID unknown.
+Retries/restarts never reset the deadline. A late result cannot automatically
+re-debit the user. This supersedes the earlier unresolved goodwill rule.
 
 ## Отмена достоверно неотправленного платного анализа фото
 
@@ -134,8 +139,8 @@ Recovery использует immutable request receipt/snapshot, provider reque
 такой отмене вся зарезервированная сумма токенов возвращается **ровно один раз**.
 Отсутствие provider ID само по себе не доказывает отсутствие отправки. Состояния
 с возможной или подтверждённой отправкой исключены; правило не разрешает refund
-или resubmit для pre-ID `outcomeUnknown`/`ambiguous`. Политика goodwill для
-неопределённого исхода остаётся `TBD`. Реализация `5a08efb` локально независимо
+or resubmit for pre-ID uncertainty on user cancellation alone. The separate
+owner-approved300s compensation rule applies. Implementation `5a08efb` was independently
 проверена: 10/10 actual PostgreSQL tests PASS. Дополнительно отдельный runtime
 API fixture подтвердил отмену до submit, полный exactly-once refund и повтор
 DELETE; после worker restart старый job не вызвал provider POST. Подробнее ниже.

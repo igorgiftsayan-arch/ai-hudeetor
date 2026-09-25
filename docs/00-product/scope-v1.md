@@ -1,5 +1,15 @@
 # Границы V1
 
+## Superseding owner decision: 2026-09-25
+
+A paid AI request without a recovered usable result after five minutes receives
+a full exactly-once refund at project expense, even if the provider accepted or
+charged for it. The deadline starts at durable operation creation/reservation;
+retry/restart never resets it. Applies to chat, food and pre-ID unknown. No blind
+resubmission and no later automatic re-debit. This replaces earlier goodwill/TBD
+statements below; it does not change known-unsent user cancellation.
+
+
 ## Входит
 
 - регистрация и онбординг;
@@ -36,7 +46,7 @@
 - По решению владельца от 2026-09-24 платный анализ фото можно отменить при
   доказанном отсутствии отправки провайдеру; полный резерв возвращается ровно
   один раз. Возможная/подтверждённая отправка исключена. Отсутствие provider ID
-  не является доказательством; pre-ID unknown refund policy остаётся `TBD`.
+  не является доказательством; pre-ID unknown follows the owner-approved300s project-funded compensation rule.
   Реализация `5a08efb` локально независимо проверена (10/10 actual PostgreSQL);
   дополнительно runtime known-unsent API fixture подтвердил1reserve/1refund,
   одинаковый replay и отсутствие provider POST после restart; физическое удаление

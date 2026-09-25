@@ -1,17 +1,28 @@
-import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
 import type { DatabaseService } from '@atlas/backend';
-import { DatabaseService as DatabaseToken } from '@atlas/backend';
+import { AiRecoveryDeadlineService, DatabaseService as DatabaseToken } from '@atlas/backend';
 
 @Injectable()
-export class AutomaticRecoveryService implements OnModuleInit {
+export class AutomaticRecoveryService implements OnModuleInit, OnModuleDestroy {
+  private timer?: ReturnType<typeof setInterval>;
+  private running=false;
   constructor(@Inject(DatabaseToken) private readonly database:DatabaseService) {}
 
   onModuleInit():void {
-    setInterval(()=>void this.sweep().catch(()=>console.error(JSON.stringify({event:'automatic_recovery_sweep_error',errorCategory:'databaseUnavailable'}))),30_000).unref();
+    this.timer=setInterval(()=>void this.sweep().catch(()=>console.error(JSON.stringify({event:'automatic_recovery_sweep_error',errorCategory:'databaseUnavailable'}))),30_000).unref();
     void this.sweep().catch(()=>console.error(JSON.stringify({event:'automatic_recovery_sweep_error',errorCategory:'databaseUnavailable'})));
   }
 
+  onModuleDestroy():void { if(this.timer)clearInterval(this.timer); }
+
   async sweep():Promise<void>{
+    if(this.running)return;
+    this.running=true;
+    try { await this.runSweep(); } finally { this.running=false; }
+  }
+
+  private async runSweep():Promise<void>{
+    await new AiRecoveryDeadlineService(this.database).sweep();
     await this.database.transaction(async(client)=>{
       await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'food.analysis_reconciliation_requested.v1','foodAnalysis',a.id,jsonb_build_object('analysisId',a.id::text),now(),now(),0 from food_analyses a join food_analysis_request_receipts r on r.food_analysis_id=a.id where a.status='outcomeUnknown' and r.submission_state='accepted' and r.provider_request_id is not null and not exists(select 1 from outbox_messages o where o.event_type='food.analysis_reconciliation_requested.v1' and o.aggregate_id=a.id and o.published_at is null)`);
       await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'ai-companion.operation_reconciliation_requested.v1','aiOperation',a.id,jsonb_build_object('operationId',a.id::text),now(),now(),0 from ai_operations a join ai_operation_request_receipts r on r.operation_id=a.id where a.status='outcomeUnknown' and r.submission_state='accepted' and r.provider_request_id is not null and not exists(select 1 from outbox_messages o where o.event_type='ai-companion.operation_reconciliation_requested.v1' and o.aggregate_id=a.id and o.published_at is null)`);
