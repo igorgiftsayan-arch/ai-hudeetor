@@ -212,3 +212,60 @@ stagingHEAD404, no error. No timestamps changed or direct S3 deletion used.
 Final7services healthy/OOMfalse/restarts0, unchanged memory caps, hostavailable
 947MiB/disk3860MiB. Runtime evidence is separate from local
 PostgreSQL cancellation concurrency tests.
+
+## Five-minute compensation deployment — 2026-09-25
+
+Backend/worker source70cd066 passed local actual PostgreSQL22/22; independent
+review reran15 selected cases (7 not selected), with no P1/P2 finding. Cases cover
+both operation types, exact boundary, time after lock wait, immutable anchors,
+receipt states and late callbacks. Webe70bac5 passed56 scoped tests/typecheck/lint;
+independent7 selected UI regressions passed. These denominators are separate.
+
+Migration registration was fixed in faa70c1 before deployment. The actual Drizzle
+migrator on a fresh isolated local database and its repeat both passed:19 entries,
+latest1790312400000, compensation table and all3 immutable triggers present. A
+private server backup before0018 passed pg_restore --list (128067bytes, SHA256
+`e5e7cf5b61e47a9bb150318259ac67474a9442bca60c2e785e6351657621ed3c`).
+The actual server migrator then reported19 entries and the compensation table.
+No ledger or creation timestamps were rewritten.
+
+Current backend/worker archive (source70cd066 + journalfaa70c1) SHA256:
+`1d301678420fd29c10c06c606f57b8d5e46e8512c3f7d27d512707b498ee7c86`.
+Current web componente70bac5 SHA256:
+`11610a3d9d345dea0f3fa6315702295f2268166cb1137e6814c07a0b522e99c6`,
+BuildID `iCsD2HnQI_7JBHzFCzxtD`. Local Node24.18/pnpm11.14 builds, same verified
+Linux dependencies and read-only mounts; only the existing stack was updated.
+Previous component overlays and database backup are retained. Immediately after
+deployment all7 services were healthy, API/worker OOMfalse and restart count0.
+
+Dedicated synthetic owner8f6e9f5f-873d-4f0a-ab76-030c77f5a84d was registered,
+onboarded, granted100 tokens and consented through existing APIs. Unchanged
+2653194byte PNG used real signed upload/completion. With zero active operations,
+only worker was stopped, then analysis0cbd6a2b-24c7-45d0-9056-0fd02c125d33 was
+created2026-09-25T04:17:29.947675Z. Before expiry: queued/receipt0/providerrefnone.
+No database clock or financial state was edited. Natural eligibility was
+04:22:29.947675Z; after worker restart compensation committed04:22:38.814878Z.
+One reservation(-5), one full refund(+5), one immutable compensation decision,
+wallet100. API returned technicalError/recoveryDeadlineExceeded/refundStatusrefunded.
+Receipt remains0/providerrefnone; stale outbox joba50d5598-98b5-4635-a5fc-5af5b06c6af8
+completed attempt1. Recheck after another automatic sweep retained exactly1refund
+and1decision, no receipt/provider reference: ZERO external generation, no third
+food generation. Original owner wallet89 remains unchanged.
+
+This proves catch-up after deliberate worker downtime. Healthy-worker deadline
+boundaries, lock waits, receipt states and late finalizers are covered by actual
+local PostgreSQL tests; no claim of instant wall-clock refund during outage or
+backlog. Sweep cadence30seconds, at most50 expired requests per kind per pass;
+direct submit/finalize paths check the deadline under the operation lock.
+Final7 services healthy/OOMfalse/restarts0 with unchanged caps, host available
+RAM927MiB and disk3834MiB. PublicHTTP remains; physical HTTPS/push is not accepted.
+
+Dedicated-account browser acceptance PASS: existing past-analysis card states the
+five-minute timeout and full refund, preserved after full reload/reopen. No new
+analysis/upload/delete was invoked by browser. Evidence:
+`work/frontend-runtime-acceptance/food-deadline-refund-reload-pass.png/txt` in the
+manager workspace. This new synthetic photo/result is retained for review; no
+deletion was requested. Runtime log is
+`work/gerbi-backend-verification/runtime-deadline-gate.log`, final health in
+`deadline-final-health.log`. The measured compensation was8.867203seconds after
+exact eligibility, during startup catch-up. No provider billing claim is made.

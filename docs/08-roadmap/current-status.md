@@ -1,15 +1,33 @@
 # Текущий статус
 
-## Five-minute recovery compensation — local implementation
+## Возврат через пять минут — проверен на тестовом стенде
 
-Owner approved full project-funded refund after300seconds from durable request
-creation, including possibly charged/pre-ID cases. Retries/restarts never extend
-the deadline. Migration0018 protects the anchor and immutable economic audit.
-Operation/reservation locks serialize submit/finalize/refund; late ID preserved
-without receipt revival or extra debit/refund. Food detail/list use ledger-derived
-refundStatus. Local actualPG22/22, scoped recovery/worker tests and typechecks
-passed; independent review and deployment are still pending. No paid AI calls.
+Решение владельца реализовано в70cd066: если результата нет через300секунд с
+принятия запроса, проект полностью возвращает резерв, даже если провайдер мог
+принять запрос и списать оплату. Повтор/перезапуск не продлевает срок. Миграция0018
+защищает anchor и финансовый аудит; faa70c1 зарегистрировал её в Drizzle journal.
 
+Local actualPG22/22 PASS; независимая проверка15 selected/15 PASS (7 skipped),
+без P1/P2. UIe70bac5:56 scoped tests PASS, независимые7/7 PASS. На единственном
+стенде обновлены backend/worker70cd066+journalfaa70c1 и webe70bac5 после backup.
+Actual migrator fresh+repeat локально и server migration PASS:19 записей.
+
+Отдельный synthetic queued запрос принят04:17:29.947675Z; worker был остановлен
+после проверки отсутствия активных операций. После естественного срока
+04:22:29.947675Z worker запущен: возврат записан04:22:38.814878Z, ровно1refund
+и1compensation, wallet100 восстановлен. Receipt0/providerref отсутствует;
+старое задание completed attempt1, повторный sweep не добавил эффектов.
+ZERO external generation. Это проверка восстановления после простоя, не обещание
+возврата ровно на300-й секунде при недоступном worker. При работающем worker sweep
+каждые30секунд,50запросов каждого вида за проход; submit/finalize проверяют срок
+под блокировкой. Точные границы и late callbacks проверены локально на PostgreSQL.
+
+Финальные7сервисов healthy/OOMfalse/restarts0, caps сохранены; available RAM927MiB,
+disk3834MiB. Основной synthetic account wallet89 и прежние результаты сохранены.
+Browser dedicated account: сообщение о пяти минутах и полном возврате сохраняется
+после reload/reopen (PASS), без новых запросов. Синтетическое фото/результат
+сохранены для проверки; удаления этого fixture не запрашивали.
+Phone HTTPS/push остаётся непроверенным; policy компенсации больше не TBD.
 
 ## Реальный chat checkpoint — 2026-09-25
 
@@ -43,7 +61,7 @@ PhoneHTTPS/push remain open; the300s compensation policy is approved.
 
 ## Runtime checkpoint — 2026-09-25
 
-Один активный expanded стенд на прежнем2GB сервере; main не менялся. API/worker backendf952948, worker composition41b80f6, web8694435. Public3114 login/APIready200;7сервисов healthy,
+Один активный expanded стенд на прежнем2GB сервере; main не менялся. Текущие компоненты: backend/worker70cd066+journalfaa70c1, webe70bac5. Public3114 login/APIready200;7сервисов healthy,
 resourceOOMfalse, автоматических restarts0. Старые volumes/backup сохранены.
 
 - Два разрешённых full-app food анализа:54129307/54130142, по1reservation(-5) и
@@ -64,7 +82,7 @@ Chat=genapi, food=genapi, push=false. One real chat54133216 reply/reload passed;
 prior locally rejected/refunded chat remains separately visible in evidence. PublicHTTP Safari не имеет crypto.subtle: desktop
 food acceptance выполнен через localhostSSH к реальному стеку. Теперь publicorigin
 восстановлен, собственный tunnel закрыт. Реальный HTTPS/телефон/push всё ещё pending;
-этот стенд не объявляется готовым для участников. The approved300s project-funded compensation is being implemented separately. Нагрузочное тестирование не выполнялось.
+этот стенд не объявляется готовым для участников. Правило компенсации300s реализовано и проверено выше. Нагрузочное тестирование не выполнялось.
 
 Ниже исторический локальный срез; старые runtime адреса/ожидание расширения сервера
 не описывают текущий единственный стенд.

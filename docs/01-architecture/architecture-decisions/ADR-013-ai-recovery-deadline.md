@@ -1,6 +1,6 @@
 # ADR-013: Durable AI recovery deadline compensation
 
-Status: implementation of owner decision2026-09-25; runtime acceptance pending.
+Status: implemented70cd066, independently reviewed; controlled queued-expiry runtime gate passed2026-09-25. See deployment evidence for proof limits.
 
 The economic deadline is300seconds from immutable operation.created_at, in the
 transaction that accepts the request/reserves tokens. Use PostgreSQL

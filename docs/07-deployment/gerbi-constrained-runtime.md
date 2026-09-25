@@ -1,5 +1,15 @@
 # Constrained Gerbi runtime — 2026-09-25
 
+## Current component update — 2026-09-25
+
+Backend/worker70cd066 + migration registrationfaa70c1 and webe70bac5 replace the
+older components below on the same seven-service stack. Migration0018 was applied
+with the actual journal-based migrator after a verified private backup. Exact
+hashes and the controlled five-minute compensation gate are recorded in
+[full runtime evidence](gerbi-full-food-runtime.md). Resource caps, publicHTTP
+origin, chat/foodGenAPI, PUSH_ENABLED=false and bootstrap disabled are unchanged.
+The following initial deployment snapshot is retained as historical provenance.
+
 ## Observed checkpoint
 
 The single active test stack is `atlas-gerbi-expanded`, HTTP port3114. The five

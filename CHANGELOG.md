@@ -8,7 +8,12 @@
   immutable anchor/audit and exactly-once ledger, including possible provider
   charges. Submit/finalize guards and late-ID handling apply to chat and food.
   Food detail/list expose authoritative refundStatus. Local actualPG22/22 PASS;
-  independent review/deployment pending, no external provider call.
+  independent15 selected PostgreSQL cases PASS; journal registrationfaa70c1 and
+  actual migrator fresh+repeat PASS. Deployed with webe70bac5 after backup.
+  Controlled queued request expired after real300s while worker was stopped;
+  restart produced exactly1refund/1decision, wallet100, receipt0/providerrefnone.
+  Stale job completed; subsequent sweep added no effects. ZERO external AI calls.
+  Dedicated-account browser timeout/full-refund card survived reload/reopen.
 
 
 - Context6c9b1b4 actualPG1/1 verifies production prepared chat contains own corrected

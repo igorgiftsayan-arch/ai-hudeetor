@@ -1,5 +1,15 @@
 # GERBI local ledger/recovery checkpoint — 2026-09-24
 
+## Five-minute deadline local gate — 2026-09-25
+
+70cd066: actual PostgreSQL22/22, worker/API typechecks and scoped lint PASS.
+Independent review:15 selected cases PASS (7 skipped), no P1/P2. Includes chat
+and food, deadline boundary after lock wait, concurrent finalization, all receipt
+states, no-submit expired queued requests and late accepted callbacks. Food API
+refund markers are verified against ledger. faa70c1 registers migration0018;
+actual Drizzle fresh+repeat PASS19 entries and3 immutable triggers. Runtime
+verification is recorded separately in [full evidence](gerbi-full-food-runtime.md).
+
 ## Later real runtime checkpoint — 2026-09-25
 
 Two authorized real food operations each have1reservation(-5),1confirmation(0),
@@ -7,7 +17,7 @@ Two authorized real food operations each have1reservation(-5),1confirmation(0),
 worker crash with sameID/hash; first deletion preserved ledger and physicalS3 purge
 returned404 for original/staging. These actual runtime facts complement, not inflate,
 the local test denominators below. See [full runtime evidence](gerbi-full-food-runtime.md)
-for exact timestamps, IDs, component hashes and outstanding HTTPS/phone/pre-ID limits.
+for exact timestamps, IDs, component hashes and outstanding HTTPS/phone limits. The owner has now approved the pre-ID compensation policy.
 
 
 ## Current checkpoint: integrated `f360290`, deletion/list fixes locally independently reviewed
