@@ -127,6 +127,13 @@
       "when": 1790308800000,
       "tag": "0017_known_unsent_food_cancellation",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790312400000,
+      "tag": "0018_ai_recovery_deadline",
+      "breakpoints": true
     }
   ]
 }
