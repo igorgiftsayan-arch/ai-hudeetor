@@ -1,4 +1,5 @@
 'use client';
+import { aiFailureMessage } from '../ai-companion/ai-failure-message';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../shared/api';
 import { mergeFoodDeletionStatus } from './food-deletion-state';
@@ -141,6 +142,15 @@ export function FoodAnalysisHistory({
               </time>
               <strong>{item.dishName ?? 'Разбор фотографии'}</strong>
               <p>{labels[item.status]}</p>
+              {item.status === 'technicalError' && (
+                <p>
+                  {aiFailureMessage(
+                    'food',
+                    item.errorCategory,
+                    item.refundStatus,
+                  )}
+                </p>
+              )}
               {item.runtimeAdapter === 'fake' && <p>Тестовый разбор</p>}
               {item.deletionStatus.photoStatus === 'pending' && (
                 <p>Удаление фото ожидается</p>

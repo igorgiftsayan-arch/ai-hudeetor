@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { aiFailureMessage } from '../../features/ai-companion/ai-failure-message';
 import { MobileNavigation } from '../mobile-navigation';
 import {
   chatSubmission,
@@ -190,7 +191,8 @@ export default function QuickReplyPage() {
   }
 
   async function pollOperation(operationId: string, generation: number) {
-    if (generation !== contextGeneration.current || pollInFlight.current) return;
+    if (generation !== contextGeneration.current || pollInFlight.current)
+      return;
     pollInFlight.current = true;
     try {
       const next = await loadChatOperation(operationId);
@@ -284,9 +286,11 @@ export default function QuickReplyPage() {
                 </p>
                 {current?.status === 'technicalError' && (
                   <p className="chat-error" role="status">
-                    {current.refundStatus === 'refunded'
-                      ? 'Ответ не получен. Зарезервированный токен возвращён.'
-                      : 'Ответ не получен. Возврат токена пока не подтверждён.'}
+                    {aiFailureMessage(
+                      'chat',
+                      current.errorCode,
+                      current.refundStatus,
+                    )}
                   </p>
                 )}
               </Fragment>

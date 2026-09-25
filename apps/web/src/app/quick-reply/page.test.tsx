@@ -293,6 +293,49 @@ describe('AI chat screen', () => {
     ).toBe(false);
   });
 
+  it.each(['refunded', 'notRefunded'] as const)(
+    'shows persisted recovery deadline with %s marker and no resend',
+    async (refundStatus) => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-action-prices/quick-reply`) return price();
+        if (url === `${api}/ai-conversations/current`)
+          return conversation([
+            {
+              ...message('expired', 'user', 'Старое сообщение'),
+              operation: {
+                id: 'expired-op',
+                status: 'technicalError',
+                errorCode: 'recoveryDeadlineExceeded',
+                refundStatus,
+              },
+            },
+          ]);
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      render(<QuickReplyPage />);
+      expect(
+        await screen.findByText(
+          new RegExp('Ответ не удалось восстановить за 5 минут'),
+        ),
+      ).toHaveTextContent(
+        refundStatus === 'refunded'
+          ? 'Зарезервированный токен возвращён.'
+          : 'Возврат токена пока не подтверждён.',
+      );
+      expect(
+        screen.queryByRole('button', { name: 'Повторить отправку' }),
+      ).not.toBeInTheDocument();
+      expect(
+        fetchMock.mock.calls.some(([url]) =>
+          String(url).includes('/ai/operations'),
+        ),
+      ).toBe(false);
+    },
+  );
+
   it('loads the persisted conversation as visually separated messages', async () => {
     vi.stubGlobal(
       'fetch',
@@ -787,6 +830,7 @@ type ChatMessage = {
       | 'succeeded'
       | 'technicalError';
     refundStatus: 'notRefunded' | 'refunded';
+    errorCode?: string;
   };
 };
 

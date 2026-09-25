@@ -321,3 +321,40 @@ it('suppresses a confirmed analysis in an older list response while retaining ot
     ),
   ).toHaveLength(1);
 });
+
+it.each(['refunded', 'notRefunded'] as const)(
+  'shows deadline compensation in past analyses from %s ledger marker',
+  async (refundStatus) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/food-analyses?'))
+        return json({
+          items: [
+            {
+              ...item('expired'),
+              status: 'technicalError',
+              errorCategory: 'recoveryDeadlineExceeded',
+              refundStatus,
+            },
+          ],
+          nextCursor: null,
+        });
+      return baseResponse(url);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<FoodPage />);
+    fireEvent.click(await screen.findByText('Показать прошлые разборы'));
+    expect(
+      await screen.findByText(/Разбор не удалось восстановить за 5 минут/),
+    ).toHaveTextContent(
+      refundStatus === 'refunded'
+        ? 'Все зарезервированные токены возвращены.'
+        : 'Возврат токенов пока не подтверждён.',
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).endsWith('/food-analyses'),
+      ),
+    ).toBe(false);
+  },
+);
