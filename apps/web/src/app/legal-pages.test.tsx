@@ -16,8 +16,10 @@ describe('legal draft pages', () => {
       screen.getByRole('heading', { name: 'Условия использования сервиса' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Версия: draft-terms-v1')).toBeInTheDocument();
-    expect(screen.getByText(/не обещает функции/i)).toBeInTheDocument();
-    expect(screen.getByText(/не опубликован/i)).toBeInTheDocument();
+    expect(screen.getByText(/пока не предоставляет/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'levnaohote@yandex.ru' }),
+    ).toHaveAttribute('href', 'mailto:levnaohote@yandex.ru');
   });
 
   it('shows the configured privacy version and keeps external AI facts unresolved', () => {
@@ -29,7 +31,12 @@ describe('legal draft pages', () => {
       screen.getByRole('heading', { name: 'Политика конфиденциальности' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Версия: draft-privacy-v1')).toBeInTheDocument();
-    expect(screen.getByText(/пока не подтверждены/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/внешний AI-провайдер сейчас не/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/не реализованы/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'levnaohote@yandex.ru' }),
+    ).toHaveAttribute('href', 'mailto:levnaohote@yandex.ru');
   });
 });
