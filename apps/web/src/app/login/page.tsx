@@ -11,6 +11,11 @@ import type {
 } from '@atlas/api-contracts';
 import { ApiError, apiRequest, newIdempotencyKey } from '../../shared/api';
 
+type PendingRegistration = {
+  payload: string;
+  idempotencyKey: string;
+};
+
 export default function LoginPage() {
   const { replace } = useRouter();
   const [email, setEmail] = useState('');
@@ -21,7 +26,7 @@ export default function LoginPage() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const registrationKey = useRef<string | undefined>(undefined);
+  const pendingRegistration = useRef<PendingRegistration | null>(null);
   const termsVersion = process.env.NEXT_PUBLIC_IDENTITY_TERMS_VERSION;
   const privacyVersion = process.env.NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION;
   const canRegister = Boolean(termsVersion && privacyVersion);
@@ -29,7 +34,7 @@ export default function LoginPage() {
   function switchMode() {
     setMode(mode === 'login' ? 'register' : 'login');
     setError(undefined);
-    registrationKey.current = undefined;
+    pendingRegistration.current = null;
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -55,6 +60,16 @@ export default function LoginPage() {
       }
       const payload: RegistrationRequestDto | CreateSessionRequestDto =
         registrationPayload ?? { email: email.trim(), password };
+      const serializedPayload = JSON.stringify(payload);
+      if (
+        registered &&
+        pendingRegistration.current?.payload !== serializedPayload
+      ) {
+        pendingRegistration.current = {
+          payload: serializedPayload,
+          idempotencyKey: newIdempotencyKey(),
+        };
+      }
       await apiRequest<RegistrationResourceDto | SessionResourceDto>(
         registered ? '/registrations' : '/sessions',
         {
@@ -62,12 +77,10 @@ export default function LoginPage() {
           headers: registered
             ? {
                 'Content-Type': 'application/json',
-                'Idempotency-Key':
-                  registrationKey.current ??
-                  (registrationKey.current = newIdempotencyKey()),
+                'Idempotency-Key': pendingRegistration.current!.idempotencyKey,
               }
             : { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: serializedPayload,
         },
         { unauthorizedKind: 'request' },
       );
@@ -86,9 +99,12 @@ export default function LoginPage() {
         setError(
           cause instanceof ApiError && cause.code === 'EMAIL_ALREADY_REGISTERED'
             ? 'Этот email уже зарегистрирован. Попробуйте войти.'
-            : cause instanceof Error
-              ? cause.message
-              : 'Не удалось войти. Попробуйте снова.',
+            : cause instanceof ApiError &&
+                cause.code === 'CONSENT_VERSION_OUTDATED'
+              ? 'Версия условий изменилась. Обновите страницу и ознакомьтесь с актуальными документами.'
+              : cause instanceof Error
+                ? cause.message
+                : 'Не удалось войти. Попробуйте снова.',
         );
       }
     } finally {

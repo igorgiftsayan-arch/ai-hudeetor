@@ -31,3 +31,20 @@ TLS. Его canonical origin одновременно задаётся `API_CORS
 
 Тестовые HTTP environments используют `IDENTITY_SECURE_COOKIES=false` только потому,
 что Secure cookie не передаётся по HTTP. Это не production configuration.
+
+## Блокер публичного включения
+
+UI-007 технически готов к isolated synthetic acceptance, но **не разрешает** открыть
+публичный production registration gateway сам по себе. Проектная политика данных
+пока является implementation decision, а не юридически проверенной опубликованной
+политикой: до публичного доступа должны быть утверждены и доступны пользователю
+актуальные тексты условий и privacy policy, их версии должны попасть в server/web
+configuration, а provider geography and downstream data handling — быть раскрыты
+перед первым AI request. Этот блокер не снимается подстановкой test versions или
+выдачей тестовых credentials.
+
+Кроме legal gate, действующий `POST /registrations` не имеет server-side abuse/rate
+limit: существующий limiter защищает только login. Пока backend не введёт
+enforceable registration availability gate и rate-limit/abuse policy, direct API
+POST обходит любые browser-only ограничения. Это отдельное backend/security work;
+UI-007 его не имитирует и не публикует небезопасную registration topology.

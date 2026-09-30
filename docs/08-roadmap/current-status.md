@@ -8,7 +8,13 @@
   повтор completion сохраняет `Idempotency-Key`. Добавлены component и browser
   E2E проверки logout/login persistence, HTTPS gateway configuration note и
   manual acceptance. Runtime verification на isolated topology остаётся
-  следующим шагом; `main`, production и stable projects не менялись.
+  следующим шагом; `main`, production и stable projects не менялись. Публичное
+  включение регистрации блокируют ещё не утверждённые опубликованные legal texts
+  и provider data-disclosure, а также отсутствие server-side registration
+  availability/rate-limit gate. Попытка isolated runtime была остановлена до
+  внешнего browser E2E: containers/network удалены, dedicated test volumes
+  сохранены, stable projects не затронуты. UI-007 не является разрешением на
+  production gateway.
 - UI-006: frontend Daily Coach реализуется в отдельной ветке от AI-003: `/today`
   получает только server-sourced состояния `notStarted → inProgress → completed`,
   CSRF/idempotent transition retry, loading/error/session-expiry handling и
