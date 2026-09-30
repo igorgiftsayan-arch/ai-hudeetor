@@ -7,7 +7,7 @@
 ### Added
 
 - Production-readiness: отдельные Compose/Nginx/env templates, pre-production registration runbook, ручной acceptance-сценарий и read-only server capacity audit без production/stable deployment.
-- Production-readiness verification: repeatable migrations `0000–0011`, PostgreSQL integration 17/17 и exact-image backend journey registration → completed onboarding → Daily Coach подтверждены в isolated Compose topology; public signup остаётся NO-GO до закрытия UI, email/abuse, TLS/legal и restore gates.
+- Production-readiness verification: repeatable migrations `0000–0011`, exact-image API 82/82, worker 32/32, backend journey registration → completed onboarding → Daily Coach и disposable PostgreSQL backup/restore подтверждены в isolated Compose topology; public signup остаётся NO-GO до закрытия UI, email/abuse, TLS/legal и production backup-policy gates.
 - Identity security: fail-closed Redis rate limit для регистрации и обязательная trusted Origin/Referer проверка для registration/login до выдачи session cookie.
 
 - AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
