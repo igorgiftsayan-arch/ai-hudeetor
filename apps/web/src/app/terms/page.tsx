@@ -1,11 +1,12 @@
 import { LegalDocument } from '../../features/legal/legal-document';
 
 export default function TermsPage() {
+  const version = process.env.NEXT_PUBLIC_IDENTITY_TERMS_VERSION;
+  if (!version)
+    throw new Error('NEXT_PUBLIC_IDENTITY_TERMS_VERSION is required');
+
   return (
-    <LegalDocument
-      title="Условия использования сервиса"
-      version={process.env.NEXT_PUBLIC_IDENTITY_TERMS_VERSION}
-    >
+    <LegalDocument title="Условия использования сервиса" version={version}>
       <section>
         <h2>О сервисе</h2>
         <p>

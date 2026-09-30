@@ -1,11 +1,12 @@
 import { LegalDocument } from '../../features/legal/legal-document';
 
 export default function PrivacyPage() {
+  const version = process.env.NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION;
+  if (!version)
+    throw new Error('NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION is required');
+
   return (
-    <LegalDocument
-      title="Политика конфиденциальности"
-      version={process.env.NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION}
-    >
+    <LegalDocument title="Политика конфиденциальности" version={version}>
       <section>
         <h2>Какие данные обрабатываются</h2>
         <p>
