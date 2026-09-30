@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-const apiBase = process.env.E2E_API_URL ?? 'http://localhost:3001/api/v1';
-const webOrigin = process.env.E2E_WEB_ORIGIN ?? 'http://localhost:3100';
+const webUrl = process.env.E2E_WEB_URL ?? 'http://localhost:3100';
+const apiBase =
+  process.env.E2E_API_URL ?? new URL('/api/v1', webUrl).toString();
+const webOrigin = process.env.E2E_WEB_ORIGIN ?? new URL(webUrl).origin;
+const termsVersion = process.env.E2E_IDENTITY_TERMS_VERSION ?? 'test-v1';
+const privacyVersion = process.env.E2E_IDENTITY_PRIVACY_VERSION ?? 'test-v1';
+const wellnessNoticeVersion =
+  process.env.E2E_IDENTITY_WELLNESS_NOTICE_VERSION ?? 'test-v1';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -23,8 +29,12 @@ test('completed user logs in, safely retries weight and opens quick reply', asyn
       password,
       ageConfirmed: true,
       consents: [
-        { consentType: 'terms', documentVersion: 'test-v1', accepted: true },
-        { consentType: 'privacy', documentVersion: 'test-v1', accepted: true },
+        { consentType: 'terms', documentVersion: termsVersion, accepted: true },
+        {
+          consentType: 'privacy',
+          documentVersion: privacyVersion,
+          accepted: true,
+        },
       ],
     },
   });
@@ -42,7 +52,7 @@ test('completed user logs in, safely retries weight and opens quick reply', asyn
       consents: [
         {
           consentType: 'aiWellnessNotice',
-          documentVersion: 'test-v1',
+          documentVersion: wellnessNoticeVersion,
           accepted: true,
         },
       ],
@@ -90,7 +100,7 @@ test('completed user logs in, safely retries weight and opens quick reply', asyn
   await expect(page.getByTestId('weight-summary')).toContainText('98,8 кг');
   await expect(
     page.getByLabel('Недавняя история веса').getByRole('listitem'),
-  ).toHaveCount(2);
+  ).toHaveCount(1);
 
   let responseWasLost = false;
   await page.route('**/api/v1/weight-entries', async (route) => {
@@ -105,19 +115,19 @@ test('completed user logs in, safely retries weight and opens quick reply', asyn
   });
 
   await page.getByRole('textbox', { name: 'Вес сегодня' }).fill('98,4');
-  await page.getByRole('button', { name: 'Сохранить вес' }).click();
+  await page.getByRole('button', { name: 'Обновить вес' }).click();
   await page.getByRole('button', { name: 'Повторить сохранение' }).click();
-  await expect(page.getByText('Записано')).toBeVisible();
+  await expect(page.getByText('Вес за сегодня обновлён')).toBeVisible();
   await expect(page.getByTestId('weight-summary')).toContainText('98,4 кг');
   await expect(
     page.getByLabel('Недавняя история веса').getByRole('listitem'),
-  ).toHaveCount(3);
+  ).toHaveCount(1);
 
   await page.reload();
   await expect(page.getByTestId('weight-summary')).toContainText('98,4 кг');
   await expect(
     page.getByLabel('Недавняя история веса').getByRole('listitem'),
-  ).toHaveCount(3);
+  ).toHaveCount(1);
   await page.getByRole('link', { name: 'Поговорить с AI' }).click();
   await expect(page).toHaveURL(/\/quick-reply$/);
 });

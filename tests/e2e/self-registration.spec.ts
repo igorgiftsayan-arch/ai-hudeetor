@@ -35,7 +35,7 @@ test('new adult completes onboarding and can return after a fresh login', async 
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByTestId('weight-summary')).toBeVisible();
 
-  await page.getByLabel('Вес сегодня').fill('84,24');
+  await page.getByRole('textbox', { name: 'Вес сегодня' }).fill('84,24');
   await page.getByRole('button', { name: 'Записать вес' }).click();
   await expect(page.getByText('Вес за сегодня записан')).toBeVisible();
 

@@ -1,22 +1,35 @@
 # Текущий статус
 
 - Дата: 2026-09-30
+- Production candidate собран в отдельной ветке
+  `production/ai-hudeetor-candidate` от `back/production-readiness-signup` с
+  интегрированным UI-007. В ней сохранены AI-001/002/003 и UI-006, trusted
+  Origin, Redis registration limit, real registration/onboarding, daily weight
+  upsert, Daily Coach и logout/login persistence. `main`, DNS, public gateway
+  и stable не менялись.
+- Exact isolated runtime candidate проверен на commit `71a0170`: migrations
+  `0000–0011` repeatable, 12 journal rows, API/web/worker/PostgreSQL/Redis/
+  gateway healthy, PostgreSQL integration 17/17 и browser E2E 6/6 на desktop и
+  Pixel 7. Проверены full registration → completed onboarding → weight retry →
+  Daily Coach transitions → logout/login, trusted Origin `403` и registration
+  limiter `429`. Топология, image digests и release gates зафиксированы в
+  [production candidate runtime verification](../07-deployment/production-candidate-runtime-verification.md).
+- Candidate не является public-production approval: тестовые legal versions и
+  self-signed localhost TLS были синтетическими; email ownership verification,
+  anti-abuse policy, published legal documents, domain TLS, RPO/RTO и off-host
+  backup остаются обязательными gates.
 - Production-readiness регистрации готовится в отдельной ветке `back/production-readiness-signup`: backend требует trusted HTTPS origin для registration/login, ограничивает регистрацию через Redis, корректно учитывает proxy hops и возвращает фактический onboarding status после login/refresh. Добавлены production Compose/Nginx/env templates и runbook без секретов; deployment, DNS и stable не изменялись.
 - Isolated backend runtime verification пройдена на exact image: migrations `0000–0011` repeatable, API 82/82, worker 32/32, registration → profile → persona → completion → wallet → Daily Coach, login/refresh, Redis rate limit и safe logs подтверждены. Custom-format backup успешно восстановлен в disposable PostgreSQL 17. После server resize доступно около 21 GiB; `atlas-production-readiness` healthy, другие projects не запускались.
-- UI-007: самостоятельная регистрация и реальный onboarding реализуются в
-  отдельной ветке `ui/ui-007-self-registration` от UI-006. `/login` отправляет
-  существующий registration request с явными согласиями и server-side session;
-  `/onboarding` последовательно сохраняет profile, persona и completion, а
-  повтор completion сохраняет `Idempotency-Key`. Добавлены component и browser
-  E2E проверки logout/login persistence, HTTPS gateway configuration note и
-  manual acceptance. Runtime verification на isolated topology остаётся
-  следующим шагом; `main`, production и stable projects не менялись. Публичное
-  включение регистрации блокируют ещё не утверждённые опубликованные legal texts
-  и provider data-disclosure, а также отсутствие server-side registration
-  availability/rate-limit gate. Попытка isolated runtime была остановлена до
-  внешнего browser E2E: containers/network удалены, dedicated test volumes
-  сохранены, stable projects не затронуты. UI-007 не является разрешением на
-  production gateway.
+- UI-007: самостоятельная регистрация и реальный onboarding были реализованы
+  в `ui/ui-007-self-registration` от UI-006 и интегрированы в candidate:
+  `/login` отправляет явные согласия и server-side session; `/onboarding`
+  последовательно сохраняет profile, persona и completion, а completion retry
+  сохраняет `Idempotency-Key`. Component/browser E2E, logout/login persistence
+  и same-origin HTTPS note сохранены. Ранняя isolated-попытка UI-007 была
+  остановлена до внешнего browser E2E; её результат заменён candidate runtime
+  verification выше. Backend registration availability/rate-limit boundary
+  теперь поступает из `back/production-readiness-signup`; public gateway всё
+  ещё не разрешён до закрытия legal, email, abuse и infra gates.
 - UI-006: frontend Daily Coach реализуется в отдельной ветке от AI-003: `/today`
   получает только server-sourced состояния `notStarted → inProgress → completed`,
   CSRF/idempotent transition retry, loading/error/session-expiry handling и

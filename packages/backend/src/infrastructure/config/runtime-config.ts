@@ -1,5 +1,26 @@
 import { z } from 'zod';
 
+const corsOriginSchema = z.url().transform((value, context) => {
+  const url = new URL(value);
+  const canonicalOrigin = url.origin;
+  const explicitDefaultPort =
+    url.protocol === 'https:'
+      ? `${url.protocol}//${url.hostname}:443`
+      : url.protocol === 'http:'
+        ? `${url.protocol}//${url.hostname}:80`
+        : undefined;
+
+  if (value !== canonicalOrigin && value !== explicitDefaultPort) {
+    context.addIssue({
+      code: 'custom',
+      message: 'API_CORS_ORIGIN must be a canonical origin',
+    });
+    return canonicalOrigin;
+  }
+
+  return canonicalOrigin;
+});
+
 const baseSchema = z.object({
   APP_ENV: z.enum(['local', 'test', 'production']).default('local'),
   DATABASE_URL: z.string().min(1),
@@ -10,7 +31,7 @@ const baseSchema = z.object({
 
 export const apiConfigSchema = baseSchema
   .extend({
-    API_CORS_ORIGIN: z.url().default('http://localhost:3000'),
+    API_CORS_ORIGIN: corsOriginSchema.default('http://localhost:3000'),
     API_HOST: z.string().min(1).default('0.0.0.0'),
     API_PORT: z.coerce.number().int().positive().default(3001),
     API_TRUST_PROXY_HOPS: z.coerce.number().int().nonnegative().default(0),

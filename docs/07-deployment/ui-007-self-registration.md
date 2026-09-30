@@ -43,8 +43,9 @@ configuration, а provider geography and downstream data handling — быть �
 перед первым AI request. Этот блокер не снимается подстановкой test versions или
 выдачей тестовых credentials.
 
-Кроме legal gate, действующий `POST /registrations` не имеет server-side abuse/rate
-limit: существующий limiter защищает только login. Пока backend не введёт
-enforceable registration availability gate и rate-limit/abuse policy, direct API
-POST обходит любые browser-only ограничения. Это отдельное backend/security work;
-UI-007 его не имитирует и не публикует небезопасную registration topology.
+Кроме legal gate, backend применяет fail-closed Redis rate limit к каждому
+`POST /registrations`; trusted Origin/Referer также проверяется до выдачи session
+cookie. Эти технические границы не заменяют утверждённую anti-abuse policy и
+email ownership verification: direct API POST по-прежнему не должен становиться
+публично доступным до отдельного release decision. UI-007 не имитирует эти
+защиты и не публикует registration topology.

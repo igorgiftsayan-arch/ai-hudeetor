@@ -6,6 +6,13 @@
 
 ### Added
 
+- Production candidate: отдельная ветка объединяет backend security/production
+  boundary и UI-007 registration/onboarding без merge в `main` и без public
+  deploy. Exact isolated runtime verification зафиксирована в
+  `docs/07-deployment/production-candidate-runtime-verification.md`.
+- Candidate runtime: fake-worker корректно принимает пустые optional
+  `GENAPI_*` Compose variables; для `AI_PROVIDER=genapi` все три значения всё
+  так же обязательны. Добавлен regression test.
 - Production-readiness: отдельные Compose/Nginx/env templates, pre-production registration runbook, ручной acceptance-сценарий и read-only server capacity audit без production/stable deployment.
 - Production-readiness verification: repeatable migrations `0000–0011`, exact-image API 82/82, worker 32/32, backend journey registration → completed onboarding → Daily Coach и disposable PostgreSQL backup/restore подтверждены в isolated Compose topology; public signup остаётся NO-GO до закрытия UI, email/abuse, TLS/legal и production backup-policy gates.
 - Identity security: fail-closed Redis rate limit для регистрации и обязательная trusted Origin/Referer проверка для registration/login до выдачи session cookie.
