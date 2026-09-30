@@ -28,3 +28,7 @@
 - Создать изолированный Compose project и отдельные volumes/env; не переиспользовать данные других topology.
 - Выполнить backup и restore drill, repeatable migrations, exact-image health/smoke и browser acceptance.
 - Открывать регистрацию только named testers за access control, пока не утверждены email verification и anti-abuse policy.
+
+## Состояние после расширения диска
+
+После отдельного server resize/reboot 2026-09-30 повторная read-only проверка показала root filesystem 48 GiB, около 27 GiB used и 21 GiB free (57%). Это снимает первоначальный блокер свободного места для изолированной verification, но не разрешает общую Docker cleanup. Capacity и backup policy всё равно должны быть утверждены до production rollout.

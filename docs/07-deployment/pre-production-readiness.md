@@ -4,6 +4,8 @@ This runbook prepares, but does not authorize, a production deployment. Domain,
 DNS, certificates, secrets, legal document versions and the release window must
 be approved separately.
 
+Последний isolated backend result зафиксирован в [pre-production runtime verification](pre-production-runtime-verification.md).
+
 ## Exact backend journey
 
 All browser mutations use the same HTTPS origin, credentials/cookies and the
