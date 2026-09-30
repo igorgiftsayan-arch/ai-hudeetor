@@ -26,7 +26,11 @@ export interface RotateIdentitySessionInput {
 export type RotateIdentitySessionResult =
   | { kind: 'invalid' }
   | { kind: 'reused' }
-  | { kind: 'rotated'; session: IdentitySessionRecord };
+  | {
+      kind: 'rotated';
+      session: IdentitySessionRecord;
+      onboardingStatus: OnboardingStatus;
+    };
 
 export abstract class IdentityRepository {
   abstract register(

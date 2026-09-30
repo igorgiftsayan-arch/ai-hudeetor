@@ -43,6 +43,8 @@ const config = loadApiConfig();
       redisUrl: config.REDIS_URL,
       loginMaxAttempts: config.IDENTITY_LOGIN_MAX_ATTEMPTS,
       loginWindowMs: config.IDENTITY_LOGIN_WINDOW_SECONDS * 1_000,
+      registrationMaxAttempts: config.IDENTITY_REGISTRATION_MAX_ATTEMPTS,
+      registrationWindowMs: config.IDENTITY_REGISTRATION_WINDOW_SECONDS * 1_000,
     }),
     AiCompanionModule.forRoot(),
     ProfilesModule.forRoot({

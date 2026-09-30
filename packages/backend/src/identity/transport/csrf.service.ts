@@ -14,6 +14,8 @@ export interface IdentitySecurityOptions {
   redisUrl: string;
   loginMaxAttempts: number;
   loginWindowMs: number;
+  registrationMaxAttempts: number;
+  registrationWindowMs: number;
 }
 
 const csrfCookieName = 'atlas_csrf';
@@ -37,20 +39,21 @@ export class CsrfService {
       next();
       return;
     }
-    const origin = request.header('origin');
-    const referer = request.header('referer');
-    const allowedOrigin = this.options.corsOrigin;
-    const originAllowed =
-      origin === allowedOrigin ||
-      (!origin &&
-        typeof referer === 'string' &&
-        referer.startsWith(`${allowedOrigin}/`));
-    if (!originAllowed || !this.utilities.validateRequest(request)) {
+    if (
+      !this.isTrustedOrigin(request) ||
+      !this.utilities.validateRequest(request)
+    ) {
       next(identityErrors.csrfValidationFailed());
       return;
     }
     next();
   };
+
+  assertTrustedOrigin(request: Request): void {
+    if (!this.isTrustedOrigin(request)) {
+      throw identityErrors.originValidationFailed();
+    }
+  }
 
   generate(
     request: Request,
@@ -93,6 +96,17 @@ export class CsrfService {
     return (
       request.path === '/api/v1/registrations' ||
       request.path === '/api/v1/sessions'
+    );
+  }
+
+  private isTrustedOrigin(request: Request): boolean {
+    const origin = request.header('origin');
+    const referer = request.header('referer');
+    return (
+      origin === this.options.corsOrigin ||
+      (!origin &&
+        typeof referer === 'string' &&
+        referer.startsWith(`${this.options.corsOrigin}/`))
     );
   }
 }

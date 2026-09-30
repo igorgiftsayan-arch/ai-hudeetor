@@ -13,6 +13,7 @@ export const apiConfigSchema = baseSchema
     API_CORS_ORIGIN: z.url().default('http://localhost:3000'),
     API_HOST: z.string().min(1).default('0.0.0.0'),
     API_PORT: z.coerce.number().int().positive().default(3001),
+    API_TRUST_PROXY_HOPS: z.coerce.number().int().nonnegative().default(0),
     CSRF_SECRET: z.string().min(32),
     IDENTITY_ACCESS_TTL_SECONDS: z.coerce
       .number()
@@ -37,6 +38,16 @@ export const apiConfigSchema = baseSchema
       .int()
       .positive()
       .default(900),
+    IDENTITY_REGISTRATION_MAX_ATTEMPTS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(10),
+    IDENTITY_REGISTRATION_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(3600),
   })
   .superRefine((config, context) => {
     if (config.APP_ENV === 'production' && !config.IDENTITY_SECURE_COOKIES) {
@@ -44,6 +55,23 @@ export const apiConfigSchema = baseSchema
         code: 'custom',
         path: ['IDENTITY_SECURE_COOKIES'],
         message: 'Secure identity cookies are required in production',
+      });
+    }
+    if (
+      config.APP_ENV === 'production' &&
+      !config.API_CORS_ORIGIN.startsWith('https://')
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['API_CORS_ORIGIN'],
+        message: 'HTTPS API_CORS_ORIGIN is required in production',
+      });
+    }
+    if (config.APP_ENV === 'production' && config.API_TRUST_PROXY_HOPS < 1) {
+      context.addIssue({
+        code: 'custom',
+        path: ['API_TRUST_PROXY_HOPS'],
+        message: 'A trusted reverse proxy is required in production',
       });
     }
   });

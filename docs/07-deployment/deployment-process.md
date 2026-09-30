@@ -11,3 +11,5 @@
 9. Записать версию, время, исполнителя, результат и инциденты.
 
 BOOT-001 предоставляет локально воспроизводимые команды `db:migrate`, `smoke` и Compose healthchecks. Миграции выполняются отдельным one-shot service и не запускаются при старте API/worker. Архитектурный flow зафиксирован в [deployment-architecture.md](../01-architecture/deployment-architecture.md); CI provider остаётся отложенным.
+
+Первый production-like запуск регистрации выполняется только по [pre-production readiness runbook](pre-production-readiness.md). Он не является разрешением на DNS, сертификаты, публичный signup или production deployment.

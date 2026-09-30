@@ -23,10 +23,12 @@ export {
   type RotateIdentitySessionInput,
 } from './identity/application/identity-repository';
 export { LoginAttemptLimiter } from './identity/application/login-attempt-limiter';
+export { RegistrationAttemptLimiter } from './identity/application/registration-attempt-limiter';
 export { Argon2PasswordHasher } from './identity/infrastructure/argon2-password-hasher';
 export { CryptoSessionTokenService } from './identity/infrastructure/crypto-session-token.service';
 export { PostgresIdentityRepository } from './identity/infrastructure/postgres-identity.repository';
 export { RedisLoginAttemptLimiter } from './identity/infrastructure/redis-login-attempt-limiter';
+export { RedisRegistrationAttemptLimiter } from './identity/infrastructure/redis-registration-attempt-limiter';
 export { RegisterUserUseCase } from './identity/application/register-user.use-case';
 export { CreateSessionUseCase } from './identity/application/create-session.use-case';
 export { RefreshSessionUseCase } from './identity/application/refresh-session.use-case';
@@ -39,6 +41,8 @@ export { IdentityModule } from './identity/transport/identity.module';
 export { ProfilesModule } from './profiles/transport/profiles.module';
 export { TokenEconomyModule } from './token-economy/transport/token-economy.module';
 export { TrackingModule } from './tracking/transport/tracking.module';
+export { CreateWeightEntryUseCase } from './tracking/application/create-weight-entry.use-case';
+export { ListWeightEntriesUseCase } from './tracking/application/list-weight-entries.use-case';
 export {
   AiCompanionRepository,
   type QueuedAiOperation,

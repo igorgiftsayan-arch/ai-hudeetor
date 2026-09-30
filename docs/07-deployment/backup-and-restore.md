@@ -13,3 +13,5 @@ PostgreSQL, метаданные и объекты S3, конфигурация 
 - Runbook фиксирует владельца, шаги, проверку целостности и время восстановления.
 
 RPO, RTO, расписание и срок хранения — открытые инфраструктурные решения до настройки test. Наличие backup без успешного restore drill не считается готовностью.
+
+Для pre-production rollout обязательны backup до migration и восстановление в отдельной disposable PostgreSQL согласно [pre-production readiness runbook](pre-production-readiness.md). Production rollout запрещён, пока владелец не утвердит RPO, RTO, расписание и retention.

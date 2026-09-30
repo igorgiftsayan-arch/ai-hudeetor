@@ -5,6 +5,7 @@ import {
   PostgresAiDailyStateRepository,
   TransitionAiDailyStateUseCase,
 } from '@atlas/backend';
+import type { DailyContextBuilder } from '@atlas/backend';
 
 const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -154,7 +155,7 @@ describeWithDatabase('AI daily state PostgreSQL integration', () => {
     );
   }
 
-  function dailyContext() {
+  function dailyContext(): DailyContextBuilder {
     return {
       build: jest.fn().mockImplementation((_userId, localDate) => ({
         localDate,
@@ -163,7 +164,7 @@ describeWithDatabase('AI daily state PostgreSQL integration', () => {
         weight: {},
         memories: [],
       })),
-    };
+    } as unknown as DailyContextBuilder;
   }
 
   async function createCompletedUser(timezone: string) {

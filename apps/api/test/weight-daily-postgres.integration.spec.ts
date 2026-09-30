@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { DatabaseService } from '@atlas/backend';
-import { CreateWeightEntryUseCase } from '../../../packages/backend/src/tracking/application/create-weight-entry.use-case';
-import { ListWeightEntriesUseCase } from '../../../packages/backend/src/tracking/application/list-weight-entries.use-case';
+import {
+  CreateWeightEntryUseCase,
+  DatabaseService,
+  ListWeightEntriesUseCase,
+} from '@atlas/backend';
 
 const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;

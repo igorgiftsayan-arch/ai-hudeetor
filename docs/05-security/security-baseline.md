@@ -9,5 +9,7 @@
 - Администратору применяется принцип минимальных прав; чувствительные действия требуют причины.
 - Зависимости и контейнеры проверяются; логи имеют `request_id`, алерты и ограниченный доступ.
 - Резервное восстановление регулярно проверяется.
+- До выдачи session cookie регистрация и вход проверяют точное совпадение `Origin`/`Referer` с разрешённым HTTPS origin. Production запускается только с явной настройкой trusted proxy, чтобы IP-based ограничения не объединяли всех пользователей в адрес gateway.
+- Registration и login имеют отдельные fail-closed Redis rate limits. Это не заменяет подтверждение владения email и edge anti-abuse: публичная регистрация остаётся закрытой до выбора email verification и политики invite/CAPTCHA/WAF.
 
-Модель угроз и конкретные механизмы уточняются в ARCH-001. Privacy — [privacy-and-data.md](privacy-and-data.md), AI — [ai-safety.md](ai-safety.md).
+Модель угроз и конкретные механизмы уточняются в ARCH-001. Privacy — [privacy-and-data.md](privacy-and-data.md), AI — [ai-safety.md](ai-safety.md), pre-production gate — [pre-production-readiness.md](../07-deployment/pre-production-readiness.md).

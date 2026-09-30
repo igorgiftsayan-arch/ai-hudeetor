@@ -1,6 +1,8 @@
 # Текущий статус
 
-- Дата: 2026-08-21
+- Дата: 2026-09-30
+- Production-readiness регистрации готовится в отдельной ветке `back/production-readiness-signup`: backend требует trusted HTTPS origin для registration/login, ограничивает регистрацию через Redis, корректно учитывает proxy hops и возвращает фактический onboarding status после login/refresh. Добавлены production Compose/Nginx/env templates и runbook без секретов; deployment, DNS и stable не изменялись.
+- Публичный signup пока не разрешён: отсутствуют email ownership verification/утверждённая anti-abuse policy, реальный registration/onboarding UI, production domain/certificate и подтверждённый backup/restore drill. Read-only аудит test server также выявил 87% заполнения диска и существующий host Nginx на port 80.
 - AI-003: Daily Coach backend реализует и изолированно проверяет одну timezone-aware state row на локальную дату, state machine `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API в отдельной ветке; migration repeatability, 76 API и 32 worker tests подтверждены, `main` и stable не изменены; frontend, scheduling, prompts и Character не входят.
 - AI-002: structured companion memory, nullable profile context, migration `0010`, owner list/delete API, deterministic worker extraction и bounded memory context реализованы и проверены в отдельной ветке; `main` не изменён.
 - AI-001: GenAPI adapter реализован и проверен в отдельной ветке на synthetic test-пользователях; `main` и stable остаются на fake до приёмки и merge.

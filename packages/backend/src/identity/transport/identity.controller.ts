@@ -26,6 +26,7 @@ import { GetCurrentUserUseCase } from '../application/get-current-user.use-case'
 import { LogoutUseCase } from '../application/logout.use-case';
 import { RefreshSessionUseCase } from '../application/refresh-session.use-case';
 import { RegisterUserUseCase } from '../application/register-user.use-case';
+import { RegistrationAttemptLimiter } from '../application/registration-attempt-limiter';
 import { IdentityError } from '../domain/identity-error';
 import type { IssuedIdentitySession } from '../domain/identity-types';
 import { CsrfService, type IdentitySecurityOptions } from './csrf.service';
@@ -57,12 +58,15 @@ export class IdentityController {
     private readonly logout: LogoutUseCase,
     @Inject(CsrfService)
     private readonly csrf: CsrfService,
+    @Inject(RegistrationAttemptLimiter)
+    private readonly registrationAttempts: RegistrationAttemptLimiter,
     @Inject(IDENTITY_SECURITY_OPTIONS)
     private readonly security: IdentitySecurityOptions,
   ) {}
 
   @Post('registrations')
   @ApiBody({ type: RegistrationRequestDto })
+  @ApiHeader({ name: 'Origin', required: true })
   @ApiHeader({ name: 'Idempotency-Key', required: true })
   @ApiCreatedResponse({ type: RegistrationResourceDto })
   async register(
@@ -71,6 +75,7 @@ export class IdentityController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<RegistrationResourceDto> {
+    this.csrf.assertTrustedOrigin(request);
     if (!idempotencyKey || !/^[!-~]{16,128}$/.test(idempotencyKey)) {
       throw new IdentityError(
         'IDEMPOTENCY_KEY_REQUIRED',
@@ -107,6 +112,7 @@ export class IdentityController {
         'A current consent document version is required',
       );
     }
+    await this.registrationAttempts.consume(request.ip ?? 'unknown');
     const result = await this.registerUser.execute({
       ...body,
       consents: body.consents,
@@ -123,12 +129,14 @@ export class IdentityController {
 
   @Post('sessions')
   @ApiBody({ type: CreateSessionRequestDto })
+  @ApiHeader({ name: 'Origin', required: true })
   @ApiCreatedResponse({ type: SessionResourceDto })
   async login(
     @Body() body: CreateSessionRequestDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<SessionResourceDto> {
+    this.csrf.assertTrustedOrigin(request);
     const session = await this.createSession.execute({
       ...body,
       attemptScope: `${request.ip}|${body.email.trim().toLowerCase()}`,
@@ -136,7 +144,7 @@ export class IdentityController {
     return {
       userId: session.userId,
       expiresAt: session.accessExpiresAt.toISOString(),
-      onboardingStatus: 'registered',
+      onboardingStatus: session.onboardingStatus,
       csrfToken: this.issueCookies(request, response, session),
     };
   }
@@ -153,7 +161,7 @@ export class IdentityController {
     return {
       userId: session.userId,
       expiresAt: session.accessExpiresAt.toISOString(),
-      onboardingStatus: 'registered',
+      onboardingStatus: session.onboardingStatus,
       csrfToken: this.issueCookies(request, response, session),
     };
   }

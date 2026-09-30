@@ -18,3 +18,5 @@
 - [ ] Логи содержат корреляционный идентификатор и не содержат секретов.
 
 До реализации компонентов неприменимые пункты отмечаются N/A. Результат, commit и время сохраняются в записи развёртывания.
+
+Для регистрации на production-like домене дополнительно выполнить security, backup/restore и browser gates из [pre-production readiness runbook](pre-production-readiness.md).

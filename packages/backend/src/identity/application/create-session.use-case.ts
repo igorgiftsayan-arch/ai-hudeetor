@@ -1,5 +1,5 @@
 import { identityErrors } from '../domain/identity-error';
-import type { IssuedIdentitySession } from '../domain/identity-types';
+import type { IssuedIdentitySessionWithOnboarding } from '../domain/identity-types';
 import type { IdentityRepository } from './identity-repository';
 import type { PasswordHasher, SessionTokenService } from './identity-ports';
 import type { LoginAttemptLimiter } from './login-attempt-limiter';
@@ -16,7 +16,7 @@ export class CreateSessionUseCase {
     email: string;
     password: string;
     attemptScope: string;
-  }): Promise<IssuedIdentitySession> {
+  }): Promise<IssuedIdentitySessionWithOnboarding> {
     await this.attempts.assertAllowed(command.attemptScope);
     const credentials = await this.repository.findCredentialsByEmail(
       command.email.trim().toLowerCase(),
@@ -46,6 +46,7 @@ export class CreateSessionUseCase {
       refreshToken: issued.refreshToken,
       accessExpiresAt: stored.accessExpiresAt,
       refreshExpiresAt: stored.refreshExpiresAt,
+      onboardingStatus: credentials.user.onboardingStatus,
     };
   }
 }

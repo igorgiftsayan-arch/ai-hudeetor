@@ -6,6 +6,9 @@
 
 ### Added
 
+- Production-readiness: отдельные Compose/Nginx/env templates, pre-production registration runbook, ручной acceptance-сценарий и read-only server capacity audit без production/stable deployment.
+- Identity security: fail-closed Redis rate limit для регистрации и обязательная trusted Origin/Referer проверка для registration/login до выдачи session cookie.
+
 - AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
 - AI-003 verification: exact-image isolated runtime подтвердил repeatable migration, concurrent lazy initialization, timezone/ownership/idempotency/rollback, полный HTTP state flow, отсутствие daily context в логах/outbox и regression 76 API + 32 worker tests без изменения `main` или stable.
 - AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.
@@ -52,6 +55,9 @@
 - VERT-001.4 verification: migration `0003` и final test-server acceptance подтверждены; completion/weight retries идемпотентны, а изменённый payload с тем же key возвращает conflict.
 
 ### Changed
+
+- Production API configuration теперь fail-closed требует HTTPS browser origin, secure cookies и явно доверенный reverse-proxy hop; login и refresh возвращают фактический persisted onboarding status.
+- API test imports приведены к публичной границе `@atlas/backend`, поэтому root TypeScript project-reference check снова проходит.
 
 - BUG-UI-001: AI operation `Idempotency-Key` теперь привязан к payload; новый текст получает новый key, а сетевой retry того же текста повторяет прежний key без двойного списания.
 - BUG-UI-001: raw server message больше не выводится пользователю; idempotency, balance и operation errors отображаются внутри чата понятным текстом.

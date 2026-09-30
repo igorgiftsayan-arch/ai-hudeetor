@@ -7,9 +7,13 @@ import {
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CsrfService } from '@atlas/backend';
 import cookieParser from 'cookie-parser';
+import type { Express } from 'express';
 import { ErrorEnvelopeFilter } from '../http/error-envelope.filter';
 
 export function configureApplication(app: INestApplication): void {
+  const trustProxyHops = Number(process.env.API_TRUST_PROXY_HOPS ?? 0);
+  const express = app.getHttpAdapter().getInstance() as Express;
+  express.set('trust proxy', trustProxyHops);
   app.useLogger(new ConsoleLogger({ json: true }));
   app.enableCors({
     credentials: true,

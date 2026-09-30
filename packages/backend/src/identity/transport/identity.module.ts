@@ -11,12 +11,14 @@ import {
 } from '../application/identity-ports';
 import { RefreshSessionUseCase } from '../application/refresh-session.use-case';
 import { RegisterUserUseCase } from '../application/register-user.use-case';
+import { RegistrationAttemptLimiter } from '../application/registration-attempt-limiter';
 import { OnboardingStatePort } from '../application/onboarding-state.port';
 import { OnboardingStateService } from '../application/onboarding-state.service';
 import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
 import { CryptoSessionTokenService } from '../infrastructure/crypto-session-token.service';
 import { PostgresIdentityRepository } from '../infrastructure/postgres-identity.repository';
 import { RedisLoginAttemptLimiter } from '../infrastructure/redis-login-attempt-limiter';
+import { RedisRegistrationAttemptLimiter } from '../infrastructure/redis-registration-attempt-limiter';
 import { CsrfService, type IdentitySecurityOptions } from './csrf.service';
 import { IdentityController } from './identity.controller';
 import { IDENTITY_SECURITY_OPTIONS } from './identity.tokens';
@@ -44,6 +46,15 @@ export class IdentityModule {
               options.redisUrl,
               options.loginMaxAttempts,
               options.loginWindowMs,
+            ),
+        },
+        {
+          provide: RegistrationAttemptLimiter,
+          useFactory: () =>
+            new RedisRegistrationAttemptLimiter(
+              options.redisUrl,
+              options.registrationMaxAttempts,
+              options.registrationWindowMs,
             ),
         },
         {

@@ -174,7 +174,11 @@ export class PostgresIdentityRepository extends IdentityRepository {
   ): Promise<RotateIdentitySessionResult> {
     return this.database.transaction(async (client) => {
       const result = await client.query<SessionRow>(
-        `select * from user_sessions where refresh_token_hash = $1 for update`,
+        `select s.*, u.onboarding_status
+           from user_sessions s
+           join users u on u.id = s.user_id
+          where s.refresh_token_hash = $1
+          for update of s`,
         [input.currentRefreshTokenHash],
       );
       const current = result.rows[0];
@@ -210,7 +214,11 @@ export class PostgresIdentityRepository extends IdentityRepository {
           where id = $1`,
         [current.id, next.id],
       );
-      return { kind: 'rotated', session: next };
+      return {
+        kind: 'rotated',
+        session: next,
+        onboardingStatus: current.onboarding_status!,
+      };
     });
   }
 

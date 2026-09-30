@@ -39,6 +39,10 @@ export interface IssuedIdentitySession {
   refreshExpiresAt: Date;
 }
 
+export type IssuedIdentitySessionWithOnboarding = IssuedIdentitySession & {
+  onboardingStatus: OnboardingStatus;
+};
+
 export interface CurrentIdentity {
   userId: string;
   onboardingStatus: OnboardingStatus;

@@ -2,6 +2,7 @@ import {
   IdentityRepository,
   IdentityError,
   LoginAttemptLimiter,
+  RegistrationAttemptLimiter,
   ProfilesRepository,
   DatabaseService,
   AiDailyStateRepository,
@@ -127,7 +128,14 @@ class InMemoryIdentityRepository extends IdentityRepository {
       familyId: current.familyId,
     });
     this.sessions.set(rotated.id, rotated);
-    return { kind: 'rotated' as const, session: rotated };
+    const user = [...this.users.values()].find(
+      (candidate) => candidate.id === current.userId,
+    );
+    return {
+      kind: 'rotated' as const,
+      session: rotated,
+      onboardingStatus: user?.onboardingStatus ?? 'registered',
+    };
   }
 
   async revokeByTokenHashes(
@@ -370,6 +378,22 @@ class InMemoryLoginAttemptLimiter extends LoginAttemptLimiter {
   }
 }
 
+class InMemoryRegistrationAttemptLimiter extends RegistrationAttemptLimiter {
+  private readonly attempts = new Map<string, number>();
+
+  async consume(scope: string): Promise<void> {
+    const attempts = (this.attempts.get(scope) ?? 0) + 1;
+    this.attempts.set(scope, attempts);
+    if (attempts > 5) {
+      throw new IdentityError(
+        'RATE_LIMITED',
+        429,
+        'Too many authentication attempts',
+      );
+    }
+  }
+}
+
 describe('Identity API', () => {
   const origin = 'http://localhost:3000';
   let repository: InMemoryIdentityRepository;
@@ -416,6 +440,7 @@ describe('Identity API', () => {
 
     const valid = await request(app.getHttpServer())
       .post('/api/v1/sessions')
+      .set('Origin', origin)
       .send({
         email: 'person@example.com',
         password: 'correct horse 123',
@@ -425,9 +450,26 @@ describe('Identity API', () => {
 
     const invalid = await request(app.getHttpServer())
       .post('/api/v1/sessions')
+      .set('Origin', origin)
       .send({ email: 'person@example.com', password: 'wrong password 123' });
     expect(invalid.status).toBe(401);
     expect(invalid.body.error.code).toBe('AUTHENTICATION_FAILED');
+  });
+
+  it('returns the persisted onboarding status when creating a session', async () => {
+    const registration = await register(request.agent(app.getHttpServer()));
+    repository.setOnboardingStatus(registration.body.userId, 'completed');
+
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/sessions')
+      .set('Origin', origin)
+      .send({
+        email: 'person@example.com',
+        password: 'correct horse 123',
+      });
+
+    expect(login.status).toBe(201);
+    expect(login.body.onboardingStatus).toBe('completed');
   });
 
   it('rate limits repeated invalid login attempts', async () => {
@@ -436,12 +478,63 @@ describe('Identity API', () => {
     for (let attempt = 1; attempt < 5; attempt += 1) {
       const response = await request(app.getHttpServer())
         .post('/api/v1/sessions')
+        .set('Origin', origin)
         .send({ email: 'person@example.com', password: 'wrong password 123' });
       expect(response.status).toBe(401);
     }
     const limited = await request(app.getHttpServer())
       .post('/api/v1/sessions')
+      .set('Origin', origin)
       .send({ email: 'person@example.com', password: 'wrong password 123' });
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.error.code).toBe('RATE_LIMITED');
+  });
+
+  it('rejects registration and login from an untrusted or missing origin', async () => {
+    const missingOrigin = await request(app.getHttpServer())
+      .post('/api/v1/registrations')
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send(registrationPayload());
+    expect(missingOrigin.status).toBe(403);
+    expect(missingOrigin.body.error.code).toBe('ORIGIN_VALIDATION_FAILED');
+
+    const untrustedRegistration = await request(app.getHttpServer())
+      .post('/api/v1/registrations')
+      .set('Origin', 'https://evil.example')
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send({ ...registrationPayload(), email: 'evil-origin@example.com' });
+    expect(untrustedRegistration.status).toBe(403);
+    expect(untrustedRegistration.body.error.code).toBe(
+      'ORIGIN_VALIDATION_FAILED',
+    );
+
+    const untrustedLogin = await request(app.getHttpServer())
+      .post('/api/v1/sessions')
+      .set('Origin', 'https://evil.example')
+      .send({ email: 'person@example.com', password: 'correct horse 123' });
+    expect(untrustedLogin.status).toBe(403);
+    expect(untrustedLogin.body.error.code).toBe('ORIGIN_VALIDATION_FAILED');
+  });
+
+  it('rate limits repeated account registrations from one request source', async () => {
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/registrations')
+        .set('Origin', origin)
+        .set('Idempotency-Key', crypto.randomUUID())
+        .send({
+          ...registrationPayload(),
+          email: `signup-${attempt}@example.com`,
+        });
+      expect(response.status).toBe(201);
+    }
+
+    const limited = await request(app.getHttpServer())
+      .post('/api/v1/registrations')
+      .set('Origin', origin)
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send({ ...registrationPayload(), email: 'signup-6@example.com' });
 
     expect(limited.status).toBe(429);
     expect(limited.body.error.code).toBe('RATE_LIMITED');
@@ -450,6 +543,7 @@ describe('Identity API', () => {
   it('requires exactly the terms and privacy consents', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', crypto.randomUUID())
       .send({
         ...registrationPayload(),
@@ -466,6 +560,7 @@ describe('Identity API', () => {
   it('returns the contract validation status for an invalid DTO', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', crypto.randomUUID())
       .send({ ...registrationPayload(), email: 'not-an-email' });
 
@@ -476,6 +571,7 @@ describe('Identity API', () => {
   it('rejects outdated mandatory consent versions', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', crypto.randomUUID())
       .send({
         ...registrationPayload(),
@@ -497,12 +593,14 @@ describe('Identity API', () => {
     const key = crypto.randomUUID();
     const first = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', key)
       .send(registrationPayload());
     const firstCookies = first.headers['set-cookie'] as unknown as string[];
 
     const replay = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', key)
       .send(registrationPayload());
     const replayCookies = replay.headers['set-cookie'] as unknown as string[];
@@ -526,11 +624,13 @@ describe('Identity API', () => {
     const key = crypto.randomUUID();
     await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', key)
       .send(registrationPayload());
 
     const changed = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', key)
       .send({
         ...registrationPayload(),
@@ -545,11 +645,13 @@ describe('Identity API', () => {
     const key = crypto.randomUUID();
     await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', key)
       .send(registrationPayload());
 
     const response = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', key)
       .send({ ...registrationPayload(), email: 'another@example.com' });
 
@@ -560,6 +662,7 @@ describe('Identity API', () => {
   it('rejects a non-printable registration idempotency key', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', 'invalid key with spaces')
       .send(registrationPayload());
 
@@ -570,6 +673,7 @@ describe('Identity API', () => {
   it('rotates refresh sessions and detects reuse of the previous token', async () => {
     const registration = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', crypto.randomUUID())
       .send(registrationPayload());
     const oldCookies = registration.headers[
@@ -596,6 +700,24 @@ describe('Identity API', () => {
     expect(reused.body.error.code).toBe('SESSION_INVALID');
   });
 
+  it('returns the persisted onboarding status after refresh rotation', async () => {
+    const registration = await request(app.getHttpServer())
+      .post('/api/v1/registrations')
+      .set('Origin', origin)
+      .set('Idempotency-Key', crypto.randomUUID())
+      .send(registrationPayload());
+    repository.setOnboardingStatus(registration.body.userId, 'completed');
+
+    const refresh = await request(app.getHttpServer())
+      .post('/api/v1/sessions/refreshes')
+      .set('Cookie', registration.headers['set-cookie'] as unknown as string[])
+      .set('Origin', origin)
+      .set('x-csrf-token', registration.body.csrfToken);
+
+    expect(refresh.status).toBe(201);
+    expect(refresh.body.onboardingStatus).toBe('completed');
+  });
+
   it('requires CSRF for logout and revokes the current session', async () => {
     const agent = request.agent(app.getHttpServer());
     const registration = await register(agent);
@@ -618,6 +740,7 @@ describe('Identity API', () => {
   it('revokes the whole rotated session family on logout', async () => {
     const registration = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', crypto.randomUUID())
       .send(registrationPayload());
     const oldCookies = registration.headers[
@@ -655,6 +778,7 @@ describe('Identity API', () => {
   it('revokes the session family when the access cookie is absent', async () => {
     const registration = await request(app.getHttpServer())
       .post('/api/v1/registrations')
+      .set('Origin', origin)
       .set('Idempotency-Key', crypto.randomUUID())
       .send(registrationPayload());
     const cookies = registration.headers['set-cookie'] as unknown as string[];
@@ -816,6 +940,8 @@ async function createApp(repository: InMemoryIdentityRepository) {
     .useValue(repository)
     .overrideProvider(LoginAttemptLimiter)
     .useValue(new InMemoryLoginAttemptLimiter())
+    .overrideProvider(RegistrationAttemptLimiter)
+    .useValue(new InMemoryRegistrationAttemptLimiter())
     .overrideProvider(ProfilesRepository)
     .useValue(profiles)
     .overrideProvider(DatabaseService)
@@ -842,6 +968,7 @@ async function createApp(repository: InMemoryIdentityRepository) {
 async function register(agent: ReturnType<typeof request.agent>) {
   return agent
     .post('/api/v1/registrations')
+    .set('Origin', 'http://localhost:3000')
     .set('Idempotency-Key', crypto.randomUUID())
     .send(registrationPayload());
 }

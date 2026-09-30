@@ -1,5 +1,5 @@
 import { identityErrors } from '../domain/identity-error';
-import type { IssuedIdentitySession } from '../domain/identity-types';
+import type { IssuedIdentitySessionWithOnboarding } from '../domain/identity-types';
 import type { IdentityRepository } from './identity-repository';
 import type { SessionTokenService } from './identity-ports';
 
@@ -9,7 +9,9 @@ export class RefreshSessionUseCase {
     private readonly tokens: SessionTokenService,
   ) {}
 
-  async execute(refreshToken: string): Promise<IssuedIdentitySession> {
+  async execute(
+    refreshToken: string,
+  ): Promise<IssuedIdentitySessionWithOnboarding> {
     if (!refreshToken) throw identityErrors.sessionInvalid();
     const currentHash = this.tokens.hash(refreshToken);
     const issued = this.tokens.issue({ userId: 'resolved-during-rotation' });
@@ -28,6 +30,7 @@ export class RefreshSessionUseCase {
       refreshToken: issued.refreshToken,
       accessExpiresAt: result.session.accessExpiresAt,
       refreshExpiresAt: result.session.refreshExpiresAt,
+      onboardingStatus: result.onboardingStatus,
     };
   }
 }

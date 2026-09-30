@@ -33,6 +33,12 @@ export const identityErrors = {
     new IdentityError('SESSION_INVALID', 401, 'The session is invalid'),
   csrfValidationFailed: () =>
     new IdentityError('CSRF_VALIDATION_FAILED', 403, 'CSRF validation failed'),
+  originValidationFailed: () =>
+    new IdentityError(
+      'ORIGIN_VALIDATION_FAILED',
+      403,
+      'Request origin validation failed',
+    ),
   rateLimited: (windowMs: number) =>
     new IdentityError('RATE_LIMITED', 429, 'Too many authentication attempts', {
       retryAfterSeconds: Math.ceil(windowMs / 1_000),

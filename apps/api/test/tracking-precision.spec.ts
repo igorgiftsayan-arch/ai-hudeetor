@@ -1,5 +1,4 @@
-import { CreateWeightEntryUseCase } from '../../../packages/backend/src/tracking/application/create-weight-entry.use-case';
-import { IdentityError } from '../../../packages/backend/src/identity/domain/identity-error';
+import { CreateWeightEntryUseCase, IdentityError } from '@atlas/backend';
 
 describe('weight entry precision', () => {
   it('persists a two-decimal weight without rounding it', async () => {
