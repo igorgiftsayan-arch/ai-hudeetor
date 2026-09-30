@@ -35,6 +35,18 @@ test('new adult completes onboarding and can return after a fresh login', async 
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByTestId('weight-summary')).toBeVisible();
 
+  await page.getByLabel('Вес сегодня').fill('84,24');
+  await page.getByRole('button', { name: 'Записать вес' }).click();
+  await expect(page.getByText('Вес за сегодня записан')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Начать день' }).click();
+  await expect(page.getByText('День начат')).toBeVisible();
+  await page.getByRole('button', { name: 'Завершить день' }).click();
+  await expect(page.getByText('День завершён')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'На сегодня достаточно' }),
+  ).toBeVisible();
+
   await page.getByRole('button', { name: 'Выйти' }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel('Email').fill(email);

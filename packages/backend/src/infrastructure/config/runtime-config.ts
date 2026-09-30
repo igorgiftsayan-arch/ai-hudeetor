@@ -82,9 +82,9 @@ export const workerConfigSchema = baseSchema
       .enum(['success', 'technicalError', 'outcomeUnknown'])
       .default('success'),
     AI_PROVIDER: z.enum(['fake', 'genapi']),
-    GENAPI_API_KEY: z.string().min(1).optional(),
-    GENAPI_BASE_URL: z.url().optional(),
-    GENAPI_MODEL: z.string().min(1).optional(),
+    GENAPI_API_KEY: optionalEnvironmentValue(z.string().min(1)),
+    GENAPI_BASE_URL: optionalEnvironmentValue(z.url()),
+    GENAPI_MODEL: optionalEnvironmentValue(z.string().min(1)),
     GENAPI_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
     WORKER_HEALTH_PORT: z.coerce.number().int().positive().default(3002),
     WORKER_QUEUE_NAME: z.string().min(1).default('atlas-system'),
@@ -104,6 +104,13 @@ export const workerConfigSchema = baseSchema
         });
     }
   });
+
+function optionalEnvironmentValue<T extends z.ZodType<string>>(schema: T) {
+  return z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    schema.optional(),
+  );
+}
 
 export type ApiConfig = z.infer<typeof apiConfigSchema>;
 export type WorkerConfig = z.infer<typeof workerConfigSchema>;

@@ -15,6 +15,18 @@ describe('workerConfigSchema AI provider selection', () => {
     });
   });
 
+  it('accepts Compose-provided empty GenAPI settings in fake mode', () => {
+    expect(
+      workerConfigSchema.parse({
+        ...base,
+        AI_PROVIDER: 'fake',
+        GENAPI_API_KEY: '',
+        GENAPI_BASE_URL: '',
+        GENAPI_MODEL: '',
+      }),
+    ).toMatchObject({ AI_PROVIDER: 'fake' });
+  });
+
   it('requires all GenAPI settings only for genapi', () => {
     expect(() =>
       workerConfigSchema.parse({ ...base, AI_PROVIDER: 'genapi' }),
