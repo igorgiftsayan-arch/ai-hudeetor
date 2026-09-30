@@ -1,7 +1,7 @@
 # Production candidate runtime verification
 
 Дата: 2026-09-30. Ветка: `production/ai-hudeetor-candidate`. Проверенный
-source commit: `71a01703151e69554d1ae0a466e34f44144a1128`.
+application source commit: `299f871b5bee58d0e65a513eae0eef5185db8fda`.
 
 ## Изоляция
 
@@ -17,9 +17,9 @@ source commit: `71a01703151e69554d1ae0a466e34f44144a1128`.
 
 ## Exact runtime
 
-- API image: `sha256:54b2d7ef4662bb225754a451b1ef232717d0d9f93e9dfd95371de14b2a1393f9`.
-- Web image: `sha256:475abb5c2d5cbfe4a4092e027441eb51135fad9f534b8396f9aa232652faee0b`.
-- Worker image: `sha256:b410c8c2923e788036bdb73516ebdb99f991d535de7b96205928bb3acff85c26`.
+- API image: `sha256:7855f3f84668fbf1d0463e0ebfad8310f5098d63514cea7a23251f9ebb2a628d`.
+- Web image: `sha256:17414b6bddaa84eb5f8707b831e496604b6e6ade6e5ba4523902ab3efacc6135`.
+- Worker image: `sha256:6b10b364c5f649ac5d2e94d80f9e3810d64d385b9faa51f10a92774e22da46ce`.
 - Migrations `0000–0011` выполнены дважды; в journal подтверждены 12 записей.
 - Все шесть candidate services достигли `healthy`.
 - Focused PostgreSQL integration на exact image: identity, daily weight и daily
@@ -32,7 +32,10 @@ source commit: `71a01703151e69554d1ae0a466e34f44144a1128`.
   persona, completion, weight daily upsert с потерянным ответом и idempotent
   retry, Daily Coach `notStarted → inProgress → completed`, logout и fresh
   login для completed user.
-- Missing и untrusted `Origin` для registration вернули `403`.
+- Missing и untrusted `Origin` для registration вернули `403`. Финальный P1
+  hardening дополнительно отвергает в production `API_CORS_ORIGIN` с path,
+  query или trailing slash, чтобы trusted-origin comparison оставался
+  каноническим.
 - После очистки только disposable candidate Redis пять registration attempts
   были приняты, шестая вернула `429`.
 - Worker работал с `AI_PROVIDER=fake`; E2E лишь открывал `/quick-reply` и не

@@ -7,12 +7,14 @@
   Origin, Redis registration limit, real registration/onboarding, daily weight
   upsert, Daily Coach и logout/login persistence. `main`, DNS, public gateway
   и stable не менялись.
-- Exact isolated runtime candidate проверен на commit `71a0170`: migrations
+- Exact isolated runtime candidate проверен на application source commit
+  `299f871b5bee58d0e65a513eae0eef5185db8fda`: migrations
   `0000–0011` repeatable, 12 journal rows, API/web/worker/PostgreSQL/Redis/
   gateway healthy, PostgreSQL integration 17/17 и browser E2E 6/6 на desktop и
   Pixel 7. Проверены full registration → completed onboarding → weight retry →
-  Daily Coach transitions → logout/login, trusted Origin `403` и registration
-  limiter `429`. Топология, image digests и release gates зафиксированы в
+  Daily Coach transitions → logout/login, final P1 Origin hardening, trusted
+  Origin `403` и registration limiter `429`. Топология, final image digests и
+  release gates зафиксированы в
   [production candidate runtime verification](../07-deployment/production-candidate-runtime-verification.md).
 - Candidate не является public-production approval: тестовые legal versions и
   self-signed localhost TLS были синтетическими; email ownership verification,

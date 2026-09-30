@@ -6,6 +6,10 @@
 
 ### Added
 
+- Production candidate verification evidence: runtime record reconciled with
+  application source `299f871b5bee58d0e65a513eae0eef5185db8fda`, final
+  API/web/worker image digests, final desktop and Pixel 7 E2E 6/6, and P1
+  canonical trusted-Origin hardening.
 - Production candidate: отдельная ветка объединяет backend security/production
   boundary и UI-007 registration/onboarding без merge в `main` и без public
   deploy. Exact isolated runtime verification зафиксирована в
