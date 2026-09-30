@@ -1,6 +1,11 @@
 # Текущий статус
 
 - Дата: 2026-09-30
+- Непубличный review draft условий и privacy подготовлен в отдельной ветке
+  `docs/privacy-terms-draft` от production candidate: `/terms` и `/privacy`
+  показывают синхронизированную с registration версию документа, а login
+  связывает consent checkbox с текстами. Draft не публикуется до подтверждения
+  оператора, контакта, legal versions и фактических privacy/AI гарантий.
 - Production candidate собран в отдельной ветке
   `production/ai-hudeetor-candidate` от `back/production-readiness-signup` с
   интегрированным UI-007. В ней сохранены AI-001/002/003 и UI-006, trusted

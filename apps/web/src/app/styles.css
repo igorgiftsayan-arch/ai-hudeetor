@@ -61,6 +61,56 @@ main:not(.app-shell) > section {
   background: var(--paper);
 }
 
+.legal-shell {
+  min-height: 100dvh;
+  padding: clamp(1.25rem, 5vw, 3rem) 1rem;
+}
+
+.legal-document {
+  width: min(100%, 46rem);
+  margin: 0 auto;
+  padding: clamp(1.35rem, 5vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--paper);
+  line-height: 1.55;
+}
+
+.legal-document h1,
+.legal-document h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+}
+
+.legal-document h1 {
+  margin: 0.4rem 0 0.25rem;
+  font-size: clamp(2rem, 9vw, 3.2rem);
+  line-height: 1.05;
+}
+
+.legal-document h2 {
+  margin: 1.6rem 0 0.45rem;
+  font-size: 1.25rem;
+}
+
+.legal-document p {
+  margin: 0.45rem 0;
+}
+
+.legal-version {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.legal-notice {
+  margin-top: 1.25rem !important;
+  padding: 0.85rem 0.95rem;
+  border-left: 3px solid #b46a2a;
+  border-radius: 0.35rem;
+  background: #fff4df;
+  color: #573411;
+}
+
 .eyebrow {
   color: #526453;
   font-size: 0.75rem;

@@ -172,7 +172,12 @@ export default function LoginPage() {
                   checked={termsAccepted}
                   onChange={(event) => setTermsAccepted(event.target.checked)}
                 />
-                Принимаю условия сервиса
+                <span>
+                  Принимаю{' '}
+                  <a href="/terms" target="_blank" rel="noreferrer">
+                    условия сервиса
+                  </a>
+                </span>
               </label>
               <label className="consent">
                 <input
@@ -180,7 +185,12 @@ export default function LoginPage() {
                   checked={privacyAccepted}
                   onChange={(event) => setPrivacyAccepted(event.target.checked)}
                 />
-                Согласен с обработкой данных
+                <span>
+                  Согласен с{' '}
+                  <a href="/privacy" target="_blank" rel="noreferrer">
+                    политикой конфиденциальности
+                  </a>
+                </span>
               </label>
             </>
           )}

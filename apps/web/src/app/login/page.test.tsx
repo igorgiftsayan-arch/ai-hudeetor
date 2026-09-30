@@ -190,6 +190,20 @@ describe('login screen', () => {
     );
   });
 
+  it('links registration consents to the reviewable legal documents', async () => {
+    const user = userEvent.setup();
+
+    render(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+
+    expect(
+      screen.getByRole('link', { name: 'условия сервиса' }),
+    ).toHaveAttribute('href', '/terms');
+    expect(
+      screen.getByRole('link', { name: 'политикой конфиденциальности' }),
+    ).toHaveAttribute('href', '/privacy');
+  });
+
   it('retries an indeterminate registration with the same idempotency key', async () => {
     const user = userEvent.setup();
     vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'test-v1');

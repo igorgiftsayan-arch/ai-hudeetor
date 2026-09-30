@@ -6,6 +6,11 @@
 
 ### Added
 
+- Legal review draft: непубличные `/terms` и `/privacy` связаны с consent
+  checkbox registration и отображают текущую configured document version без
+  нового frontend source of truth. Draft явно не обещает account/chat deletion,
+  export, retention jobs, payments, photos, analytics или внешний AI flow до
+  подтверждения фактической реализации и операторских реквизитов.
 - Production candidate verification evidence: runtime record reconciled with
   application source `299f871b5bee58d0e65a513eae0eef5185db8fda`, final
   API/web/worker image digests, final desktop and Pixel 7 E2E 6/6, and P1
