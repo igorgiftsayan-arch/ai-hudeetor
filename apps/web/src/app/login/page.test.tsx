@@ -16,6 +16,7 @@ describe('login screen', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('logs in a completed user and opens today', async () => {
@@ -137,6 +138,171 @@ describe('login screen', () => {
 
     await waitFor(() =>
       expect(replaceMock).toHaveBeenCalledWith('/onboarding'),
+    );
+  });
+
+  it('creates a self-registered adult session with explicit consents', async () => {
+    const user = userEvent.setup();
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'test-v1');
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION', 'test-v1');
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        expect(String(input)).toBe(`${api}/registrations`);
+        expect(init?.method).toBe('POST');
+        expect(new Headers(init?.headers).get('Idempotency-Key')).toBeTruthy();
+        expect(init?.body).toBe(
+          JSON.stringify({
+            email: 'new@example.test',
+            password: 'new-password-42',
+            ageConfirmed: true,
+            consents: [
+              {
+                consentType: 'terms',
+                documentVersion: 'test-v1',
+                accepted: true,
+              },
+              {
+                consentType: 'privacy',
+                documentVersion: 'test-v1',
+                accepted: true,
+              },
+            ],
+          }),
+        );
+        return json({
+          userId: 'new-user',
+          onboardingStatus: 'registered',
+          sessionExpiresAt: '2026-09-30T00:00:00.000Z',
+          csrfToken: 'csrf-token',
+        });
+      },
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    await user.type(screen.getByLabelText('Email'), 'new@example.test');
+    await user.type(screen.getByLabelText('Пароль'), 'new-password-42');
+    for (const checkbox of screen.getAllByRole('checkbox'))
+      await user.click(checkbox);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    await waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith('/onboarding'),
+    );
+  });
+
+  it('retries an indeterminate registration with the same idempotency key', async () => {
+    const user = userEvent.setup();
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'test-v1');
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION', 'test-v1');
+    let calls = 0;
+    const keys: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        calls += 1;
+        keys.push(new Headers(init?.headers).get('Idempotency-Key') ?? '');
+        if (calls === 1) throw new TypeError('Failed to fetch');
+        return json({
+          userId: 'new-user',
+          onboardingStatus: 'registered',
+          sessionExpiresAt: '2026-09-30T00:00:00.000Z',
+          csrfToken: 'csrf-token',
+        });
+      }),
+    );
+
+    render(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    await user.type(screen.getByLabelText('Email'), 'new@example.test');
+    await user.type(screen.getByLabelText('Пароль'), 'new-password-42');
+    for (const checkbox of screen.getAllByRole('checkbox'))
+      await user.click(checkbox);
+
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Не удалось связаться с сервером. Проверьте интернет и попробуйте снова.',
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    await waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith('/onboarding'),
+    );
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toBeTruthy();
+    expect(keys[1]).toBe(keys[0]);
+  });
+
+  it('issues a new registration key when data changes after a lost response', async () => {
+    const user = userEvent.setup();
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'test-v1');
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION', 'test-v1');
+    const keys: string[] = [];
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        calls += 1;
+        keys.push(new Headers(init?.headers).get('Idempotency-Key') ?? '');
+        if (calls === 1) throw new TypeError('Failed to fetch');
+        return json({
+          userId: 'new-user',
+          onboardingStatus: 'registered',
+          sessionExpiresAt: '2026-09-30T00:00:00.000Z',
+          csrfToken: 'csrf-token',
+        });
+      }),
+    );
+
+    render(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    await user.type(screen.getByLabelText('Email'), 'first@example.test');
+    await user.type(screen.getByLabelText('Пароль'), 'new-password-42');
+    for (const checkbox of screen.getAllByRole('checkbox'))
+      await user.click(checkbox);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    await screen.findByRole('alert');
+
+    await user.clear(screen.getByLabelText('Email'));
+    await user.type(screen.getByLabelText('Email'), 'second@example.test');
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+
+    await waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith('/onboarding'),
+    );
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).toBeTruthy();
+    expect(keys[1]).not.toBe(keys[0]);
+  });
+
+  it('explains an outdated consent version without showing the raw API text', async () => {
+    const user = userEvent.setup();
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'old-v1');
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION', 'old-v1');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        json(
+          {
+            error: {
+              code: 'CONSENT_VERSION_OUTDATED',
+              message: 'A current consent document version is required',
+            },
+          },
+          409,
+        ),
+      ),
+    );
+
+    render(<LoginPage />);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+    await user.type(screen.getByLabelText('Email'), 'new@example.test');
+    await user.type(screen.getByLabelText('Пароль'), 'new-password-42');
+    for (const checkbox of screen.getAllByRole('checkbox'))
+      await user.click(checkbox);
+    await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Версия условий изменилась. Обновите страницу и ознакомьтесь с актуальными документами.',
     );
   });
 });

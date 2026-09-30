@@ -151,6 +151,46 @@ button:disabled {
   padding: 0 0.25rem 1.8rem;
 }
 
+.today-header-row,
+.chat-header-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.logout-control {
+  position: relative;
+  flex: none;
+}
+
+.logout-action {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.15rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.logout-control [role='alert'] {
+  position: absolute;
+  z-index: 2;
+  top: 2.3rem;
+  right: 0;
+  width: 13rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.65rem;
+  background: #fff0eb;
+  color: #762d20;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
 .quiet-greeting {
   margin: 0 0 0.35rem;
   color: var(--muted);
@@ -233,6 +273,54 @@ button:disabled {
   border-radius: 1.55rem;
   background: rgb(255 253 247 / 0.88);
   backdrop-filter: blur(12px);
+}
+
+.daily-coach {
+  margin-top: 1.15rem;
+  padding: 1.25rem 0.15rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.daily-coach-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.daily-coach h2 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.daily-coach p:not(.section-label) {
+  max-width: 25rem;
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.coach-action {
+  flex: 0 0 auto;
+  border: 1px solid var(--forest);
+  border-radius: 999px;
+  padding: 0.62rem 0.85rem;
+  background: transparent;
+  color: var(--forest-deep);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.coach-action:hover:not(:disabled) {
+  background: var(--forest);
+  color: #fff;
 }
 
 .section-heading,
@@ -809,6 +897,128 @@ button:disabled {
 
 .login-form .primary-action {
   margin-top: 0.9rem;
+}
+
+.field-hint {
+  margin: -0.05rem 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.login-form .consent {
+  margin-top: 0.35rem;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.login-form .consent input,
+.onboarding-form .consent input {
+  flex: none;
+  width: 1.1rem;
+  min-height: 1.1rem;
+  margin: 0.05rem 0 0;
+  accent-color: var(--forest);
+}
+
+.login-panel > .text-action {
+  margin-top: 1.1rem;
+}
+
+.onboarding-shell {
+  min-height: 100dvh;
+  justify-content: center;
+  padding-bottom: 1rem;
+}
+
+.onboarding-panel {
+  width: min(100%, 31rem);
+  padding: clamp(1.6rem, 6vw, 2.5rem);
+  border: 1px solid var(--line);
+  border-radius: 1.75rem;
+  background: rgb(255 253 247 / 0.9);
+  box-shadow: 0 1.4rem 4rem rgb(38 58 47 / 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.onboarding-panel h1 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 10vw, 3.15rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.03;
+}
+
+.onboarding-copy {
+  margin: 0.8rem 0 1.5rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.onboarding-form {
+  margin-top: 0.5rem;
+}
+
+.onboarding-form label:not(.consent) {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.onboarding-form input:not([type='checkbox']) {
+  width: 100%;
+  min-height: 3.25rem;
+  border: 1px solid #bfc1b8;
+  border-radius: 0.9rem;
+  outline: 0;
+  background: #fffef9;
+  color: var(--ink);
+}
+
+.onboarding-form input:not([type='checkbox']):focus {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 0.2rem rgb(37 75 59 / 0.1);
+}
+
+.onboarding-form .consent {
+  margin: 0.55rem 0 0.35rem;
+  line-height: 1.45;
+}
+
+.persona-grid {
+  margin-top: 1.4rem;
+}
+
+.persona-grid .onboarding-copy {
+  margin: 0 0 0.35rem;
+}
+
+.persona-grid button {
+  border: 1px solid var(--line);
+  background: #fffef9;
+  color: var(--ink);
+  text-align: left;
+}
+
+.persona-grid button:hover:not(:disabled) {
+  border-color: var(--forest);
+  background: rgb(37 75 59 / 0.07);
+}
+
+.onboarding-completion {
+  margin-top: 1.35rem;
+}
+
+.onboarding-panel .form-error {
+  margin: 1rem 0 0;
+  padding: 0.8rem 0.95rem;
+  border-radius: 0.9rem;
+  background: #fff0eb;
+  color: #762d20;
+  line-height: 1.45;
 }
 
 .login-error {

@@ -53,13 +53,14 @@ control to named testers. The current response still distinguishes an already
 registered email; hiding that difference requires an email verification flow,
 not a cosmetic error-code change.
 
-## UI blocker
+## Candidate UI boundary
 
-UI-006 has login and Daily Coach, but no registration screen. Its `/onboarding`
-route is a technical local state demo and does not call the profile, persona or
-completion endpoints. A browser E2E from signup to `/today` therefore requires a
-separate frontend implementation against the contract above. Backend API E2E is
-independently testable now.
+The candidate branch integrates the UI-007 registration and real onboarding
+flow: `/login` submits explicit age/terms/privacy confirmation to the existing
+registration contract; `/onboarding` persists profile, persona and completion;
+completed users continue to `/today`. Browser E2E must exercise this exact
+same-origin path before any release decision. This integration does not approve
+public signup: named synthetic testers and the security gates above still apply.
 
 ## Configuration gate
 
@@ -127,5 +128,6 @@ after the backup.
 - Logs contain request IDs but no email, password, cookies, CSRF token, profile,
   weight, prompt, response or memory values.
 - Backup artifact exists and isolated restore verification is recorded.
-- Browser/mobile E2E remains blocked until the frontend signup/onboarding route
-  is implemented and reviewed.
+- Browser/mobile E2E covers the integrated signup/onboarding route with a
+  synthetic named tester; it is not evidence that public registration is
+  approved.

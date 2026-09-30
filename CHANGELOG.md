@@ -9,7 +9,25 @@
 - Production-readiness: отдельные Compose/Nginx/env templates, pre-production registration runbook, ручной acceptance-сценарий и read-only server capacity audit без production/stable deployment.
 - Production-readiness verification: repeatable migrations `0000–0011`, exact-image API 82/82, worker 32/32, backend journey registration → completed onboarding → Daily Coach и disposable PostgreSQL backup/restore подтверждены в isolated Compose topology; public signup остаётся NO-GO до закрытия UI, email/abuse, TLS/legal и production backup-policy gates.
 - Identity security: fail-closed Redis rate limit для регистрации и обязательная trusted Origin/Referer проверка для registration/login до выдачи session cookie.
-
+- UI-007: `/login` теперь даёт самостоятельную регистрацию с явными
+  неотмеченными согласиями 18+/условия/privacy, server-issued cookie session и
+  стабильным registration `Idempotency-Key` для повторной отправки.
+- UI-007: технический onboarding заменён реальным `profile → persona →
+completion` REST flow; completion retry сохраняет ключ, а completed user
+  возвращается на `/today` после нового входа.
+- UI-007: добавлены logout control, component/browser E2E path для нового
+  синтетического пользователя и инструкция конфигурации same-origin HTTPS
+  gateway без включения домена или TLS.
+- UI-006: `/today` получает спокойный Daily Coach между фиксацией веса и
+  историей: server-sourced состояния `notStarted`, `inProgress` и `completed`,
+  подтверждённые transitions, disabled/loading, safe retry с тем же
+  `Idempotency-Key`, session redirect и recovery после stale `404/409`.
+- UI-006: отдельная Compose override `atlas-daily-coach` публикует только
+  gateway/web port; manual acceptance покрывает mobile/desktop, daily replay,
+  session expiry и сохранность существующего weight/chat path.
+- UI-006 verification: isolated runtime подтвердил migrations, state flow,
+  health, login, `/today`, mobile и переход в существующий чат без AI message
+  или token spend.
 - AI-003: additive migration `0011`, concurrency-safe owner/local-date daily state, explicit state machine, structured daily context и backend-only REST/OpenAPI contract без frontend, scheduler или prompt/Character изменений.
 - AI-003 verification: exact-image isolated runtime подтвердил repeatable migration, concurrent lazy initialization, timezone/ownership/idempotency/rollback, полный HTTP state flow, отсутствие daily context в логах/outbox и regression 76 API + 32 worker tests без изменения `main` или stable.
 - AI-002: structured companion memory, nullable `displayName`/`targetWeightKg`, migration `0010`, owner list/delete API, deterministic worker extraction и bounded system context.

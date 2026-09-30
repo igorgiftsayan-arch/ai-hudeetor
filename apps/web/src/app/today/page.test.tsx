@@ -26,6 +26,7 @@ describe('today weight screen', () => {
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
         if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-daily-states/today`) return dailyState();
         if (url === `${api}/weight-entries`)
           return json({
             items: [
@@ -66,6 +67,35 @@ describe('today weight screen', () => {
     expect(
       screen.getByRole('link', { name: 'Поговорить с AI' }),
     ).toHaveAttribute('href', '/quick-reply');
+    expect(
+      screen.getByRole('button', { name: 'Начать день' }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the weight screen available when the daily state cannot load', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-daily-states/today`)
+          throw new TypeError('Failed to fetch');
+        if (url === `${api}/weight-entries`)
+          return json({ items: [], nextCursor: null });
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<TodayPage />);
+
+    expect(
+      await screen.findByText('Сценарий пока недоступен'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Здесь появятся ваши изменения. Начните с сегодняшнего веса.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('renders a stable chart for a single entry', async () => {
@@ -323,6 +353,7 @@ describe('today weight screen', () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url === `${api}/users/me/onboarding`) return onboarding();
+      if (url === `${api}/ai-daily-states/today`) return dailyState();
       if (url === `${api}/weight-entries`)
         return json({ items: [], nextCursor: null });
       throw new Error(`Unexpected fetch: ${url}`);
@@ -342,7 +373,7 @@ describe('today weight screen', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Используйте не больше двух знаков после запятой.',
     );
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('shows loading and can retry an initial network error', async () => {
@@ -429,6 +460,25 @@ function savedEntry(
     ...entry(id, weightKg, '2026-07-22T04:00:00.000Z'),
     result,
   };
+}
+
+function dailyState() {
+  return json({
+    id: 'daily-state-1',
+    localDate: '2026-07-22',
+    status: 'notStarted',
+    startedAt: null,
+    completedAt: null,
+    createdAt: '2026-07-22T00:00:00.000Z',
+    updatedAt: '2026-07-22T00:00:00.000Z',
+    context: {
+      localDate: '2026-07-22',
+      timezone: 'Asia/Irkutsk',
+      profile: {},
+      weight: {},
+      memories: [],
+    },
+  });
 }
 
 function json(body: unknown, status = 200): Response {

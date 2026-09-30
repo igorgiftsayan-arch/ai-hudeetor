@@ -3,7 +3,28 @@
 - Дата: 2026-09-30
 - Production-readiness регистрации готовится в отдельной ветке `back/production-readiness-signup`: backend требует trusted HTTPS origin для registration/login, ограничивает регистрацию через Redis, корректно учитывает proxy hops и возвращает фактический onboarding status после login/refresh. Добавлены production Compose/Nginx/env templates и runbook без секретов; deployment, DNS и stable не изменялись.
 - Isolated backend runtime verification пройдена на exact image: migrations `0000–0011` repeatable, API 82/82, worker 32/32, registration → profile → persona → completion → wallet → Daily Coach, login/refresh, Redis rate limit и safe logs подтверждены. Custom-format backup успешно восстановлен в disposable PostgreSQL 17. После server resize доступно около 21 GiB; `atlas-production-readiness` healthy, другие projects не запускались.
-- Публичный signup пока не разрешён: отсутствуют email ownership verification/утверждённая anti-abuse policy, реальный registration/onboarding UI, production domain/certificate и утверждённые RPO/RTO/off-host backup policies. Host Nginx уже занимает port 80; production routing не менялся.
+- UI-007: самостоятельная регистрация и реальный onboarding реализуются в
+  отдельной ветке `ui/ui-007-self-registration` от UI-006. `/login` отправляет
+  существующий registration request с явными согласиями и server-side session;
+  `/onboarding` последовательно сохраняет profile, persona и completion, а
+  повтор completion сохраняет `Idempotency-Key`. Добавлены component и browser
+  E2E проверки logout/login persistence, HTTPS gateway configuration note и
+  manual acceptance. Runtime verification на isolated topology остаётся
+  следующим шагом; `main`, production и stable projects не менялись. Публичное
+  включение регистрации блокируют ещё не утверждённые опубликованные legal texts
+  и provider data-disclosure, а также отсутствие server-side registration
+  availability/rate-limit gate. Попытка isolated runtime была остановлена до
+  внешнего browser E2E: containers/network удалены, dedicated test volumes
+  сохранены, stable projects не затронуты. UI-007 не является разрешением на
+  production gateway.
+- UI-006: frontend Daily Coach реализуется в отдельной ветке от AI-003: `/today`
+  получает только server-sourced состояния `notStarted → inProgress → completed`,
+  CSRF/idempotent transition retry, loading/error/session-expiry handling и
+  mobile-first presentation. Новых API, AI-текстов, Character, scheduler, push
+  или AI-004 не добавляется. Isolated runtime acceptance `atlas-daily-coach`
+  пройдена: migrations, state flow, health, browser/mobile и navigation
+  подтверждены; stable projects не затронуты.
+- Публичный signup пока не разрешён: отсутствуют email ownership verification/утверждённая anti-abuse policy, production domain/certificate и утверждённые RPO/RTO/off-host backup policies. Host Nginx уже занимает port 80; production routing не менялся.
 - AI-003: Daily Coach backend реализует и изолированно проверяет одну timezone-aware state row на локальную дату, state machine `notStarted → inProgress → completed`, lazy initialization, structured daily context и owner-scoped REST API в отдельной ветке; migration repeatability, 76 API и 32 worker tests подтверждены, `main` и stable не изменены; frontend, scheduling, prompts и Character не входят.
 - AI-002: structured companion memory, nullable profile context, migration `0010`, owner list/delete API, deterministic worker extraction и bounded memory context реализованы и проверены в отдельной ветке; `main` не изменён.
 - AI-001: GenAPI adapter реализован и проверен в отдельной ветке на synthetic test-пользователях; `main` и stable остаются на fake до приёмки и merge.

@@ -1,5 +1,19 @@
 # BOOT-001 — runtime verification
 
+## UI-006 — isolated Daily Coach verification
+
+- Date: 2026-09-24. Runtime commit `5eb612941eea43778283a3f9d2050d7de23e001b`
+  was deployed as Compose project `atlas-daily-coach`; `main`, `atlas-v01`,
+  `atlas-ui-001` and `atlas-gerbi-marathon` remained healthy and unchanged.
+- Isolation: distinct checkout, network and PostgreSQL/Redis volumes. Only
+  gateway port `3113` is public: `http://5.42.126.71:3113/login`.
+- Migrations `0000–0011`, service health, daily state flow
+  `notStarted → inProgress → completed`, browser login, mobile `/today` and
+  existing `/quick-reply` navigation passed. No AI message or token spend.
+- Image digests: API `sha256:eaead3edf20fe54c3510f73890c9eccde896bbcc575fd066c58a3a7ef200c7e9`;
+  web `sha256:203bbbd8d49b5fb79e92156ae327a0c4090e06d1db9e414da99af65a40fe2fae`;
+  worker `sha256:5c7ef38d486c46d173ebc7d8a374347af56c8933e99f94999bd25685f4a3d5c5`.
+
 ## AI-002 — isolated companion-memory verification
 
 - Дата: 2026-07-31. Ветка `back/ai-002-companion-memory`; stable `atlas-v01` и `main` не изменялись.
