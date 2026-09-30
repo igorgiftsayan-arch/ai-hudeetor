@@ -104,8 +104,12 @@ services:
       target: web
       args:
         NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
+        NEXT_PUBLIC_IDENTITY_TERMS_VERSION: ${IDENTITY_TERMS_VERSION:-test-v1}
+        NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION: ${IDENTITY_PRIVACY_VERSION:-test-v1}
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
+      NEXT_PUBLIC_IDENTITY_TERMS_VERSION: ${IDENTITY_TERMS_VERSION:-test-v1}
+      NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION: ${IDENTITY_PRIVACY_VERSION:-test-v1}
       WEB_PORT: 3000
     depends_on:
       api: { condition: service_healthy }

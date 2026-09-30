@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '../mobile-navigation';
+import { LogoutButton } from '../../features/identity/logout-button';
 import {
   chatSubmission,
   loadChatOperation,
@@ -176,7 +177,10 @@ export default function QuickReplyPage() {
             <p className="section-label">Поддержка рядом</p>
             <h1>AI-друг</h1>
           </div>
-          <span className="fake-runtime-badge">тестовый AI</span>
+          <div className="chat-header-actions">
+            <span className="fake-runtime-badge">тестовый AI</span>
+            <LogoutButton csrfToken={csrfToken} />
+          </div>
         </header>
 
         <section

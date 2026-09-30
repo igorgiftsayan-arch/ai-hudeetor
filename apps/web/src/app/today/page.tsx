@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileNavigation } from '../mobile-navigation';
+import { LogoutButton } from '../../features/identity/logout-button';
 import {
   createWeightEntry,
   loadTodayData,
@@ -153,8 +154,13 @@ export default function TodayPage() {
     <main className="app-shell today-shell">
       <div className="app-page">
         <header className="today-header">
-          <p className="quiet-greeting">Здравствуйте</p>
-          <h1>{formatToday(new Date(), timezone)}</h1>
+          <div className="today-header-row">
+            <div>
+              <p className="quiet-greeting">Здравствуйте</p>
+              <h1>{formatToday(new Date(), timezone)}</h1>
+            </div>
+            <LogoutButton csrfToken={csrfToken} />
+          </div>
         </header>
 
         <section

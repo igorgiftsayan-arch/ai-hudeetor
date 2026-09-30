@@ -1,6 +1,14 @@
 # Текущий статус
 
-- Дата: 2026-08-21
+- Дата: 2026-09-30
+- UI-007: самостоятельная регистрация и реальный onboarding реализуются в
+  отдельной ветке `ui/ui-007-self-registration` от UI-006. `/login` отправляет
+  существующий registration request с явными согласиями и server-side session;
+  `/onboarding` последовательно сохраняет profile, persona и completion, а
+  повтор completion сохраняет `Idempotency-Key`. Добавлены component и browser
+  E2E проверки logout/login persistence, HTTPS gateway configuration note и
+  manual acceptance. Runtime verification на isolated topology остаётся
+  следующим шагом; `main`, production и stable projects не менялись.
 - UI-006: frontend Daily Coach реализуется в отдельной ветке от AI-003: `/today`
   получает только server-sourced состояния `notStarted → inProgress → completed`,
   CSRF/idempotent transition retry, loading/error/session-expiry handling и

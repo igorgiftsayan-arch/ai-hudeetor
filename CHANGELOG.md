@@ -6,6 +6,15 @@
 
 ### Added
 
+- UI-007: `/login` теперь даёт самостоятельную регистрацию с явными
+  неотмеченными согласиями 18+/условия/privacy, server-issued cookie session и
+  стабильным registration `Idempotency-Key` для повторной отправки.
+- UI-007: технический onboarding заменён реальным `profile → persona →
+completion` REST flow; completion retry сохраняет ключ, а completed user
+  возвращается на `/today` после нового входа.
+- UI-007: добавлены logout control, component/browser E2E path для нового
+  синтетического пользователя и инструкция конфигурации same-origin HTTPS
+  gateway без включения домена или TLS.
 - UI-006: `/today` получает спокойный Daily Coach между фиксацией веса и
   историей: server-sourced состояния `notStarted`, `inProgress` и `completed`,
   подтверждённые transitions, disabled/loading, safe retry с тем же

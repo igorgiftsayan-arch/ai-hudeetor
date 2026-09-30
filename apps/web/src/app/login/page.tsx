@@ -1,18 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ApiError, apiRequest } from '../../shared/api';
-
-type SessionResource = {
-  userId: string;
-  expiresAt: string;
-  onboardingStatus: string;
-  csrfToken: string;
-};
-
-type OnboardingResource = { status: string };
+import type {
+  CreateSessionRequestDto,
+  RegistrationRequestDto,
+  RegistrationResourceDto,
+  SessionResourceDto,
+} from '@atlas/api-contracts';
+import { ApiError, apiRequest, newIdempotencyKey } from '../../shared/api';
 
 export default function LoginPage() {
   const { replace } = useRouter();
@@ -20,6 +17,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const registrationKey = useRef<string | undefined>(undefined);
+  const termsVersion = process.env.NEXT_PUBLIC_IDENTITY_TERMS_VERSION;
+  const privacyVersion = process.env.NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION;
+  const canRegister = Boolean(termsVersion && privacyVersion);
+
+  function switchMode() {
+    setMode(mode === 'login' ? 'register' : 'login');
+    setError(undefined);
+    registrationKey.current = undefined;
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,27 +38,57 @@ export default function LoginPage() {
     setError(undefined);
 
     try {
-      await apiRequest<SessionResource>(
-        '/sessions',
+      const registered = mode === 'register';
+      const registrationPayload = registered
+        ? buildRegistrationPayload({
+            email: email.trim(),
+            password,
+            termsVersion,
+            privacyVersion,
+          })
+        : undefined;
+      if (registered && !registrationPayload) {
+        setError(
+          'Регистрация временно недоступна: версии документов не настроены.',
+        );
+        return;
+      }
+      const payload: RegistrationRequestDto | CreateSessionRequestDto =
+        registrationPayload ?? { email: email.trim(), password };
+      await apiRequest<RegistrationResourceDto | SessionResourceDto>(
+        registered ? '/registrations' : '/sessions',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), password }),
+          headers: registered
+            ? {
+                'Content-Type': 'application/json',
+                'Idempotency-Key':
+                  registrationKey.current ??
+                  (registrationKey.current = newIdempotencyKey()),
+              }
+            : { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         },
         { unauthorizedKind: 'request' },
       );
-      const onboarding = await apiRequest<OnboardingResource>(
-        '/users/me/onboarding',
-      );
-      replace(onboarding.status === 'completed' ? '/today' : '/onboarding');
+      if (registered) {
+        replace('/onboarding');
+      } else {
+        const onboarding = await apiRequest<{ status: string }>(
+          '/users/me/onboarding',
+        );
+        replace(onboarding.status === 'completed' ? '/today' : '/onboarding');
+      }
     } catch (cause) {
       if (cause instanceof ApiError && cause.code === 'AUTHENTICATION_FAILED') {
         setError('Неверный email или пароль.');
       } else {
         setError(
-          cause instanceof Error
-            ? cause.message
-            : 'Не удалось войти. Попробуйте снова.',
+          cause instanceof ApiError && cause.code === 'EMAIL_ALREADY_REGISTERED'
+            ? 'Этот email уже зарегистрирован. Попробуйте войти.'
+            : cause instanceof Error
+              ? cause.message
+              : 'Не удалось войти. Попробуйте снова.',
         );
       }
     } finally {
@@ -59,9 +100,13 @@ export default function LoginPage() {
     <main className="app-shell login-shell">
       <section className="login-panel" aria-labelledby="login-title">
         <p className="section-label">Ваш дневник</p>
-        <h1 id="login-title">С возвращением</h1>
+        <h1 id="login-title">
+          {mode === 'login' ? 'С возвращением' : 'Начнём спокойно'}
+        </h1>
         <p className="login-intro">
-          Войдите, чтобы спокойно продолжить с сегодняшней записи.
+          {mode === 'login'
+            ? 'Войдите, чтобы спокойно продолжить с сегодняшней записи.'
+            : 'Создайте аккаунт, чтобы начать свой дневник.'}
         </p>
 
         <form className="login-form" onSubmit={submit}>
@@ -81,18 +126,81 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
+            autoComplete={
+              mode === 'login' ? 'current-password' : 'new-password'
+            }
+            minLength={mode === 'register' ? 12 : undefined}
+            maxLength={128}
             required
           />
+
+          {mode === 'register' && (
+            <p className="field-hint">
+              Не менее 12 символов, с буквой и цифрой.
+            </p>
+          )}
+
+          {mode === 'register' && (
+            <>
+              <label className="consent">
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(event) => setAgeConfirmed(event.target.checked)}
+                />
+                Мне уже есть 18 лет
+              </label>
+              <label className="consent">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(event) => setTermsAccepted(event.target.checked)}
+                />
+                Принимаю условия сервиса
+              </label>
+              <label className="consent">
+                <input
+                  type="checkbox"
+                  checked={privacyAccepted}
+                  onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                />
+                Согласен с обработкой данных
+              </label>
+            </>
+          )}
 
           <button
             className="primary-action"
             type="submit"
-            disabled={loading || !email.trim() || !password}
+            disabled={
+              loading ||
+              !email.trim() ||
+              !password ||
+              (mode === 'register' &&
+                (!canRegister ||
+                  !ageConfirmed ||
+                  !termsAccepted ||
+                  !privacyAccepted))
+            }
           >
-            {loading ? 'Входим…' : 'Войти'}
+            {loading
+              ? mode === 'login'
+                ? 'Входим…'
+                : 'Создаём аккаунт…'
+              : mode === 'login'
+                ? 'Войти'
+                : 'Создать аккаунт'}
           </button>
         </form>
+
+        <button type="button" className="text-action" onClick={switchMode}>
+          {mode === 'login' ? 'Создать аккаунт' : 'У меня уже есть аккаунт'}
+        </button>
+        {mode === 'register' && !canRegister && (
+          <p className="login-error" role="alert">
+            Регистрация временно недоступна: версии документов не настроены.
+          </p>
+        )}
 
         {error && (
           <p className="login-error" role="alert">
@@ -102,4 +210,30 @@ export default function LoginPage() {
       </section>
     </main>
   );
+}
+
+function buildRegistrationPayload(input: {
+  email: string;
+  password: string;
+  termsVersion: string | undefined;
+  privacyVersion: string | undefined;
+}): RegistrationRequestDto | undefined {
+  if (!input.termsVersion || !input.privacyVersion) return undefined;
+  return {
+    email: input.email,
+    password: input.password,
+    ageConfirmed: true,
+    consents: [
+      {
+        consentType: 'terms',
+        documentVersion: input.termsVersion,
+        accepted: true,
+      },
+      {
+        consentType: 'privacy',
+        documentVersion: input.privacyVersion,
+        accepted: true,
+      },
+    ],
+  };
 }
