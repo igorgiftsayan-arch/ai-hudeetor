@@ -76,10 +76,11 @@ export function saveWellnessReport(input: {
 
 export function completeCaptainTask(input: {
   taskId: string;
+  completed: boolean;
   csrfToken: string;
   idempotencyKey: string;
 }) {
-  const payload: TaskCompletionDto = { completed: true };
+  const payload: TaskCompletionDto = { completed: input.completed };
   return apiRequest<TaskCompletionResponseDto>(`/marathon-captain-tasks/${input.taskId}/completion`, {
     method: 'PUT',
     headers: mutationHeaders(input.csrfToken, input.idempotencyKey),

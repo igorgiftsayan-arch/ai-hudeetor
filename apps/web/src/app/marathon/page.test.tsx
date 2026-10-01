@@ -254,6 +254,121 @@ describe('marathon page', () => {
     expect(await screen.findByText('Сегодня · 2026-09-30')).toBeInTheDocument();
     expect(currentReads).toBe(2);
   });
+
+  it('lets a participant undo and then restore today\'s captain-task completion', async () => {
+    const user = userEvent.setup();
+    let completed = true;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/marathon-teams/current/today`) {
+        return json({
+          ...team(),
+          captainTask: {
+            id: 'task-1',
+            taskDate: '2026-09-29',
+            title: 'Прогулка',
+            description: 'Пройдите 20 минут пешком.',
+            currentUserCompletion: {
+              status: completed ? 'completed' : 'unknown',
+              updatedAt: '2026-09-29T00:00:00.000Z',
+            },
+          },
+        });
+      }
+      if (
+        url === `${api}/marathon-captain-tasks/task-1/completion` &&
+        init?.method === 'PUT'
+      ) {
+        completed = JSON.parse(String(init.body)).completed;
+        return json({
+          taskId: 'task-1',
+          membershipId: 'membership-1',
+          completed,
+          updatedAt: '2026-09-29T00:00:00.000Z',
+        });
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Отменить выполнение' }),
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Отметить выполнение' }),
+    ).toBeEnabled();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Отметить выполнение' }),
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Отменить выполнение' }),
+    ).toBeEnabled();
+
+    const calls = fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        String(url) === `${api}/marathon-captain-tasks/task-1/completion` &&
+        (init as RequestInit | undefined)?.method === 'PUT',
+    );
+    expect(calls.map(([, init]) => init?.body)).toEqual([
+      JSON.stringify({ completed: false }),
+      JSON.stringify({ completed: true }),
+    ]);
+  });
+
+  it('does not retry a completion against a captain task replaced after a failed request', async () => {
+    const user = userEvent.setup();
+    let refreshed = false;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/marathon-teams/current/today`) {
+        const taskId = refreshed ? 'task-2' : 'task-1';
+        return json({
+          ...team(),
+          captainTask: {
+            id: taskId,
+            taskDate: '2026-09-29',
+            title: 'Прогулка',
+            description: 'Пройдите 20 минут пешком.',
+            currentUserCompletion: { status: 'unknown', updatedAt: null },
+          },
+        });
+      }
+      if (
+        url === `${api}/marathon-captain-tasks/task-1/completion` &&
+        init?.method === 'PUT'
+      )
+        return json(
+          { error: { code: 'TEMPORARY', message: 'Временная ошибка.' } },
+          500,
+        );
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Отметить выполнение' }),
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent('Временная ошибка.');
+
+    refreshed = true;
+    window.dispatchEvent(new Event('focus'));
+    await screen.findByText('Прогулка');
+    await user.click(screen.getByRole('button', { name: 'Повторить' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Задание обновилось. Проверьте отметку ещё раз.',
+    );
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url, init]) =>
+          String(url).includes('/marathon-captain-tasks/') &&
+          (init as RequestInit | undefined)?.method === 'PUT',
+      ),
+    ).toHaveLength(1);
+  });
 });
 
 function responseFor(input: RequestInfo | URL, init?: RequestInit): Response {
