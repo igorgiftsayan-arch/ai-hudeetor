@@ -1,6 +1,7 @@
 import { loadApiConfig } from '../src/config/load-config';
 
 const identityEmailConfig = {
+  AI_PROVIDER: 'fake',
   IDENTITY_AI_PROVIDER_PROCESSING_VERSION: 'v1',
   IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE:
     'Production disclosure for external AI provider processing and privacy.',
@@ -9,6 +10,32 @@ const identityEmailConfig = {
 };
 
 describe('Identity production configuration', () => {
+  it('requires an explicit AI provider for the API in production', () => {
+    const withoutProvider = Object.fromEntries(
+      Object.entries(identityEmailConfig).filter(
+        ([key]) => key !== 'AI_PROVIDER',
+      ),
+    );
+    const production = {
+      ...withoutProvider,
+      APP_ENV: 'production',
+      DATABASE_URL: 'postgresql://atlas:test@postgres:5432/atlas',
+      REDIS_URL: 'redis://redis:6379/0',
+      API_CORS_ORIGIN: 'https://example.test',
+      API_TRUST_PROXY_HOPS: '2',
+      CSRF_SECRET: 'production-secret-at-least-32-characters',
+      IDENTITY_TERMS_VERSION: 'v1',
+      IDENTITY_PRIVACY_VERSION: 'v1',
+      IDENTITY_AI_WELLNESS_NOTICE_VERSION: 'v1',
+      IDENTITY_SECURE_COOKIES: 'true',
+    };
+
+    expect(() => loadApiConfig(production)).toThrow();
+    expect(
+      loadApiConfig({ ...production, AI_PROVIDER: 'genapi' }).AI_PROVIDER,
+    ).toBe('genapi');
+  });
+
   it('rejects insecure identity cookies in production', () => {
     expect(() =>
       loadApiConfig({

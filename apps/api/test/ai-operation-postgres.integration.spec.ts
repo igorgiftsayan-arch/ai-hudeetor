@@ -10,7 +10,7 @@ describeWithDatabase('AI operation PostgreSQL transaction', () => {
 
   beforeAll(() => {
     database = new DatabaseService(databaseUrl!);
-    repository = new PostgresAiCompanionRepository(database);
+    repository = new PostgresAiCompanionRepository(database, 'fake');
   });
 
   afterAll(async () => database.onApplicationShutdown());
@@ -56,6 +56,32 @@ describeWithDatabase('AI operation PostgreSQL transaction', () => {
 
     expect(replay).toEqual(operation);
     await expectCounts(fixture.walletId, operation.id, 1, 1, 1);
+  });
+
+  it('persists the configured runtime adapter for a queued operation', async () => {
+    const fixture = await completedUserFixture();
+    const genApiRepository = new PostgresAiCompanionRepository(
+      database,
+      'genapi',
+    );
+
+    const operation = await database.transaction((client) =>
+      genApiRepository.startQuickReply(client, {
+        userId: fixture.userId,
+        idempotencyKey: randomUUID(),
+        conversationId: fixture.conversationId,
+        content: 'Проверь configured provider',
+        expectedPriceTokens: 1,
+        priceVersion: 1,
+      }),
+    );
+
+    expect(operation.runtimeAdapter).toBe('genapi');
+    const stored = await database.query<{ runtime_adapter: string }>(
+      'select runtime_adapter from ai_operations where id=$1',
+      [operation.id],
+    );
+    expect(stored.rows[0]).toEqual({ runtime_adapter: 'genapi' });
   });
 
   it('allows two completed quick replies for the same user', async () => {

@@ -24,7 +24,9 @@ import { GetCompanionWeightContextUseCase } from '../../tracking/application/get
 
 @Module({})
 export class AiCompanionModule {
-  static forRoot(): DynamicModule {
+  static forRoot(options: {
+    runtimeAdapter: 'fake' | 'genapi';
+  }): DynamicModule {
     return {
       module: AiCompanionModule,
       controllers: [AiCompanionController],
@@ -32,7 +34,7 @@ export class AiCompanionModule {
         {
           provide: AiCompanionRepository,
           useFactory: (database: DatabaseService) =>
-            new PostgresAiCompanionRepository(database),
+            new PostgresAiCompanionRepository(database, options.runtimeAdapter),
           inject: [DatabaseService],
         },
         {

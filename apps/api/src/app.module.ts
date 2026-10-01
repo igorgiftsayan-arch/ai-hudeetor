@@ -53,7 +53,7 @@ const config = loadApiConfig();
       aiProviderConsentDisclosure:
         config.IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE,
     }),
-    AiCompanionModule.forRoot(),
+    AiCompanionModule.forRoot({ runtimeAdapter: config.AI_PROVIDER }),
     ProfilesModule.forRoot({
       aiWellnessNoticeVersion: config.IDENTITY_AI_WELLNESS_NOTICE_VERSION,
     }),
