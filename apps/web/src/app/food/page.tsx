@@ -70,6 +70,8 @@ export default function FoodPage() {
   const [providerConsent, setProviderConsent] = useState<ProviderConsent>();
   const [selectedFile, setSelectedFile] = useState<File>();
   const [analysis, setAnalysis] = useState<FoodAnalysisResourceDto>();
+  const [emailVerificationRequired, setEmailVerificationRequired] =
+    useState(false);
   const [deletedAnalysisId, setDeletedAnalysisId] = useState<string>();
   const [confirmedAnalysisIds, setConfirmedAnalysisIds] = useState<string[]>(
     [],
@@ -249,6 +251,7 @@ export default function FoodPage() {
     setAnalysis(undefined);
     activeAnalysisId.current = undefined;
     setError(undefined);
+    setEmailVerificationRequired(false);
     pendingAnalysis.current = {
       file,
       idempotencyKey: newIdempotencyKey(),
@@ -265,6 +268,7 @@ export default function FoodPage() {
 
     setStarting(true);
     setError(undefined);
+    setEmailVerificationRequired(false);
     try {
       if (!pending.uploadedImageId && pending.file) {
         pending.uploadedImageId = await prepareFoodImage({
@@ -304,7 +308,13 @@ export default function FoodPage() {
       if (generation.current !== version) return;
       if (cause instanceof ApiError && cause.kind === 'session')
         replace('/login');
-      else setError(readFoodError(cause));
+      else {
+        setEmailVerificationRequired(
+          cause instanceof ApiError &&
+            cause.code === 'EMAIL_VERIFICATION_REQUIRED',
+        );
+        setError(readFoodError(cause));
+      }
     } finally {
       if (generation.current === version) {
         busy.current = false;
@@ -471,7 +481,6 @@ export default function FoodPage() {
             </div>
             {providerConsent && (
               <ProviderConsentNotice
-                feature="food"
                 consent={providerConsent}
                 csrfToken={data.csrfToken}
                 disclosure="Фото блюда и необходимый контекст будут переданы внешнему сервису GenAPI для разбора."
@@ -599,7 +608,10 @@ export default function FoodPage() {
           )}
         {error && (
           <p className="food-draft-error" role="alert">
-            {error}
+            {error}{' '}
+            {emailVerificationRequired && (
+              <a href="/verify-email">Подтвердить email</a>
+            )}
           </p>
         )}
 
@@ -695,11 +707,16 @@ function tokenLabel(count: number) {
 }
 
 function canUseFoodAi(consent: ProviderConsent | undefined) {
-  if (!consent) return false;
-  return consent.foodExternalProviderEnabled === false || consent.accepted;
+  return Boolean(consent?.accepted);
 }
 
 function readFoodError(cause: unknown) {
+  if (cause instanceof ApiError) {
+    if (cause.code === 'EMAIL_VERIFICATION_REQUIRED')
+      return 'Подтвердите email, чтобы отправить фото на разбор.';
+    if (cause.code === 'AI_PROVIDER_CONSENT_REQUIRED')
+      return 'Перед разбором ознакомьтесь с обработкой данных AI.';
+  }
   return cause instanceof Error
     ? cause.message
     : 'Не удалось продолжить. Попробуйте ещё раз.';

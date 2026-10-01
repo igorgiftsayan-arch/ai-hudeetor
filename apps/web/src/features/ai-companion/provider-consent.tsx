@@ -1,18 +1,13 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import {
-  ApiError,
-  apiRequest,
-  mutationHeaders,
-  newIdempotencyKey,
-} from '../../shared/api';
-import type { ProviderConsentMetadataDto } from '@atlas/api-contracts';
+import { useState } from 'react';
+import { ApiError, apiRequest } from '../../shared/api';
+import type {
+  AcceptAiProviderConsentRequestDto,
+  AiProviderConsentResourceDto,
+} from '@atlas/api-contracts';
 
-export type ProviderConsent = ProviderConsentMetadataDto;
-
-const genapiDisclosure =
-  'Сообщения и необходимый контекст будут переданы внешнему сервису GenAPI для формирования ответа.';
+export type ProviderConsent = AiProviderConsentResourceDto;
 
 export function loadProviderConsent() {
   return apiRequest<ProviderConsent>('/users/me/ai-provider-consent');
@@ -22,49 +17,39 @@ export function ProviderConsentNotice({
   consent,
   csrfToken,
   disclosure,
-  feature = 'chat',
   onAccepted,
   onSessionExpired,
 }: {
   consent: ProviderConsent;
   csrfToken: string;
   disclosure?: string;
-  feature?: 'chat' | 'food';
   onAccepted: () => Promise<void> | void;
   onSessionExpired: () => void;
 }) {
-  const pendingKey = useRef<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
 
-  const externalProviderEnabled =
-    feature === 'food'
-      ? consent.foodExternalProviderEnabled !== false
-      : consent.providerMode !== 'fake' && consent.externalProviderEnabled;
-  if (!externalProviderEnabled) {
-    return (
-      <p className="marathon-consent-notice">
-        AI сейчас работает в тестовом режиме.
-      </p>
-    );
-  }
   if (consent.accepted) return null;
 
   async function accept() {
-    const idempotencyKey = pendingKey.current ?? newIdempotencyKey();
-    pendingKey.current = idempotencyKey;
     setSaving(true);
     setError(undefined);
     try {
-      await apiRequest('/users/me/ai-provider-consent', {
-        method: 'PUT',
-        headers: mutationHeaders(csrfToken, idempotencyKey),
-        body: JSON.stringify({
-          accepted: true,
-          documentVersion: consent.documentVersion,
-        }),
-      });
-      pendingKey.current = undefined;
+      const payload: AcceptAiProviderConsentRequestDto = {
+        accepted: true,
+        documentVersion: consent.currentVersion,
+      };
+      await apiRequest<AiProviderConsentResourceDto>(
+        '/users/me/ai-provider-consent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
       await onAccepted();
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session')
@@ -83,12 +68,7 @@ export function ProviderConsentNotice({
   return (
     <section className="marathon-consent-card">
       <p className="marathon-kicker">Перед внешним AI</p>
-      <p>
-        {disclosure ??
-          (consent.providerMode === 'genapi'
-            ? genapiDisclosure
-            : consent.disclosure)}
-      </p>
+      <p>{disclosure ?? consent.disclosure}</p>
       <button type="button" onClick={() => void accept()} disabled={saving}>
         {saving ? 'Сохраняем…' : 'Разрешить обработку'}
       </button>

@@ -5,18 +5,14 @@ import { ProviderConsentNotice } from './provider-consent';
 describe('ProviderConsentNotice', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('explains the external GenAPI transfer without calling it a test mode', () => {
+  it('uses the disclosure returned by the active consent contract', () => {
     render(
       <ProviderConsentNotice
         consent={{
-          providerMode: 'genapi',
-          foodProviderMode: 'genapi',
-          foodExternalProviderEnabled: true,
-          externalProviderEnabled: true,
-          documentVersion: 'test-v1',
-          disclosure: 'AI is running in test mode.',
+          currentVersion: 'test-v1',
+          acceptedVersion: null,
+          disclosure: 'Сообщения будут переданы внешнему AI-провайдеру.',
           accepted: false,
-          acceptedAt: null,
         }}
         csrfToken="csrf-token"
         onAccepted={vi.fn()}
@@ -26,15 +22,12 @@ describe('ProviderConsentNotice', () => {
 
     expect(
       screen.getByText(
-        'Сообщения и необходимый контекст будут переданы внешнему сервису GenAPI для формирования ответа.',
+        'Сообщения будут переданы внешнему AI-провайдеру.',
       ),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText('AI is running in test mode.'),
-    ).not.toBeInTheDocument();
   });
 
-  it('sends the current disclosure version and reuses its idempotency key on retry', async () => {
+  it('posts the active consent version and permits a safe retry after a failed response', async () => {
     const user = userEvent.setup();
     const onAccepted = vi.fn();
     let calls = 0;
@@ -47,8 +40,9 @@ describe('ProviderConsentNotice', () => {
       return Promise.resolve(
         json({
           accepted: true,
-          documentVersion: 'v2',
-          acceptedAt: '2026-09-24T00:00:00.000Z',
+          currentVersion: 'v2',
+          acceptedVersion: 'v2',
+          disclosure: 'Передадим запрос внешнему провайдеру.',
         }),
       );
     });
@@ -57,14 +51,10 @@ describe('ProviderConsentNotice', () => {
     render(
       <ProviderConsentNotice
         consent={{
-          providerMode: 'genapi',
-          foodProviderMode: 'genapi',
-          foodExternalProviderEnabled: true,
-          externalProviderEnabled: true,
-          documentVersion: 'v2',
+          currentVersion: 'v2',
+          acceptedVersion: null,
           disclosure: 'Передадим запрос внешнему провайдеру.',
           accepted: false,
-          acceptedAt: null,
         }}
         csrfToken="csrf-token"
         onAccepted={onAccepted}
@@ -83,9 +73,9 @@ describe('ProviderConsentNotice', () => {
     expect(onAccepted).toHaveBeenCalledTimes(1);
     const first = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const second = fetchMock.mock.calls[1]?.[1] as RequestInit;
-    expect(new Headers(first.headers).get('Idempotency-Key')).toBe(
-      new Headers(second.headers).get('Idempotency-Key'),
-    );
+    expect(first.method).toBe('POST');
+    expect(new Headers(first.headers).get('X-CSRF-Token')).toBe('csrf-token');
+    expect(second.method).toBe('POST');
     expect(first.body).toBe(
       JSON.stringify({ accepted: true, documentVersion: 'v2' }),
     );
