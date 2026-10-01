@@ -52,14 +52,18 @@ Email настоящего капитана владелец предостав�
 
 Ветка координатора: `release/marathon-enrollment-20261001`, база `e88532d`.
 Backend и frontend работают в отдельных ветках и возвращают коммиты координатору.
-Исправление food labels `462da6d` включено как `7e950a2`; новое приложение ещё
-не опубликовано. Public runtime пока предыдущий GERBI release, main не меняется.
+Исправление food labels `462da6d` включено как `7e950a2`. Публичный runtime
+обновлён до `38ef5dc`; `main` не менялся. Последующая проверка выявила два
+пограничных дефекта, поэтому полная приёмка выпуска пока не завершена.
 
 Food E2E предыдущего выпуска уже прошёл на synthetic photo, one paid call.
 Общий журнал проверок: 4/15 разрешённых запросов; новые вызовы для изменения
 марафона не требуются. Резервные копии исключены по решению владельца.
 
 ## Проверка координатора перед публикацией
+
+Ниже исторический checkpoint `115a1f9`; актуальная публикация и последующая
+проверка описаны в следующем разделе.
 
 - Source `115a1f9`: immutable image
   `sha256:a77e8e85410f0baa7890c9c614c61e5d1823958c21e8dfe191c7d7ddfb727a80`,
@@ -79,3 +83,36 @@ Food E2E предыдущего выпуска уже прошёл на syntheti
   presentation-only counter from server-resolved calendar dates (not device
   timezone). First/second/final-day regressions RED→GREEN; web **180/180 PASS**,
   typecheck/lint and generated contract drift check PASS. Final build pending.
+
+## Публикация и независимая проверка, 2026-10-01
+
+- `38ef5dc` опубликован в существующий production Compose project; API/worker/web
+  используют immutable image
+  `sha256:8e603107051a2a0470c619905fca6e6791d716c1dd3b2227df9c07d3af69b9cb`.
+  Миграции до 0020 применены, повторный запуск миграций PASS. Все семь сервисов
+  healthy; restart policies сохранены. Реальный reboot не выполнялся.
+- Перед/после обновления совпали counts и fingerprints всех существующих
+  пользователей, весов, ledger, food analyses и confirmed consumptions.
+  Data volumes PostgreSQL и приватных фото сохранены. Публичный марафон и
+  настоящий капитан не создавались.
+- На чистой изолированной БД final image прошёл 146 API tests / 29 suites;
+  web180/180 на Node24. Test identity versions/origin и timezone задавались
+  согласно test baseline, а не production consent/origin.
+- Runtime/browser подтверждают close/start HTTP200, сохранение участия,
+  отдельный первый день, выполнение задания и daily weight update84.24→84.10
+  без изменения уже захваченного baseline84.24. Платных вызовов нет.
+- Mobile fix `576c3ed` собран в image
+  `sha256:9cc5689b65380eb634a3aec6c958ecdb6e087349585f48a7b7c192a3ba43f72c`:
+  Node24 build PASS, web181/181. Browser QA320/393px: пять ссылок, подписи
+  внутри своих ячеек, нет горизонтального overflow; targets55px. Это кандидат,
+  production всё ещё38ef5dc.
+- Независимый read-only review выявил Important: final-day wellness form
+  недоступна на endsOn+1, хотя write endpoint принимает этот report; pre-start
+  same-day weight ошибочно становится baseline public enrollment. Исправления
+  назначены backend/frontend в отдельных ветках, новая миграция только additive;
+  применённая0020 не переписывается. До их проверки выпуск не принят полностью.
+- Публичный synthetic account создан штатно, вход дошёл до verify-email.
+  Продолжение browser non-AI проверки ждёт разрешения владельца на штатную
+  кнопку «Продолжить без AI»; подтверждение email/AI guards не обходятся.
+- Email зарегистрированного настоящего капитана пока не предоставлен;
+  production bootstrap выключен. S3/backups вне scope; GenAPI использовано4/15.

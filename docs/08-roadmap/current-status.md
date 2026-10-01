@@ -1,5 +1,20 @@
 # Текущий статус
 
+## Актуальный публичный runtime и приёмка, 2026-10-01
+
+Production опубликован до `38ef5dc`: набор без кода, длительность и отдельный
+первый день доступны в runtime; миграции21/до0020, все семь сервисов healthy,
+существующие данные сохранены по before/after fingerprints. Main не менялся.
+Node24 API146/146 и web180/180 PASS. Mobile fix576c3ed прошёл Node24 web181/181
+и QA browser320/393px, но пока не опубликован. Независимый review нашёл две
+Important границы: final-day report на следующий день и baseline из веса до
+фактического старта. Их исправляют отдельные backend/frontend ветки до полной
+приёмки. Настоящий капитан ждёт email; публичный non-AI browser путь ждёт
+разрешения владельца на «Продолжить без AI». GenAPI4/15; backups исключены.
+Подробная [приёмка и журнал](../07-deployment/marathon-enrollment-release.md).
+
+Нижние блоки — исторические checkpoints; не заменяют актуальный статус выше.
+
 ## Mobile navigation visual fix — prepared, not deployed, 2026-10-01
 
 В отдельной UI-ветке от release commit `38ef5dc` устранено перекрытие

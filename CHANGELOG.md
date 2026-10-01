@@ -1,6 +1,17 @@
 # Changelog
 
-## 2026-10-01 — enrollment release acceptance fixes (not deployed yet)
+## 2026-10-01 — enrollment published; boundary review fixes in progress
+
+- Published38ef5dc with migrations through0020, documented HTTP200 and day
+  counter. Existing user/weight/ledger/food fingerprints match before/after.
+- Final Node24 image passed146API and180web tests. Navigation candidate576c3ed
+  passed181web tests and browser320/393px; it is not yet published.
+- Independent review found final-day reporting and pre-start baseline boundary
+  defects; fixes and additive migration are being prepared before full acceptance.
+- Real captain email and public non-AI browser approval remain outstanding;
+  no main merge or new paid calls, backups excluded.
+
+## 2026-10-01 — enrollment release acceptance fixes (historical pre-publication checkpoint)
 
 - The daily marathon screen now shows day N of total using server calendar dates.
 - Close enrollment and start return their documented HTTP 200, covered by
