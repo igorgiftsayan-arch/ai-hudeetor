@@ -151,6 +151,32 @@ export interface AiActionPriceResourceDto {
   priceVersion: number;
 }
 
+export type AiConversationOperationSummaryDtoStatus = typeof AiConversationOperationSummaryDtoStatus[keyof typeof AiConversationOperationSummaryDtoStatus];
+
+
+export const AiConversationOperationSummaryDtoStatus = {
+  queued: 'queued',
+  processing: 'processing',
+  succeeded: 'succeeded',
+  technicalError: 'technicalError',
+  outcomeUnknown: 'outcomeUnknown',
+} as const;
+
+export type AiConversationOperationSummaryDtoRefundStatus = typeof AiConversationOperationSummaryDtoRefundStatus[keyof typeof AiConversationOperationSummaryDtoRefundStatus];
+
+
+export const AiConversationOperationSummaryDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
+export interface AiConversationOperationSummaryDto {
+  id: string;
+  status: AiConversationOperationSummaryDtoStatus;
+  errorCode?: string;
+  refundStatus: AiConversationOperationSummaryDtoRefundStatus;
+}
+
 export type AiConversationMessageResourceDtoRole = typeof AiConversationMessageResourceDtoRole[keyof typeof AiConversationMessageResourceDtoRole];
 
 
@@ -164,6 +190,7 @@ export interface AiConversationMessageResourceDto {
   role: AiConversationMessageResourceDtoRole;
   content: string;
   createdAt: string;
+  operation?: AiConversationOperationSummaryDto;
 }
 
 export interface AiConversationDetailResourceDto {
@@ -213,6 +240,14 @@ export const AiOperationResourceDtoRuntimeAdapter = {
   genapi: 'genapi',
 } as const;
 
+export type AiOperationResourceDtoRefundStatus = typeof AiOperationResourceDtoRefundStatus[keyof typeof AiOperationResourceDtoRefundStatus];
+
+
+export const AiOperationResourceDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
 export interface AiOperationResourceDto {
   id: string;
   status: AiOperationResourceDtoStatus;
@@ -225,6 +260,7 @@ export interface AiOperationResourceDto {
   outputMessageId?: string;
   responseText?: string;
   errorCode?: string;
+  refundStatus?: AiOperationResourceDtoRefundStatus;
 }
 
 export type AiMemoryResourceDtoCategory = typeof AiMemoryResourceDtoCategory[keyof typeof AiMemoryResourceDtoCategory];
@@ -602,6 +638,644 @@ export interface WeightEntryPageDto {
   /** @nullable */
   nextCursor: WeightEntryPageDtoNextCursor;
 }
+
+export interface CreateMarathonDto {
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  timezone: string;
+  teamName: string;
+}
+
+export interface JoinMarathonDto {
+  joinCode: string;
+}
+
+export interface MarathonSummaryDto {
+  id: string;
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  timezone: string;
+}
+
+export interface TeamSummaryDto {
+  id: string;
+  name: string;
+}
+
+export type MembershipSummaryDtoRole = typeof MembershipSummaryDtoRole[keyof typeof MembershipSummaryDtoRole];
+
+
+export const MembershipSummaryDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface MembershipSummaryDto {
+  id: string;
+  role: MembershipSummaryDtoRole;
+  isCurrentUser: boolean;
+}
+
+export interface CurrentMarathonDto {
+  marathon: MarathonSummaryDto;
+  team: TeamSummaryDto;
+  membership: MembershipSummaryDto;
+  displayDate: string;
+  reportDate: string;
+}
+
+export interface WellnessReportValuesDto {
+  morningShake: boolean;
+  physicalActivity: boolean;
+  waterTarget: boolean;
+  secondShake: boolean;
+  healthyDinner: boolean;
+  goodSleep: boolean;
+  noJunkFood: boolean;
+  noSmoking: boolean;
+  updatedAt: string;
+}
+
+export type WellnessReportReadDtoStatus = typeof WellnessReportReadDtoStatus[keyof typeof WellnessReportReadDtoStatus];
+
+
+export const WellnessReportReadDtoStatus = {
+  notApplicable: 'notApplicable',
+  unknown: 'unknown',
+  reported: 'reported',
+} as const;
+
+export interface WellnessReportReadDto {
+  status: WellnessReportReadDtoStatus;
+  reportDate: string;
+  /** @nullable */
+  report?: WellnessReportValuesDto | null;
+}
+
+export interface WellnessReportDto {
+  morningShake: boolean;
+  physicalActivity: boolean;
+  waterTarget: boolean;
+  secondShake: boolean;
+  healthyDinner: boolean;
+  goodSleep: boolean;
+  noJunkFood: boolean;
+  noSmoking: boolean;
+}
+
+export type WellnessReportSavedDtoStatus = typeof WellnessReportSavedDtoStatus[keyof typeof WellnessReportSavedDtoStatus];
+
+
+export const WellnessReportSavedDtoStatus = {
+  reported: 'reported',
+} as const;
+
+export interface WellnessReportSavedDto {
+  morningShake: boolean;
+  physicalActivity: boolean;
+  waterTarget: boolean;
+  secondShake: boolean;
+  healthyDinner: boolean;
+  goodSleep: boolean;
+  noJunkFood: boolean;
+  noSmoking: boolean;
+  status: WellnessReportSavedDtoStatus;
+  reportDate: string;
+  markedCount: number;
+  updatedAt: string;
+}
+
+export interface CaptainTaskDto {
+  title: string;
+  description: string;
+}
+
+export interface CaptainTaskResponseDto {
+  id: string;
+  teamId: string;
+  taskDate: string;
+  title: string;
+  description: string;
+  updatedAt: string;
+}
+
+export interface TaskCompletionDto {
+  completed: boolean;
+}
+
+export interface TaskCompletionResponseDto {
+  taskId: string;
+  membershipId: string;
+  completed: boolean;
+  updatedAt: string;
+}
+
+export type TaskCompletionStatusDtoStatus = typeof TaskCompletionStatusDtoStatus[keyof typeof TaskCompletionStatusDtoStatus];
+
+
+export const TaskCompletionStatusDtoStatus = {
+  unknown: 'unknown',
+  completed: 'completed',
+  notCompleted: 'notCompleted',
+} as const;
+
+export interface TaskCompletionStatusDto {
+  status: TaskCompletionStatusDtoStatus;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export interface CaptainTaskReadDto {
+  id: string;
+  taskDate: string;
+  title: string;
+  description: string;
+  currentUserCompletion: TaskCompletionStatusDto;
+}
+
+export type MetricStatusDtoStatus = typeof MetricStatusDtoStatus[keyof typeof MetricStatusDtoStatus];
+
+
+export const MetricStatusDtoStatus = {
+  unknown: 'unknown',
+  reported: 'reported',
+} as const;
+
+export interface MetricStatusDto {
+  status: MetricStatusDtoStatus;
+  /** @nullable */
+  dailyPercent: number | null;
+}
+
+export type WellnessStatusDtoStatus = typeof WellnessStatusDtoStatus[keyof typeof WellnessStatusDtoStatus];
+
+
+export const WellnessStatusDtoStatus = {
+  unknown: 'unknown',
+  reported: 'reported',
+} as const;
+
+export interface WellnessStatusDto {
+  status: WellnessStatusDtoStatus;
+  /** @nullable */
+  markedCount: number | null;
+}
+
+export type TaskStatusDtoStatus = typeof TaskStatusDtoStatus[keyof typeof TaskStatusDtoStatus];
+
+
+export const TaskStatusDtoStatus = {
+  notAssigned: 'notAssigned',
+  unknown: 'unknown',
+  completed: 'completed',
+  notCompleted: 'notCompleted',
+} as const;
+
+export interface TaskStatusDto {
+  status: TaskStatusDtoStatus;
+}
+
+export type TeamMemberTodayDtoRole = typeof TeamMemberTodayDtoRole[keyof typeof TeamMemberTodayDtoRole];
+
+
+export const TeamMemberTodayDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface TeamMemberTodayDto {
+  membershipId: string;
+  /** @nullable */
+  displayName: string | null;
+  role: TeamMemberTodayDtoRole;
+  isCurrentUser: boolean;
+  weight: MetricStatusDto;
+  wellness: WellnessStatusDto;
+  captainTask: TaskStatusDto;
+}
+
+export type PodiumMemberDtoRole = typeof PodiumMemberDtoRole[keyof typeof PodiumMemberDtoRole];
+
+
+export const PodiumMemberDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface PodiumMemberDto {
+  membershipId: string;
+  /** @nullable */
+  displayName: string | null;
+  role: PodiumMemberDtoRole;
+  isCurrentUser: boolean;
+}
+
+export interface NumericPodiumPlaceDto {
+  /**
+     * @minimum 1
+     * @maximum 3
+     */
+  place: number;
+  value: number;
+  members: PodiumMemberDto[];
+}
+
+export interface TaskPodiumPlaceDto {
+  /**
+     * @minimum 1
+     * @maximum 1
+     */
+  place: number;
+  value: true;
+  members: PodiumMemberDto[];
+}
+
+export interface PodiumsDto {
+  weight: NumericPodiumPlaceDto[];
+  wellness: NumericPodiumPlaceDto[];
+  captainTask: TaskPodiumPlaceDto[];
+}
+
+export interface TeamTodayDto {
+  displayDate: string;
+  reportDate: string;
+  team: TeamSummaryDto;
+  currentMembership: MembershipSummaryDto;
+  /** @nullable */
+  captainTask?: CaptainTaskReadDto | null;
+  members: TeamMemberTodayDto[];
+  podiums: PodiumsDto;
+}
+
+export type FoodActionPriceDtoActionType = typeof FoodActionPriceDtoActionType[keyof typeof FoodActionPriceDtoActionType];
+
+
+export const FoodActionPriceDtoActionType = {
+  foodPhotoAnalysis: 'foodPhotoAnalysis',
+} as const;
+
+export interface FoodActionPriceDto {
+  actionType: FoodActionPriceDtoActionType;
+  tokenPrice: number;
+  priceVersion: number;
+}
+
+export type CreateFoodUploadIntentDtoContentType = typeof CreateFoodUploadIntentDtoContentType[keyof typeof CreateFoodUploadIntentDtoContentType];
+
+
+export const CreateFoodUploadIntentDtoContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface CreateFoodUploadIntentDto {
+  contentType: CreateFoodUploadIntentDtoContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  sizeBytes: number;
+  /** @pattern ^[0-9a-f]{64}$ */
+  sha256: string;
+}
+
+export type FoodUploadIntentResourceDtoStatus = typeof FoodUploadIntentResourceDtoStatus[keyof typeof FoodUploadIntentResourceDtoStatus];
+
+
+export const FoodUploadIntentResourceDtoStatus = {
+  pendingUpload: 'pendingUpload',
+} as const;
+
+export type FoodUploadIntentResourceDtoRequiredHeaders = { [key: string]: unknown };
+
+export interface FoodUploadIntentResourceDto {
+  id: string;
+  status: FoodUploadIntentResourceDtoStatus;
+  uploadUrl: string;
+  expiresAt: string;
+  requiredHeaders: FoodUploadIntentResourceDtoRequiredHeaders;
+}
+
+export type FoodUploadCompletionResourceDtoStatus = typeof FoodUploadCompletionResourceDtoStatus[keyof typeof FoodUploadCompletionResourceDtoStatus];
+
+
+export const FoodUploadCompletionResourceDtoStatus = {
+  available: 'available',
+} as const;
+
+export interface FoodUploadCompletionResourceDto {
+  id: string;
+  status: FoodUploadCompletionResourceDtoStatus;
+}
+
+export interface CreateFoodAnalysisDto {
+  uploadedImageId: string;
+  expectedTokenPrice: number;
+  expectedPriceVersion: number;
+}
+
+export type QueuedFoodAnalysisResourceDtoStatus = typeof QueuedFoodAnalysisResourceDtoStatus[keyof typeof QueuedFoodAnalysisResourceDtoStatus];
+
+
+export const QueuedFoodAnalysisResourceDtoStatus = {
+  queued: 'queued',
+} as const;
+
+export interface QueuedFoodAnalysisResourceDto {
+  id: string;
+  status: QueuedFoodAnalysisResourceDtoStatus;
+  reservedTokens: number;
+  priceVersion: number;
+  pollingUrl: string;
+}
+
+export type FoodDeletionStatusDtoCancellationStatus = typeof FoodDeletionStatusDtoCancellationStatus[keyof typeof FoodDeletionStatusDtoCancellationStatus];
+
+
+export const FoodDeletionStatusDtoCancellationStatus = {
+  notCancelled: 'notCancelled',
+  cancelledRefunded: 'cancelledRefunded',
+} as const;
+
+export type FoodDeletionStatusDtoPhotoStatus = typeof FoodDeletionStatusDtoPhotoStatus[keyof typeof FoodDeletionStatusDtoPhotoStatus];
+
+
+export const FoodDeletionStatusDtoPhotoStatus = {
+  available: 'available',
+  pending: 'pending',
+  deleted: 'deleted',
+} as const;
+
+export type FoodDeletionStatusDtoAnalysisStatus = typeof FoodDeletionStatusDtoAnalysisStatus[keyof typeof FoodDeletionStatusDtoAnalysisStatus];
+
+
+export const FoodDeletionStatusDtoAnalysisStatus = {
+  available: 'available',
+  deleted: 'deleted',
+} as const;
+
+export interface FoodDeletionStatusDto {
+  analysisId: string;
+  cancellationStatus: FoodDeletionStatusDtoCancellationStatus;
+  photoStatus: FoodDeletionStatusDtoPhotoStatus;
+  analysisStatus: FoodDeletionStatusDtoAnalysisStatus;
+}
+
+export type FoodAnalysisListItemDtoRefundStatus = typeof FoodAnalysisListItemDtoRefundStatus[keyof typeof FoodAnalysisListItemDtoRefundStatus];
+
+
+export const FoodAnalysisListItemDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
+/**
+ * Presentation status; deleted does not change the financial operation status.
+ */
+export type FoodAnalysisListItemDtoStatus = typeof FoodAnalysisListItemDtoStatus[keyof typeof FoodAnalysisListItemDtoStatus];
+
+
+export const FoodAnalysisListItemDtoStatus = {
+  queued: 'queued',
+  processing: 'processing',
+  analyzed: 'analyzed',
+  technicalError: 'technicalError',
+  outcomeUnknown: 'outcomeUnknown',
+  deleted: 'deleted',
+  cancelled: 'cancelled',
+} as const;
+
+export type FoodAnalysisListItemDtoConsumptionStatus = typeof FoodAnalysisListItemDtoConsumptionStatus[keyof typeof FoodAnalysisListItemDtoConsumptionStatus];
+
+
+export const FoodAnalysisListItemDtoConsumptionStatus = {
+  notConfirmed: 'notConfirmed',
+  consumed: 'consumed',
+} as const;
+
+export interface FoodAnalysisListItemDto {
+  refundStatus: FoodAnalysisListItemDtoRefundStatus;
+  /** @nullable */
+  errorCategory: string | null;
+  id: string;
+  uploadedImageId: string;
+  /** Presentation status; deleted does not change the financial operation status. */
+  status: FoodAnalysisListItemDtoStatus;
+  runtimeAdapter: string;
+  createdAt: string;
+  consumptionStatus: FoodAnalysisListItemDtoConsumptionStatus;
+  /** @nullable */
+  dishName: string | null;
+  deletionStatus: FoodDeletionStatusDto;
+}
+
+export interface FoodAnalysisPageDto {
+  items: FoodAnalysisListItemDto[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface FoodComponentDto {
+  name: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence?: number;
+}
+
+export type FoodRecognizedResultDtoKind = typeof FoodRecognizedResultDtoKind[keyof typeof FoodRecognizedResultDtoKind];
+
+
+export const FoodRecognizedResultDtoKind = {
+  food: 'food',
+  nonFood: 'nonFood',
+  ambiguous: 'ambiguous',
+} as const;
+
+export interface FoodRecognizedResultDto {
+  kind: FoodRecognizedResultDtoKind;
+  /** @nullable */
+  dishName?: string | null;
+  items: FoodComponentDto[];
+  uncertaintyNotes: string[];
+}
+
+export type FoodSuitabilityResultDtoStatus = typeof FoodSuitabilityResultDtoStatus[keyof typeof FoodSuitabilityResultDtoStatus];
+
+
+export const FoodSuitabilityResultDtoStatus = {
+  matches: 'matches',
+  doesNotMatch: 'doesNotMatch',
+  mixed: 'mixed',
+  insufficientData: 'insufficientData',
+} as const;
+
+export type FoodSuitabilityResultDtoSource = typeof FoodSuitabilityResultDtoSource[keyof typeof FoodSuitabilityResultDtoSource];
+
+
+export const FoodSuitabilityResultDtoSource = {
+  profile: 'profile',
+  gerbiProgram: 'gerbiProgram',
+  none: 'none',
+} as const;
+
+export interface FoodSuitabilityResultDto {
+  status: FoodSuitabilityResultDtoStatus;
+  source: FoodSuitabilityResultDtoSource;
+  observations: string[];
+  missingData: string[];
+}
+
+export interface FoodCorrectionDto {
+  dishName?: string;
+  /** @maxItems 25 */
+  items: FoodComponentDto[];
+  note?: string;
+}
+
+export type FoodAnalysisResourceDtoRefundStatus = typeof FoodAnalysisResourceDtoRefundStatus[keyof typeof FoodAnalysisResourceDtoRefundStatus];
+
+
+export const FoodAnalysisResourceDtoRefundStatus = {
+  notRefunded: 'notRefunded',
+  refunded: 'refunded',
+} as const;
+
+export type FoodAnalysisResourceDtoStatus = typeof FoodAnalysisResourceDtoStatus[keyof typeof FoodAnalysisResourceDtoStatus];
+
+
+export const FoodAnalysisResourceDtoStatus = {
+  queued: 'queued',
+  processing: 'processing',
+  analyzed: 'analyzed',
+  technicalError: 'technicalError',
+  outcomeUnknown: 'outcomeUnknown',
+  deleted: 'deleted',
+  cancelled: 'cancelled',
+} as const;
+
+export interface FoodAnalysisResourceDto {
+  refundStatus: FoodAnalysisResourceDtoRefundStatus;
+  id: string;
+  uploadedImageId: string;
+  status: FoodAnalysisResourceDtoStatus;
+  runtimeAdapter: string;
+  recognizedResult?: FoodRecognizedResultDto;
+  suitabilityResult?: FoodSuitabilityResultDto;
+  userCorrection?: FoodCorrectionDto;
+  /** @nullable */
+  errorCategory?: string | null;
+  consumptionStatus: string;
+  createdAt: string;
+}
+
+export interface ConfirmFoodConsumptionDto {
+  consumedAt: string;
+  timezone: string;
+}
+
+export interface FoodConsumptionResourceDto {
+  id: string;
+  foodAnalysisId: string;
+  consumedAt: string;
+  localDate: string;
+  timezone: string;
+  confirmedResult: FoodCorrectionDto;
+}
+
+export interface FoodConsumptionPageDto {
+  items: FoodConsumptionResourceDto[];
+}
+
+export interface UpdateFoodConsumptionDto {
+  consumedAt: string;
+  timezone: string;
+  confirmedResult: FoodCorrectionDto;
+}
+
+export type PushPreferenceResourceDtoSubscriptionState = typeof PushPreferenceResourceDtoSubscriptionState[keyof typeof PushPreferenceResourceDtoSubscriptionState];
+
+
+export const PushPreferenceResourceDtoSubscriptionState = {
+  active: 'active',
+  none: 'none',
+} as const;
+
+export interface PushPreferenceResourceDto {
+  available: boolean;
+  /** @nullable */
+  vapidPublicKey?: string | null;
+  enabled: boolean;
+  /** @nullable */
+  localTime?: string | null;
+  /** @nullable */
+  timezone?: string | null;
+  subscriptionState: PushPreferenceResourceDtoSubscriptionState;
+  activeSubscriptionCount: number;
+}
+
+export interface SavePushPreferenceDto {
+  enabled: boolean;
+  localTime?: string;
+  timezone?: string;
+}
+
+export type SavePushSubscriptionDtoPlatform = typeof SavePushSubscriptionDtoPlatform[keyof typeof SavePushSubscriptionDtoPlatform];
+
+
+export const SavePushSubscriptionDtoPlatform = {
+  iosPwa: 'iosPwa',
+  androidPwa: 'androidPwa',
+  desktopPwa: 'desktopPwa',
+  unknown: 'unknown',
+} as const;
+
+export interface SavePushSubscriptionDto {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  platform: SavePushSubscriptionDtoPlatform;
+}
+
+export interface PushSubscriptionResourceDto {
+  id: string;
+  platform: string;
+  status: string;
+}
+
+export interface RevokePushSubscriptionDto {
+  endpoint: string;
+}
+
+export interface PushSubscriptionLookupResourceDto {
+  connected: boolean;
+  /** @nullable */
+  subscriptionId?: string | null;
+}
+
+export type FoodControllerAnalysesApiV1Params = {
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+/**
+ * @maxLength 512
+ */
+cursor?: string;
+consumptionStatus?: FoodControllerAnalysesApiV1ConsumptionStatus;
+};
+
+export type FoodControllerAnalysesApiV1ConsumptionStatus = typeof FoodControllerAnalysesApiV1ConsumptionStatus[keyof typeof FoodControllerAnalysesApiV1ConsumptionStatus];
+
+
+export const FoodControllerAnalysesApiV1ConsumptionStatus = {
+  notConfirmed: 'notConfirmed',
+} as const;
 
 export type healthControllerLivenessApiV1Response200 = {
   data: void
@@ -1806,4 +2480,1137 @@ export const trackingControllerEntriesApiV1 = async ( options?: RequestInit): Pr
 
   const data: trackingControllerEntriesApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as trackingControllerEntriesApiV1Response
+}
+
+
+
+export type marathonControllerCreateApiV1Response201 = {
+  data: void
+  status: 201
+}
+
+export type marathonControllerCreateApiV1ResponseSuccess = (marathonControllerCreateApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerCreateApiV1Response = (marathonControllerCreateApiV1ResponseSuccess)
+
+export const getMarathonControllerCreateApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathons`
+}
+
+export const marathonControllerCreateApiV1 = async (createMarathonDto: CreateMarathonDto, options?: RequestInit): Promise<marathonControllerCreateApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerCreateApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createMarathonDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerCreateApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as marathonControllerCreateApiV1Response
+}
+
+
+
+export type marathonControllerJoinApiV1Response201 = {
+  data: void
+  status: 201
+}
+
+export type marathonControllerJoinApiV1ResponseSuccess = (marathonControllerJoinApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerJoinApiV1Response = (marathonControllerJoinApiV1ResponseSuccess)
+
+export const getMarathonControllerJoinApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathon-team-memberships`
+}
+
+export const marathonControllerJoinApiV1 = async (joinMarathonDto: JoinMarathonDto, options?: RequestInit): Promise<marathonControllerJoinApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerJoinApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(joinMarathonDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerJoinApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as marathonControllerJoinApiV1Response
+}
+
+
+
+export type marathonControllerCurrentApiV1Response200 = {
+  data: CurrentMarathonDto
+  status: 200
+}
+
+export type marathonControllerCurrentApiV1ResponseSuccess = (marathonControllerCurrentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerCurrentApiV1Response = (marathonControllerCurrentApiV1ResponseSuccess)
+
+export const getMarathonControllerCurrentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathons/current`
+}
+
+export const marathonControllerCurrentApiV1 = async ( options?: RequestInit): Promise<marathonControllerCurrentApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerCurrentApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerCurrentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerCurrentApiV1Response
+}
+
+
+
+export type marathonControllerReportApiV1Response200 = {
+  data: WellnessReportReadDto
+  status: 200
+}
+
+export type marathonControllerReportApiV1ResponseSuccess = (marathonControllerReportApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerReportApiV1Response = (marathonControllerReportApiV1ResponseSuccess)
+
+export const getMarathonControllerReportApiV1Url = (reportDate: string,) => {
+
+
+
+
+  return `/api/v1/marathon-wellness-reports/${reportDate}`
+}
+
+export const marathonControllerReportApiV1 = async (reportDate: string, options?: RequestInit): Promise<marathonControllerReportApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerReportApiV1Url(reportDate),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerReportApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerReportApiV1Response
+}
+
+
+
+export type marathonControllerSaveReportApiV1Response200 = {
+  data: WellnessReportSavedDto
+  status: 200
+}
+
+export type marathonControllerSaveReportApiV1ResponseSuccess = (marathonControllerSaveReportApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerSaveReportApiV1Response = (marathonControllerSaveReportApiV1ResponseSuccess)
+
+export const getMarathonControllerSaveReportApiV1Url = (reportDate: string,) => {
+
+
+
+
+  return `/api/v1/marathon-wellness-reports/${reportDate}`
+}
+
+export const marathonControllerSaveReportApiV1 = async (reportDate: string,
+    wellnessReportDto: WellnessReportDto, options?: RequestInit): Promise<marathonControllerSaveReportApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerSaveReportApiV1Url(reportDate),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(wellnessReportDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerSaveReportApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerSaveReportApiV1Response
+}
+
+
+
+export type marathonControllerTaskApiV1Response200 = {
+  data: CaptainTaskResponseDto
+  status: 200
+}
+
+export type marathonControllerTaskApiV1ResponseSuccess = (marathonControllerTaskApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerTaskApiV1Response = (marathonControllerTaskApiV1ResponseSuccess)
+
+export const getMarathonControllerTaskApiV1Url = (taskDate: string,) => {
+
+
+
+
+  return `/api/v1/marathon-captain-tasks/${taskDate}`
+}
+
+export const marathonControllerTaskApiV1 = async (taskDate: string,
+    captainTaskDto: CaptainTaskDto, options?: RequestInit): Promise<marathonControllerTaskApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerTaskApiV1Url(taskDate),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(captainTaskDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerTaskApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerTaskApiV1Response
+}
+
+
+
+export type marathonControllerCompletionApiV1Response200 = {
+  data: TaskCompletionResponseDto
+  status: 200
+}
+
+export type marathonControllerCompletionApiV1ResponseSuccess = (marathonControllerCompletionApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerCompletionApiV1Response = (marathonControllerCompletionApiV1ResponseSuccess)
+
+export const getMarathonControllerCompletionApiV1Url = (taskId: string,) => {
+
+
+
+
+  return `/api/v1/marathon-captain-tasks/${taskId}/completion`
+}
+
+export const marathonControllerCompletionApiV1 = async (taskId: string,
+    taskCompletionDto: TaskCompletionDto, options?: RequestInit): Promise<marathonControllerCompletionApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerCompletionApiV1Url(taskId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(taskCompletionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerCompletionApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerCompletionApiV1Response
+}
+
+
+
+export type marathonControllerTodayApiV1Response200 = {
+  data: TeamTodayDto
+  status: 200
+}
+
+export type marathonControllerTodayApiV1ResponseSuccess = (marathonControllerTodayApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerTodayApiV1Response = (marathonControllerTodayApiV1ResponseSuccess)
+
+export const getMarathonControllerTodayApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathon-teams/current/today`
+}
+
+export const marathonControllerTodayApiV1 = async ( options?: RequestInit): Promise<marathonControllerTodayApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerTodayApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerTodayApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerTodayApiV1Response
+}
+
+
+
+export type foodControllerPriceApiV1Response200 = {
+  data: FoodActionPriceDto
+  status: 200
+}
+
+export type foodControllerPriceApiV1ResponseSuccess = (foodControllerPriceApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerPriceApiV1Response = (foodControllerPriceApiV1ResponseSuccess)
+
+export const getFoodControllerPriceApiV1Url = () => {
+
+
+
+
+  return `/api/v1/ai-action-prices/food-photo-analysis`
+}
+
+export const foodControllerPriceApiV1 = async ( options?: RequestInit): Promise<foodControllerPriceApiV1Response> => {
+
+  const res = await fetch(getFoodControllerPriceApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerPriceApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerPriceApiV1Response
+}
+
+
+
+export type foodControllerUploadIntentApiV1Response201 = {
+  data: FoodUploadIntentResourceDto
+  status: 201
+}
+
+export type foodControllerUploadIntentApiV1ResponseSuccess = (foodControllerUploadIntentApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerUploadIntentApiV1Response = (foodControllerUploadIntentApiV1ResponseSuccess)
+
+export const getFoodControllerUploadIntentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/food-images/upload-intents`
+}
+
+export const foodControllerUploadIntentApiV1 = async (createFoodUploadIntentDto: CreateFoodUploadIntentDto, options?: RequestInit): Promise<foodControllerUploadIntentApiV1Response> => {
+
+  const res = await fetch(getFoodControllerUploadIntentApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createFoodUploadIntentDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerUploadIntentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerUploadIntentApiV1Response
+}
+
+
+
+export type foodControllerCompleteUploadApiV1Response200 = {
+  data: FoodUploadCompletionResourceDto
+  status: 200
+}
+
+export type foodControllerCompleteUploadApiV1ResponseSuccess = (foodControllerCompleteUploadApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerCompleteUploadApiV1Response = (foodControllerCompleteUploadApiV1ResponseSuccess)
+
+export const getFoodControllerCompleteUploadApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-images/${id}/completions`
+}
+
+export const foodControllerCompleteUploadApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerCompleteUploadApiV1Response> => {
+
+  const res = await fetch(getFoodControllerCompleteUploadApiV1Url(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerCompleteUploadApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerCompleteUploadApiV1Response
+}
+
+
+
+export type foodControllerCreateAnalysisApiV1Response202 = {
+  data: QueuedFoodAnalysisResourceDto
+  status: 202
+}
+
+export type foodControllerCreateAnalysisApiV1ResponseSuccess = (foodControllerCreateAnalysisApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerCreateAnalysisApiV1Response = (foodControllerCreateAnalysisApiV1ResponseSuccess)
+
+export const getFoodControllerCreateAnalysisApiV1Url = () => {
+
+
+
+
+  return `/api/v1/food-analyses`
+}
+
+export const foodControllerCreateAnalysisApiV1 = async (createFoodAnalysisDto: CreateFoodAnalysisDto, options?: RequestInit): Promise<foodControllerCreateAnalysisApiV1Response> => {
+
+  const res = await fetch(getFoodControllerCreateAnalysisApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createFoodAnalysisDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerCreateAnalysisApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerCreateAnalysisApiV1Response
+}
+
+
+
+export type foodControllerAnalysesApiV1Response200 = {
+  data: FoodAnalysisPageDto
+  status: 200
+}
+
+export type foodControllerAnalysesApiV1ResponseSuccess = (foodControllerAnalysesApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerAnalysesApiV1Response = (foodControllerAnalysesApiV1ResponseSuccess)
+
+export const getFoodControllerAnalysesApiV1Url = (params?: FoodControllerAnalysesApiV1Params,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/food-analyses?${stringifiedParams}` : `/api/v1/food-analyses`
+}
+
+export const foodControllerAnalysesApiV1 = async (params?: FoodControllerAnalysesApiV1Params, options?: RequestInit): Promise<foodControllerAnalysesApiV1Response> => {
+
+  const res = await fetch(getFoodControllerAnalysesApiV1Url(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerAnalysesApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerAnalysesApiV1Response
+}
+
+
+
+export type foodControllerAnalysisApiV1Response200 = {
+  data: FoodAnalysisResourceDto
+  status: 200
+}
+
+export type foodControllerAnalysisApiV1ResponseSuccess = (foodControllerAnalysisApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerAnalysisApiV1Response = (foodControllerAnalysisApiV1ResponseSuccess)
+
+export const getFoodControllerAnalysisApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}`
+}
+
+export const foodControllerAnalysisApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerAnalysisApiV1Response> => {
+
+  const res = await fetch(getFoodControllerAnalysisApiV1Url(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerAnalysisApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerAnalysisApiV1Response
+}
+
+
+
+export type foodControllerDeleteAnalysisApiV1Response202 = {
+  data: FoodDeletionStatusDto
+  status: 202
+}
+
+export type foodControllerDeleteAnalysisApiV1ResponseSuccess = (foodControllerDeleteAnalysisApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerDeleteAnalysisApiV1Response = (foodControllerDeleteAnalysisApiV1ResponseSuccess)
+
+export const getFoodControllerDeleteAnalysisApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}`
+}
+
+export const foodControllerDeleteAnalysisApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerDeleteAnalysisApiV1Response> => {
+
+  const res = await fetch(getFoodControllerDeleteAnalysisApiV1Url(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerDeleteAnalysisApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerDeleteAnalysisApiV1Response
+}
+
+
+
+export type foodControllerDeletionStatusApiV1Response200 = {
+  data: FoodDeletionStatusDto
+  status: 200
+}
+
+export type foodControllerDeletionStatusApiV1ResponseSuccess = (foodControllerDeletionStatusApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerDeletionStatusApiV1Response = (foodControllerDeletionStatusApiV1ResponseSuccess)
+
+export const getFoodControllerDeletionStatusApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}/deletion-status`
+}
+
+export const foodControllerDeletionStatusApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerDeletionStatusApiV1Response> => {
+
+  const res = await fetch(getFoodControllerDeletionStatusApiV1Url(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerDeletionStatusApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerDeletionStatusApiV1Response
+}
+
+
+
+export type foodControllerDeletePhotoApiV1Response202 = {
+  data: FoodDeletionStatusDto
+  status: 202
+}
+
+export type foodControllerDeletePhotoApiV1ResponseSuccess = (foodControllerDeletePhotoApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerDeletePhotoApiV1Response = (foodControllerDeletePhotoApiV1ResponseSuccess)
+
+export const getFoodControllerDeletePhotoApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}/photo`
+}
+
+export const foodControllerDeletePhotoApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerDeletePhotoApiV1Response> => {
+
+  const res = await fetch(getFoodControllerDeletePhotoApiV1Url(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerDeletePhotoApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerDeletePhotoApiV1Response
+}
+
+
+
+export type foodControllerCorrectionApiV1Response200 = {
+  data: FoodAnalysisResourceDto
+  status: 200
+}
+
+export type foodControllerCorrectionApiV1ResponseSuccess = (foodControllerCorrectionApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerCorrectionApiV1Response = (foodControllerCorrectionApiV1ResponseSuccess)
+
+export const getFoodControllerCorrectionApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}/correction`
+}
+
+export const foodControllerCorrectionApiV1 = async (id: string,
+    foodCorrectionDto: FoodCorrectionDto, options?: RequestInit): Promise<foodControllerCorrectionApiV1Response> => {
+
+  const res = await fetch(getFoodControllerCorrectionApiV1Url(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(foodCorrectionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerCorrectionApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerCorrectionApiV1Response
+}
+
+
+
+export type foodControllerConfirmApiV1Response201 = {
+  data: FoodConsumptionResourceDto
+  status: 201
+}
+
+export type foodControllerConfirmApiV1ResponseSuccess = (foodControllerConfirmApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerConfirmApiV1Response = (foodControllerConfirmApiV1ResponseSuccess)
+
+export const getFoodControllerConfirmApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-analyses/${id}/consumption-confirmations`
+}
+
+export const foodControllerConfirmApiV1 = async (id: string,
+    confirmFoodConsumptionDto: ConfirmFoodConsumptionDto, options?: RequestInit): Promise<foodControllerConfirmApiV1Response> => {
+
+  const res = await fetch(getFoodControllerConfirmApiV1Url(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(confirmFoodConsumptionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerConfirmApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerConfirmApiV1Response
+}
+
+
+
+export type foodControllerConsumptionsApiV1Response200 = {
+  data: FoodConsumptionPageDto
+  status: 200
+}
+
+export type foodControllerConsumptionsApiV1ResponseSuccess = (foodControllerConsumptionsApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerConsumptionsApiV1Response = (foodControllerConsumptionsApiV1ResponseSuccess)
+
+export const getFoodControllerConsumptionsApiV1Url = () => {
+
+
+
+
+  return `/api/v1/food-consumptions`
+}
+
+export const foodControllerConsumptionsApiV1 = async ( options?: RequestInit): Promise<foodControllerConsumptionsApiV1Response> => {
+
+  const res = await fetch(getFoodControllerConsumptionsApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerConsumptionsApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerConsumptionsApiV1Response
+}
+
+
+
+export type foodControllerUpdateConsumptionApiV1Response200 = {
+  data: FoodConsumptionResourceDto
+  status: 200
+}
+
+export type foodControllerUpdateConsumptionApiV1ResponseSuccess = (foodControllerUpdateConsumptionApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerUpdateConsumptionApiV1Response = (foodControllerUpdateConsumptionApiV1ResponseSuccess)
+
+export const getFoodControllerUpdateConsumptionApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-consumptions/${id}`
+}
+
+export const foodControllerUpdateConsumptionApiV1 = async (id: string,
+    updateFoodConsumptionDto: UpdateFoodConsumptionDto, options?: RequestInit): Promise<foodControllerUpdateConsumptionApiV1Response> => {
+
+  const res = await fetch(getFoodControllerUpdateConsumptionApiV1Url(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateFoodConsumptionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerUpdateConsumptionApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as foodControllerUpdateConsumptionApiV1Response
+}
+
+
+
+export type foodControllerDeleteConsumptionApiV1Response204 = {
+  data: void
+  status: 204
+}
+
+export type foodControllerDeleteConsumptionApiV1ResponseSuccess = (foodControllerDeleteConsumptionApiV1Response204) & {
+  headers: Headers;
+};
+;
+
+export type foodControllerDeleteConsumptionApiV1Response = (foodControllerDeleteConsumptionApiV1ResponseSuccess)
+
+export const getFoodControllerDeleteConsumptionApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/food-consumptions/${id}`
+}
+
+export const foodControllerDeleteConsumptionApiV1 = async (id: string, options?: RequestInit): Promise<foodControllerDeleteConsumptionApiV1Response> => {
+
+  const res = await fetch(getFoodControllerDeleteConsumptionApiV1Url(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: foodControllerDeleteConsumptionApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as foodControllerDeleteConsumptionApiV1Response
+}
+
+
+
+export type notificationsControllerGetApiV1Response200 = {
+  data: PushPreferenceResourceDto
+  status: 200
+}
+
+export type notificationsControllerGetApiV1ResponseSuccess = (notificationsControllerGetApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerGetApiV1Response = (notificationsControllerGetApiV1ResponseSuccess)
+
+export const getNotificationsControllerGetApiV1Url = () => {
+
+
+
+
+  return `/api/v1/notification-preferences/push`
+}
+
+export const notificationsControllerGetApiV1 = async ( options?: RequestInit): Promise<notificationsControllerGetApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerGetApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerGetApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as notificationsControllerGetApiV1Response
+}
+
+
+
+export type notificationsControllerSaveApiV1Response200 = {
+  data: PushPreferenceResourceDto
+  status: 200
+}
+
+export type notificationsControllerSaveApiV1ResponseSuccess = (notificationsControllerSaveApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerSaveApiV1Response = (notificationsControllerSaveApiV1ResponseSuccess)
+
+export const getNotificationsControllerSaveApiV1Url = () => {
+
+
+
+
+  return `/api/v1/notification-preferences/push`
+}
+
+export const notificationsControllerSaveApiV1 = async (savePushPreferenceDto: SavePushPreferenceDto, options?: RequestInit): Promise<notificationsControllerSaveApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerSaveApiV1Url(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(savePushPreferenceDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerSaveApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as notificationsControllerSaveApiV1Response
+}
+
+
+
+export type notificationsControllerSubscribeApiV1Response201 = {
+  data: PushSubscriptionResourceDto
+  status: 201
+}
+
+export type notificationsControllerSubscribeApiV1ResponseSuccess = (notificationsControllerSubscribeApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerSubscribeApiV1Response = (notificationsControllerSubscribeApiV1ResponseSuccess)
+
+export const getNotificationsControllerSubscribeApiV1Url = () => {
+
+
+
+
+  return `/api/v1/notification-preferences/push/subscriptions`
+}
+
+export const notificationsControllerSubscribeApiV1 = async (savePushSubscriptionDto: SavePushSubscriptionDto, options?: RequestInit): Promise<notificationsControllerSubscribeApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerSubscribeApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(savePushSubscriptionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerSubscribeApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as notificationsControllerSubscribeApiV1Response
+}
+
+
+
+export type notificationsControllerLookupApiV1Response200 = {
+  data: PushSubscriptionLookupResourceDto
+  status: 200
+}
+
+export type notificationsControllerLookupApiV1ResponseSuccess = (notificationsControllerLookupApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerLookupApiV1Response = (notificationsControllerLookupApiV1ResponseSuccess)
+
+export const getNotificationsControllerLookupApiV1Url = () => {
+
+
+
+
+  return `/api/v1/notification-preferences/push/subscription-lookups`
+}
+
+export const notificationsControllerLookupApiV1 = async (revokePushSubscriptionDto: RevokePushSubscriptionDto, options?: RequestInit): Promise<notificationsControllerLookupApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerLookupApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(revokePushSubscriptionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerLookupApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as notificationsControllerLookupApiV1Response
+}
+
+
+
+export type notificationsControllerUnsubscribeByEndpointApiV1Response204 = {
+  data: void
+  status: 204
+}
+
+export type notificationsControllerUnsubscribeByEndpointApiV1ResponseSuccess = (notificationsControllerUnsubscribeByEndpointApiV1Response204) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerUnsubscribeByEndpointApiV1Response = (notificationsControllerUnsubscribeByEndpointApiV1ResponseSuccess)
+
+export const getNotificationsControllerUnsubscribeByEndpointApiV1Url = () => {
+
+
+
+
+  return `/api/v1/notification-preferences/push/subscription-revocations`
+}
+
+export const notificationsControllerUnsubscribeByEndpointApiV1 = async (revokePushSubscriptionDto: RevokePushSubscriptionDto, options?: RequestInit): Promise<notificationsControllerUnsubscribeByEndpointApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerUnsubscribeByEndpointApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(revokePushSubscriptionDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerUnsubscribeByEndpointApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as notificationsControllerUnsubscribeByEndpointApiV1Response
+}
+
+
+
+export type notificationsControllerUnsubscribeApiV1Response204 = {
+  data: void
+  status: 204
+}
+
+export type notificationsControllerUnsubscribeApiV1ResponseSuccess = (notificationsControllerUnsubscribeApiV1Response204) & {
+  headers: Headers;
+};
+;
+
+export type notificationsControllerUnsubscribeApiV1Response = (notificationsControllerUnsubscribeApiV1ResponseSuccess)
+
+export const getNotificationsControllerUnsubscribeApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/notification-preferences/push/subscriptions/${id}`
+}
+
+export const notificationsControllerUnsubscribeApiV1 = async (id: string, options?: RequestInit): Promise<notificationsControllerUnsubscribeApiV1Response> => {
+
+  const res = await fetch(getNotificationsControllerUnsubscribeApiV1Url(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: notificationsControllerUnsubscribeApiV1Response['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as notificationsControllerUnsubscribeApiV1Response
 }

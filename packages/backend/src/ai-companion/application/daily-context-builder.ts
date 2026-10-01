@@ -13,7 +13,6 @@ export interface DailyContext {
   localDate: string;
   timezone: string;
   profile: {
-    displayName?: string;
     targetWeightKg?: string;
     personaId?: string;
   };
@@ -43,7 +42,6 @@ export class DailyContextBuilder {
       localDate,
       timezone: profile.timezone,
       profile: compact({
-        displayName: profile.displayName ?? undefined,
         targetWeightKg: profile.targetWeightKg ?? undefined,
         personaId: profile.personaId ?? undefined,
       }),

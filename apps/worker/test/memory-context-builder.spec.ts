@@ -5,7 +5,7 @@ describe('MemoryContextBuilder', () => {
     const builder = new MemoryContextBuilder({
       profile: async () => ({
         timezone: 'Asia/Irkutsk',
-        displayName: null,
+        displayName: 'Private Profile Name Sentinel',
         targetWeightKg: '85.00',
         personaId: 'gentleFriend',
       }),
@@ -27,6 +27,7 @@ describe('MemoryContextBuilder', () => {
     expect(context).toContain('Стартовый вес: 98.45 кг');
     expect(context).toContain('не употребляет рыбу');
     expect(context).not.toContain('Имя:');
+    expect(context).not.toContain('Private Profile Name Sentinel');
     expect(context).not.toContain('таблетки');
   });
 
@@ -34,7 +35,7 @@ describe('MemoryContextBuilder', () => {
     const builder = new MemoryContextBuilder({
       profile: async () => ({
         timezone: 'UTC',
-        displayName: '😀'.repeat(1000),
+        displayName: 'Private Profile Name Sentinel',
         targetWeightKg: null,
         personaId: null,
       }),
@@ -46,7 +47,7 @@ describe('MemoryContextBuilder', () => {
       }),
       memories: async () =>
         Array.from({ length: 20 }, (_, index) =>
-          memory('preference', `факт ${index}`),
+          memory('preference', `факт ${index} ${'😀'.repeat(300)}`),
         ),
     });
     const context = await builder.build('user', '');

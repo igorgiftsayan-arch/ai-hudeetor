@@ -2,6 +2,7 @@ import {
   AiProviderAdapter,
   type AiProviderRequest,
   type AiProviderResult,
+  type AiProviderLifecycle,
 } from '../application/ai-provider-adapter';
 
 export type AiTechnicalLogRecord = {
@@ -23,6 +24,8 @@ type GenApiConfig = {
   baseUrl: string;
   model: string;
   timeoutMs: number;
+  nativeBaseUrl?: string;
+  pollIntervalMs?: number;
 };
 
 type Fetcher = (input: string, init: RequestInit) => Promise<Response>;
@@ -56,7 +59,18 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
     super();
   }
 
-  async execute(request: AiProviderRequest): Promise<AiProviderResult> {
+  override prepareRequest(request: AiProviderRequest): AiProviderRequest {
+    if (!this.config.nativeBaseUrl || request.nativePayload) return request;
+    // Native network IDs and optional provider model versions are different namespaces.
+    // Omit the proxy-only model selector and persist the exact native wire body.
+    return { ...request, nativePayload: {
+      messages: buildGenApiChatPayload(request, this.config.model).messages,
+      is_sync: false,
+    } };
+  }
+
+  async execute(request: AiProviderRequest,lifecycle?:AiProviderLifecycle): Promise<AiProviderResult> {
+    if(this.config.nativeBaseUrl)return this.executeNative(request,lifecycle);
     const startedAt = Date.now();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
@@ -118,6 +132,28 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
     };
   }
 
+  private async executeNative(request:AiProviderRequest,lifecycle?:AiProviderLifecycle):Promise<AiProviderResult>{
+    const startedAt=Date.now();const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),this.config.timeoutMs);
+    let accepted:Response;
+    try{accepted=await this.fetcher(`${this.config.nativeBaseUrl!.replace(/\/$/,'')}/networks/${encodeURIComponent(this.config.model)}`,{method:'POST',headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json','Accept':'application/json','X-Request-ID':request.operationId},body:JSON.stringify(this.prepareRequest(request).nativePayload),signal:controller.signal});}
+    catch(error){clearTimeout(timer);const unknown=isAbort(error)||!isConfirmedConnectionFailure(error);this.writeLog(request,startedAt,{status:unknown?'outcomeUnknown':'technicalError',errorCode:unknown?'timeout':'providerUnavailable'});return unknown?{kind:'outcomeUnknown'}:{kind:'technicalError',errorClass:'providerUnavailable'};}
+    if(!accepted.ok){clearTimeout(timer);this.writeLog(request,startedAt,{status:'technicalError',errorCode:mapHttpError(accepted.status)});return{kind:'technicalError',errorClass:'providerUnavailable'};}
+    const acceptedBody=await safeJson(accepted);const requestId=isRecord(acceptedBody)&&(typeof acceptedBody.request_id==='string'||typeof acceptedBody.request_id==='number')?String(acceptedBody.request_id):null;
+    if(!requestId){clearTimeout(timer);return{kind:'technicalError',errorClass:'invalidProviderResponse'};}
+    await lifecycle?.onAccepted(requestId);
+    while(!controller.signal.aborted){
+      await new Promise((resolve)=>setTimeout(resolve,this.config.pollIntervalMs ?? 1500));
+      let response:Response;try{response=await this.fetcher(`${this.config.nativeBaseUrl!.replace(/\/$/,'')}/request/get/${encodeURIComponent(requestId)}`,{headers:{Authorization:`Bearer ${this.config.apiKey}`,'Accept':'application/json'},signal:controller.signal});}catch{if(controller.signal.aborted)break;continue;}
+      if(!response.ok)continue;const body=await safeJson(response);if(!isRecord(body)||body.status==='processing'||body.status==='starting')continue;
+      if(body.status==='error'){clearTimeout(timer);return{kind:'technicalError',errorClass:'providerUnavailable'};}
+      if(body.status!=='success'){clearTimeout(timer);return{kind:'technicalError',errorClass:'invalidProviderResponse'};}
+      const normalized=extractNativeChat(body);clearTimeout(timer);if(!normalized)return{kind:'technicalError',errorClass:'invalidProviderResponse'};
+      this.writeLog(request,startedAt,{status:'succeeded',errorCode:null,responseId:normalized.responseId,...normalized.usage});
+      return{kind:'success',text:normalized.text,usage:normalized.usage,providerReference:requestId};
+    }
+    clearTimeout(timer);return{kind:'outcomeUnknown',providerReference:requestId};
+  }
+
   private async fetchWithConnectionRetry(
     request: AiProviderRequest,
     signal: AbortSignal,
@@ -130,19 +166,7 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
         'Content-Type': 'application/json',
         'X-Request-ID': request.operationId,
       },
-      body: JSON.stringify({
-        model: this.config.model,
-        messages: [
-          {
-            role: 'system',
-            content: buildSystemPrompt(
-              request.personaId,
-              request.memoryContext,
-            ),
-          },
-          ...request.messages,
-        ],
-      }),
+      body: JSON.stringify(buildGenApiChatPayload(request, this.config.model)),
       signal,
     };
     try {
@@ -175,11 +199,31 @@ export class GenApiAiProviderAdapter extends AiProviderAdapter {
   }
 }
 
+export function buildGenApiChatPayload(
+  request: AiProviderRequest,
+  model: string,
+): {
+  model: string;
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+} {
+  return {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content: buildSystemPrompt(request.personaId, request.memoryContext),
+      },
+      ...request.messages,
+    ],
+  };
+}
+
 function buildSystemPrompt(personaId: string, memoryContext?: string): string {
   return [
     'Ты — AI-друг в wellness-продукте для снижения веса.',
     personaInstructions[personaId] ?? personaInstructions.gentleFriend,
     'Не ставь диагнозы, не стыди за вес или еду, не рекомендуй голодание или наказание едой.',
+    'Связь записей питания и веса описывай только как наблюдение: корреляции и единичные изменения веса не доказывают причинность. Не объявляй продукт или приём пищи причиной привеса или отвеса. Если данных недостаточно или нет записей питания и веса за сопоставимые периоды, прямо скажи об этом и не делай вывод о влиянии еды на вес.',
     'Не обещай гарантированный результат. Предлагай один безопасный небольшой следующий шаг.',
     memoryContext ? `Контекст пользователя:\n${memoryContext}` : '',
   ].join(' ');
@@ -223,6 +267,16 @@ function extractUsage(body: unknown): {
     totalTokens,
     ...(cost !== undefined ? { cost } : {}),
   };
+}
+
+function extractNativeChat(body:Record<string,unknown>):{text:string;responseId:string|null;usage:{inputTokens:number;outputTokens:number;totalTokens:number;cost?:number}}|null{
+  const first = Array.isArray(body.result) ? body.result[0] : null;
+  const full = Array.isArray(body.full_response) ? body.full_response[0] : body.full_response;
+  const result = isRecord(first) ? first : isRecord(full) ? full : null;
+  const text = typeof first === 'string' && first.trim() ? first.trim() : extractText(result);
+  if(!text)return null;const usage=extractUsage(result);
+  const cost=typeof body.cost==='number'&&body.cost>=0?body.cost:undefined;
+  return{text,responseId:result && typeof result.id==='string'?result.id:null,usage:{...usage,...(cost!==undefined?{cost}:{})}};
 }
 
 function numberOrZero(value: unknown): number {

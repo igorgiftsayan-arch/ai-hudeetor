@@ -11,6 +11,9 @@ import {
   TokenEconomyModule,
   TechnicalInfrastructureModule,
   TrackingModule,
+  MarathonModule,
+  FoodModule,
+  NotificationsModule,
 } from '@atlas/backend';
 import { loadApiConfig } from './config/load-config';
 import { HealthController } from './health/health.controller';
@@ -59,6 +62,30 @@ const config = loadApiConfig();
     }),
     TokenEconomyModule.forRoot(),
     TrackingModule.forRoot(),
+    MarathonModule.forRoot({
+      bootstrapEnabled: config.MARATHON_BOOTSTRAP_ENABLED,
+      bootstrapUserIds: config.MARATHON_BOOTSTRAP_USER_IDS,
+      providerMode: config.AI_PROVIDER,
+      foodProviderMode: config.FOOD_VISION_PROVIDER,
+      consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+      consentDisclosure: config.IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE,
+    }),
+    FoodModule.forRoot({
+      enabled: config.FOOD_STORAGE_ENABLED,
+      endpoint: config.S3_ENDPOINT,
+      publicEndpoint: config.S3_PUBLIC_ENDPOINT,
+      region: config.S3_REGION,
+      bucket: config.S3_BUCKET,
+      accessKeyId: config.S3_ACCESS_KEY_ID,
+      secretAccessKey: config.S3_SECRET_ACCESS_KEY,
+      forcePathStyle: config.S3_FORCE_PATH_STYLE,
+      runtimeAdapter: config.FOOD_VISION_PROVIDER,
+      consentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+    }),
+    NotificationsModule.forRoot({
+      enabled: config.PUSH_ENABLED,
+      publicKey: config.PUSH_VAPID_PUBLIC_KEY,
+    }),
   ],
   controllers: [HealthController],
 })

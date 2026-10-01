@@ -144,7 +144,7 @@ describeWithDatabase('AI daily state PostgreSQL integration', () => {
     return new GetTodayAiDailyStateUseCase(
       currentUser(userId, onboardingStatus) as never,
       new PostgresAiDailyStateRepository(database),
-      dailyContext(),
+      dailyContext() as never,
     );
   }
 

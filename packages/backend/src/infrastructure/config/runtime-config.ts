@@ -83,6 +83,39 @@ export const apiConfigSchema = baseSchema
       .int()
       .positive()
       .default(1_800),
+    FOOD_VISION_PROVIDER: z.enum(['fake', 'genapi']).default('fake'),
+    FOOD_STORAGE_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    S3_ENDPOINT: z.url().default('http://localhost:9000'),
+    S3_PUBLIC_ENDPOINT: optionalEnvironmentValue(z.url()),
+    S3_REGION: z.string().min(1).default('us-east-1'),
+    S3_BUCKET: z.string().min(1).default('atlas-private'),
+    S3_ACCESS_KEY_ID: z.string().min(1).default('disabled'),
+    S3_SECRET_ACCESS_KEY: z.string().min(1).default('disabled'),
+    S3_FORCE_PATH_STYLE: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
+    PUSH_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    PUSH_VAPID_PUBLIC_KEY: optionalEnvironmentValue(z.string().min(1)),
+    MARATHON_BOOTSTRAP_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    MARATHON_BOOTSTRAP_USER_IDS: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
   })
   .superRefine((config, context) => {
     if (config.APP_ENV === 'production' && !config.IDENTITY_SECURE_COOKIES) {
@@ -109,10 +142,51 @@ export const apiConfigSchema = baseSchema
         message: 'A trusted reverse proxy is required in production',
       });
     }
+    if (
+      config.FOOD_STORAGE_ENABLED &&
+      (config.S3_ACCESS_KEY_ID === 'disabled' ||
+        config.S3_SECRET_ACCESS_KEY === 'disabled')
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['S3_ACCESS_KEY_ID'],
+        message: 'Private S3 credentials are required when food storage is enabled',
+      });
+    }
+    if (config.PUSH_ENABLED && !config.PUSH_VAPID_PUBLIC_KEY) {
+      context.addIssue({
+        code: 'custom',
+        path: ['PUSH_VAPID_PUBLIC_KEY'],
+        message: 'PUSH_VAPID_PUBLIC_KEY is required when push is enabled',
+      });
+    }
   });
 
 export const workerConfigSchema = baseSchema
   .extend({
+    FOOD_FAKE_MODE: z
+      .enum(['success', 'technicalError', 'outcomeUnknown'])
+      .default('success'),
+    FOOD_VISION_PROVIDER: z.enum(['fake', 'genapi']).default('fake'),
+    GENAPI_VISION_MODEL: optionalEnvironmentValue(z.string().min(1)),
+    GENAPI_VISION_MODEL_VERSION: z.string().min(1).default('gpt-4o-2024-08-06'),
+    GENAPI_NATIVE_BASE_URL: z.url().default('https://api.gen-api.ru/api/v1'),
+    S3_ENDPOINT: z.url().default('http://localhost:9000'),
+    S3_REGION: z.string().min(1).default('us-east-1'),
+    S3_BUCKET: z.string().min(1).default('atlas-private'),
+    S3_ACCESS_KEY_ID: z.string().min(1).default('disabled'),
+    S3_SECRET_ACCESS_KEY: z.string().min(1).default('disabled'),
+    S3_FORCE_PATH_STYLE: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
+    PUSH_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    PUSH_VAPID_SUBJECT: optionalEnvironmentValue(z.string().min(1)),
+    PUSH_VAPID_PUBLIC_KEY: optionalEnvironmentValue(z.string().min(1)),
+    PUSH_VAPID_PRIVATE_KEY: optionalEnvironmentValue(z.string().min(1)),
     AI_FAKE_MODE: z
       .enum(['success', 'technicalError', 'outcomeUnknown'])
       .default('success'),
@@ -183,6 +257,34 @@ export const workerConfigSchema = baseSchema
         path: ['PUBLIC_WEB_URL'],
         message: 'HTTPS PUBLIC_WEB_URL is required in production',
       });
+    }
+    if (config.FOOD_VISION_PROVIDER === 'genapi') {
+      for (const key of [
+        'GENAPI_API_KEY',
+        'GENAPI_NATIVE_BASE_URL',
+        'GENAPI_VISION_MODEL',
+      ] as const) {
+        if (!config[key])
+          context.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `${key} is required when FOOD_VISION_PROVIDER=genapi`,
+          });
+      }
+    }
+    if (config.PUSH_ENABLED) {
+      for (const key of [
+        'PUSH_VAPID_SUBJECT',
+        'PUSH_VAPID_PUBLIC_KEY',
+        'PUSH_VAPID_PRIVATE_KEY',
+      ] as const) {
+        if (!config[key])
+          context.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `${key} is required when PUSH_ENABLED=true`,
+          });
+      }
     }
   });
 

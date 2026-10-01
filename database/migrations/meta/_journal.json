@@ -92,6 +92,55 @@
       "when": 1788278400000,
       "tag": "0012_identity_email_verification_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790208000000,
+      "tag": "0013_gerbi_marathon_pilot",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790211600000,
+      "tag": "0014_gerbi_marathon_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790298000000,
+      "tag": "0015_gerbi_expanded_pilot",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790301600000,
+      "tag": "0016_food_photo_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790305200000,
+      "tag": "0017_terminal_food_deletion",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790308800000,
+      "tag": "0018_known_unsent_food_cancellation",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790312400000,
+      "tag": "0019_ai_recovery_deadline",
+      "breakpoints": true
     }
   ]
 }

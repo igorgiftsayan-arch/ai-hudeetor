@@ -1,0 +1,15 @@
+{
+  "status": "success",
+  "result": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"recognized\":{\"kind\":\"food\",\"dishName\":null,\"items\":[{\"name\":\"chicken\",\"confidence\":0.95},{\"name\":\"lettuce\",\"confidence\":0.85},{\"name\":\"tomato\",\"confidence\":0.85},{\"name\":\"cucumber\",\"confidence\":0.85}],\"uncertaintyNotes\":[]},\"suitability\":{\"status\":\"doesNotMatch\",\"source\":\"profile\",\"observations\":[\"The presence of chicken does not match vegetarian preference.\"],\"missingData\":[]}}",
+        "refusal": null
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ]
+}
