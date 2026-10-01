@@ -14,6 +14,12 @@
 
 Тесты детерминированы, не используют реальные секреты или платные внешние вызовы и очищают изолированные данные.
 
+Production backup scripts проходят shell syntax и fail-closed tests для
+root-only env, dedicated repository prefix, immutable tool digest, overlap
+lock, failure/freshness status и retention approvals. Готовность внешней копии
+подтверждается отдельно только real S3 upload и restore drill в disposable
+PostgreSQL; unit/fake Docker tests это доказательство не заменяют.
+
 Для identity email обязательны реальные PostgreSQL проверки: concurrent
 resend/reset оставляет один активный token, token потребляется один раз,
 password reset отзывает session family, stale old-password login не создаёт

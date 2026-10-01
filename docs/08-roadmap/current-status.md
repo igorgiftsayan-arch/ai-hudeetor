@@ -1,5 +1,11 @@
 # Текущий статус
 
+- 2026-10-01: в отдельной ветке подготовлены fail-closed scripts для
+  encrypted PostgreSQL backup в private S3 через digest-pinned restic,
+  freshness status, scoped 7-daily retention и disposable restore drill.
+  Scheduler/upload/prune не активированы; отдельный S3 endpoint, bucket и
+  credentials ещё не предоставлены, поэтому runtime backup/restore остаётся
+  непроверенным.
 - Дата: 2026-10-01
 - Backend identity release candidate находится в отдельной ветке
   `back/rebody38-email-identity`: email verification, password reset, durable

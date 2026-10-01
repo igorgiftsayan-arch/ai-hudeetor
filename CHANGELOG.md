@@ -6,6 +6,12 @@
 
 ### Added
 
+- Prepared fail-closed production PostgreSQL backup tooling: digest-pinned
+  restic encryption for a dedicated private S3 prefix, 24-hour freshness
+  status, scoped seven-daily retention gates and an isolated PostgreSQL 17
+  restore drill. External upload, scheduling and prune remain disabled until a
+  product-specific S3 target is supplied and verified.
+
 - Rebody identity release candidate: email ownership verification and password
   recovery use one-time hashed tokens, encrypted durable delivery payloads,
   bounded SMTP retries, enumeration-safe APIs and session revocation after a
