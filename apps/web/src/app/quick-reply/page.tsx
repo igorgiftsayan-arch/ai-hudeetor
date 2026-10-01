@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import type {
+  AcceptAiProviderConsentRequestDto,
+  AiProviderConsentResourceDto,
+} from '@atlas/api-contracts';
 import { MobileNavigation } from '../mobile-navigation';
 import { LogoutButton } from '../../features/identity/logout-button';
 import {
@@ -37,8 +41,15 @@ export default function QuickReplyPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>();
+  const [emailVerificationRequired, setEmailVerificationRequired] =
+    useState(false);
+  const [providerConsent, setProviderConsent] =
+    useState<AiProviderConsentResourceDto>();
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentSaving, setConsentSaving] = useState(false);
   const pendingSubmission = useRef<PendingSubmission | undefined>(undefined);
   const pollInFlight = useRef(false);
+  const consentInFlight = useRef(false);
   const conversationRefreshVersion = useRef(0);
   const feedEnd = useRef<HTMLDivElement>(null);
 
@@ -111,6 +122,7 @@ export default function QuickReplyPage() {
 
     setSending(true);
     setError(undefined);
+    setEmailVerificationRequired(false);
     try {
       const started = await startChatReply({
         csrfToken,
@@ -127,12 +139,83 @@ export default function QuickReplyPage() {
       if (cause instanceof ApiError && cause.kind === 'session') {
         replace('/login');
       } else {
+        setEmailVerificationRequired(
+          cause instanceof ApiError &&
+            cause.code === 'EMAIL_VERIFICATION_REQUIRED',
+        );
+        if (
+          cause instanceof ApiError &&
+          cause.code === 'AI_PROVIDER_CONSENT_REQUIRED'
+        ) {
+          await loadProviderConsent();
+        }
         if (isDefinitiveSubmissionFailure(cause))
           pendingSubmission.current = undefined;
         setError(readChatError(cause));
       }
     } finally {
       setSending(false);
+    }
+  }
+
+  async function loadProviderConsent() {
+    try {
+      const next = await apiRequest<AiProviderConsentResourceDto>(
+        '/users/me/ai-provider-consent',
+      );
+      setProviderConsent(next.accepted ? undefined : next);
+      setConsentChecked(false);
+    } catch {
+      setError('Не удалось загрузить информацию об обработке данных AI.');
+    }
+  }
+
+  async function acceptProviderConsent() {
+    if (
+      !providerConsent ||
+      !consentChecked ||
+      !csrfToken ||
+      consentInFlight.current
+    )
+      return;
+    consentInFlight.current = true;
+    setConsentSaving(true);
+    setError(undefined);
+    try {
+      const payload: AcceptAiProviderConsentRequestDto = {
+        documentVersion: providerConsent.currentVersion,
+        accepted: true,
+      };
+      await apiRequest<AiProviderConsentResourceDto>(
+        '/users/me/ai-provider-consent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+      setProviderConsent(undefined);
+      setConsentChecked(false);
+    } catch (cause) {
+      if (
+        cause instanceof ApiError &&
+        cause.code === 'CONSENT_VERSION_OUTDATED'
+      ) {
+        setError(
+          'Информация об обработке данных обновилась. Ознакомьтесь с ней ещё раз.',
+        );
+        await loadProviderConsent();
+      } else if (cause instanceof ApiError && cause.kind === 'session') {
+        replace('/login');
+      } else {
+        setError('Не удалось сохранить согласие. Попробуйте снова.');
+      }
+    } finally {
+      setConsentSaving(false);
+      consentInFlight.current = false;
     }
   }
 
@@ -215,6 +298,9 @@ export default function QuickReplyPage() {
           {error && (
             <div className="chat-error" role="alert">
               <p>{error}</p>
+              {emailVerificationRequired && (
+                <a href="/verify-email">Подтвердить email</a>
+              )}
               {pendingSubmission.current && (
                 <button
                   type="button"
@@ -225,6 +311,29 @@ export default function QuickReplyPage() {
                 </button>
               )}
             </div>
+          )}
+          {providerConsent && (
+            <section
+              className="provider-consent"
+              aria-label="Согласие на обработку данных AI"
+            >
+              <p>{providerConsent.disclosure}</p>
+              <label className="consent">
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(event) => setConsentChecked(event.target.checked)}
+                />
+                Я прочитал(а) информацию об обработке данных AI-провайдером
+              </label>
+              <button
+                type="button"
+                onClick={() => void acceptProviderConsent()}
+                disabled={!consentChecked || consentSaving}
+              >
+                {consentSaving ? 'Сохраняем…' : 'Продолжить с AI'}
+              </button>
+            </section>
           )}
           <div ref={feedEnd} />
         </section>

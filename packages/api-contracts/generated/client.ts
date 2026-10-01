@@ -49,6 +49,7 @@ export interface RegistrationResourceDto {
   onboardingStatus: RegistrationResourceDtoOnboardingStatus;
   sessionExpiresAt: string;
   csrfToken: string;
+  emailVerified: boolean;
 }
 
 export interface CreateSessionRequestDto {
@@ -73,6 +74,7 @@ export interface SessionResourceDto {
   expiresAt: string;
   onboardingStatus: SessionResourceDtoOnboardingStatus;
   csrfToken: string;
+  emailVerified: boolean;
 }
 
 export type CurrentUserResourceDtoOnboardingStatus = typeof CurrentUserResourceDtoOnboardingStatus[keyof typeof CurrentUserResourceDtoOnboardingStatus];
@@ -88,6 +90,52 @@ export const CurrentUserResourceDtoOnboardingStatus = {
 export interface CurrentUserResourceDto {
   userId: string;
   onboardingStatus: CurrentUserResourceDtoOnboardingStatus;
+  emailVerified: boolean;
+}
+
+export interface AiProviderConsentResourceDto {
+  accepted: boolean;
+  currentVersion: string;
+  /** @nullable */
+  acceptedVersion: string | null;
+  disclosure: string;
+}
+
+export interface AcceptAiProviderConsentRequestDto {
+  documentVersion: string;
+  accepted: true;
+}
+
+export interface IdentityAcceptedResourceDto {
+  accepted: true;
+}
+
+export interface VerifyEmailRequestDto {
+  /** @minLength 20 */
+  token: string;
+}
+
+export interface EmailVerificationResourceDto {
+  emailVerified: true;
+}
+
+export interface PasswordResetRequestDto {
+  /** @maxLength 254 */
+  email: string;
+}
+
+export interface ResetPasswordRequestDto {
+  /** @minLength 20 */
+  token: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  newPassword: string;
+}
+
+export interface PasswordResetResourceDto {
+  passwordReset: true;
 }
 
 export type AiActionPriceResourceDtoActionType = typeof AiActionPriceResourceDtoActionType[keyof typeof AiActionPriceResourceDtoActionType];
@@ -837,6 +885,246 @@ export const identityControllerCurrentApiV1 = async ( options?: RequestInit): Pr
 
   const data: identityControllerCurrentApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as identityControllerCurrentApiV1Response
+}
+
+
+
+export type identityControllerGetProviderConsentApiV1Response200 = {
+  data: AiProviderConsentResourceDto
+  status: 200
+}
+
+export type identityControllerGetProviderConsentApiV1ResponseSuccess = (identityControllerGetProviderConsentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerGetProviderConsentApiV1Response = (identityControllerGetProviderConsentApiV1ResponseSuccess)
+
+export const getIdentityControllerGetProviderConsentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/ai-provider-consent`
+}
+
+export const identityControllerGetProviderConsentApiV1 = async ( options?: RequestInit): Promise<identityControllerGetProviderConsentApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerGetProviderConsentApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerGetProviderConsentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerGetProviderConsentApiV1Response
+}
+
+
+
+export type identityControllerAcceptProviderConsentApiV1Response200 = {
+  data: AiProviderConsentResourceDto
+  status: 200
+}
+
+export type identityControllerAcceptProviderConsentApiV1ResponseSuccess = (identityControllerAcceptProviderConsentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerAcceptProviderConsentApiV1Response = (identityControllerAcceptProviderConsentApiV1ResponseSuccess)
+
+export const getIdentityControllerAcceptProviderConsentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/users/me/ai-provider-consent`
+}
+
+export const identityControllerAcceptProviderConsentApiV1 = async (acceptAiProviderConsentRequestDto: AcceptAiProviderConsentRequestDto, options?: RequestInit): Promise<identityControllerAcceptProviderConsentApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerAcceptProviderConsentApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(acceptAiProviderConsentRequestDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerAcceptProviderConsentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerAcceptProviderConsentApiV1Response
+}
+
+
+
+export type identityControllerRequestVerificationApiV1Response202 = {
+  data: IdentityAcceptedResourceDto
+  status: 202
+}
+
+export type identityControllerRequestVerificationApiV1ResponseSuccess = (identityControllerRequestVerificationApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerRequestVerificationApiV1Response = (identityControllerRequestVerificationApiV1ResponseSuccess)
+
+export const getIdentityControllerRequestVerificationApiV1Url = () => {
+
+
+
+
+  return `/api/v1/email-verification-requests`
+}
+
+export const identityControllerRequestVerificationApiV1 = async ( options?: RequestInit): Promise<identityControllerRequestVerificationApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerRequestVerificationApiV1Url(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerRequestVerificationApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerRequestVerificationApiV1Response
+}
+
+
+
+export type identityControllerConfirmEmailApiV1Response200 = {
+  data: EmailVerificationResourceDto
+  status: 200
+}
+
+export type identityControllerConfirmEmailApiV1ResponseSuccess = (identityControllerConfirmEmailApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerConfirmEmailApiV1Response = (identityControllerConfirmEmailApiV1ResponseSuccess)
+
+export const getIdentityControllerConfirmEmailApiV1Url = () => {
+
+
+
+
+  return `/api/v1/email-verifications`
+}
+
+export const identityControllerConfirmEmailApiV1 = async (verifyEmailRequestDto: VerifyEmailRequestDto, options?: RequestInit): Promise<identityControllerConfirmEmailApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerConfirmEmailApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(verifyEmailRequestDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerConfirmEmailApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerConfirmEmailApiV1Response
+}
+
+
+
+export type identityControllerRequestResetApiV1Response202 = {
+  data: IdentityAcceptedResourceDto
+  status: 202
+}
+
+export type identityControllerRequestResetApiV1ResponseSuccess = (identityControllerRequestResetApiV1Response202) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerRequestResetApiV1Response = (identityControllerRequestResetApiV1ResponseSuccess)
+
+export const getIdentityControllerRequestResetApiV1Url = () => {
+
+
+
+
+  return `/api/v1/password-reset-requests`
+}
+
+export const identityControllerRequestResetApiV1 = async (passwordResetRequestDto: PasswordResetRequestDto, options?: RequestInit): Promise<identityControllerRequestResetApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerRequestResetApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(passwordResetRequestDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerRequestResetApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerRequestResetApiV1Response
+}
+
+
+
+export type identityControllerConfirmResetApiV1Response200 = {
+  data: PasswordResetResourceDto
+  status: 200
+}
+
+export type identityControllerConfirmResetApiV1ResponseSuccess = (identityControllerConfirmResetApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type identityControllerConfirmResetApiV1Response = (identityControllerConfirmResetApiV1ResponseSuccess)
+
+export const getIdentityControllerConfirmResetApiV1Url = () => {
+
+
+
+
+  return `/api/v1/password-resets`
+}
+
+export const identityControllerConfirmResetApiV1 = async (resetPasswordRequestDto: ResetPasswordRequestDto, options?: RequestInit): Promise<identityControllerConfirmResetApiV1Response> => {
+
+  const res = await fetch(getIdentityControllerConfirmResetApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(resetPasswordRequestDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: identityControllerConfirmResetApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as identityControllerConfirmResetApiV1Response
 }
 
 

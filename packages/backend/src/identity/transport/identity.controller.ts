@@ -14,6 +14,7 @@ import {
 import {
   ApiCookieAuth,
   ApiBody,
+  ApiAcceptedResponse,
   ApiCreatedResponse,
   ApiHeader,
   ApiNoContentResponse,
@@ -26,6 +27,11 @@ import { GetCurrentUserUseCase } from '../application/get-current-user.use-case'
 import { LogoutUseCase } from '../application/logout.use-case';
 import { RefreshSessionUseCase } from '../application/refresh-session.use-case';
 import { RegisterUserUseCase } from '../application/register-user.use-case';
+import { RequestEmailVerificationUseCase } from '../application/request-email-verification.use-case';
+import { VerifyEmailUseCase } from '../application/verify-email.use-case';
+import { RequestPasswordResetUseCase } from '../application/request-password-reset.use-case';
+import { ResetPasswordUseCase } from '../application/reset-password.use-case';
+import { AiProviderConsentService } from '../application/ai-provider-consent.service';
 import { RegistrationAttemptLimiter } from '../application/registration-attempt-limiter';
 import { IdentityError } from '../domain/identity-error';
 import type { IssuedIdentitySession } from '../domain/identity-types';
@@ -36,6 +42,14 @@ import {
   RegistrationRequestDto,
   RegistrationResourceDto,
   SessionResourceDto,
+  IdentityAcceptedResourceDto,
+  VerifyEmailRequestDto,
+  EmailVerificationResourceDto,
+  PasswordResetRequestDto,
+  ResetPasswordRequestDto,
+  PasswordResetResourceDto,
+  AiProviderConsentResourceDto,
+  AcceptAiProviderConsentRequestDto,
 } from './identity.dto';
 import { IDENTITY_SECURITY_OPTIONS } from './identity.tokens';
 
@@ -56,6 +70,16 @@ export class IdentityController {
     private readonly getCurrentUser: GetCurrentUserUseCase,
     @Inject(LogoutUseCase)
     private readonly logout: LogoutUseCase,
+    @Inject(RequestEmailVerificationUseCase)
+    private readonly requestEmailVerification: RequestEmailVerificationUseCase,
+    @Inject(VerifyEmailUseCase)
+    private readonly verifyEmail: VerifyEmailUseCase,
+    @Inject(RequestPasswordResetUseCase)
+    private readonly requestPasswordReset: RequestPasswordResetUseCase,
+    @Inject(ResetPasswordUseCase)
+    private readonly resetPassword: ResetPasswordUseCase,
+    @Inject(AiProviderConsentService)
+    private readonly providerConsent: AiProviderConsentService,
     @Inject(CsrfService)
     private readonly csrf: CsrfService,
     @Inject(RegistrationAttemptLimiter)
@@ -124,6 +148,7 @@ export class IdentityController {
       onboardingStatus: result.user.onboardingStatus,
       sessionExpiresAt: result.session.accessExpiresAt.toISOString(),
       csrfToken,
+      emailVerified: result.user.emailVerified ?? false,
     };
   }
 
@@ -146,6 +171,7 @@ export class IdentityController {
       expiresAt: session.accessExpiresAt.toISOString(),
       onboardingStatus: session.onboardingStatus,
       csrfToken: this.issueCookies(request, response, session),
+      emailVerified: session.emailVerified,
     };
   }
 
@@ -163,6 +189,7 @@ export class IdentityController {
       expiresAt: session.accessExpiresAt.toISOString(),
       onboardingStatus: session.onboardingStatus,
       csrfToken: this.issueCookies(request, response, session),
+      emailVerified: session.emailVerified,
     };
   }
 
@@ -188,6 +215,95 @@ export class IdentityController {
     return this.getCurrentUser.execute(
       request.cookies?.[accessCookieName] ?? '',
     );
+  }
+
+  @Get('users/me/ai-provider-consent')
+  @ApiCookieAuth()
+  @ApiOkResponse({ type: AiProviderConsentResourceDto })
+  async getProviderConsent(
+    @Req() request: Request,
+  ): Promise<AiProviderConsentResourceDto> {
+    const user = await this.getCurrentUser.execute(
+      request.cookies?.[accessCookieName] ?? '',
+    );
+    return this.providerConsent.getStatus(user.userId);
+  }
+
+  @Post('users/me/ai-provider-consent')
+  @ApiCookieAuth()
+  @ApiBody({ type: AcceptAiProviderConsentRequestDto })
+  @ApiOkResponse({ type: AiProviderConsentResourceDto })
+  async acceptProviderConsent(
+    @Body() body: AcceptAiProviderConsentRequestDto,
+    @Req() request: Request,
+  ): Promise<AiProviderConsentResourceDto> {
+    const user = await this.getCurrentUser.execute(
+      request.cookies?.[accessCookieName] ?? '',
+    );
+    await this.providerConsent.accept(user.userId, body.documentVersion);
+    return this.providerConsent.getStatus(user.userId);
+  }
+
+  @Post('email-verification-requests')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiCookieAuth()
+  @ApiHeader({ name: 'Origin', required: true })
+  @ApiAcceptedResponse({ type: IdentityAcceptedResourceDto })
+  async requestVerification(
+    @Req() request: Request,
+  ): Promise<IdentityAcceptedResourceDto> {
+    await this.registrationAttempts.consume(
+      `verify:${request.ip ?? 'unknown'}`,
+    );
+    return this.requestEmailVerification.execute(
+      request.cookies?.[accessCookieName] ?? '',
+    );
+  }
+
+  @Post('email-verifications')
+  @ApiBody({ type: VerifyEmailRequestDto })
+  @ApiHeader({ name: 'Origin', required: true })
+  @ApiOkResponse({ type: EmailVerificationResourceDto })
+  async confirmEmail(
+    @Body() body: VerifyEmailRequestDto,
+    @Req() request: Request,
+  ): Promise<EmailVerificationResourceDto> {
+    this.csrf.assertTrustedOrigin(request);
+    await this.registrationAttempts.consume(
+      `verify-confirm:${request.ip ?? 'unknown'}`,
+    );
+    return this.verifyEmail.execute(body.token);
+  }
+
+  @Post('password-reset-requests')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiBody({ type: PasswordResetRequestDto })
+  @ApiHeader({ name: 'Origin', required: true })
+  @ApiAcceptedResponse({ type: IdentityAcceptedResourceDto })
+  async requestReset(
+    @Body() body: PasswordResetRequestDto,
+    @Req() request: Request,
+  ): Promise<IdentityAcceptedResourceDto> {
+    this.csrf.assertTrustedOrigin(request);
+    await this.registrationAttempts.consume(
+      `reset:${request.ip ?? 'unknown'}:${body.email.trim().toLowerCase()}`,
+    );
+    return this.requestPasswordReset.execute(body.email);
+  }
+
+  @Post('password-resets')
+  @ApiBody({ type: ResetPasswordRequestDto })
+  @ApiHeader({ name: 'Origin', required: true })
+  @ApiOkResponse({ type: PasswordResetResourceDto })
+  async confirmReset(
+    @Body() body: ResetPasswordRequestDto,
+    @Req() request: Request,
+  ): Promise<PasswordResetResourceDto> {
+    this.csrf.assertTrustedOrigin(request);
+    await this.registrationAttempts.consume(
+      `reset-confirm:${request.ip ?? 'unknown'}`,
+    );
+    return this.resetPassword.execute(body);
   }
 
   private issueCookies(

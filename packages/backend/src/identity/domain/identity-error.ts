@@ -43,4 +43,22 @@ export const identityErrors = {
     new IdentityError('RATE_LIMITED', 429, 'Too many authentication attempts', {
       retryAfterSeconds: Math.ceil(windowMs / 1_000),
     }),
+  emailVerificationTokenInvalid: () =>
+    new IdentityError(
+      'EMAIL_VERIFICATION_TOKEN_INVALID',
+      400,
+      'The email verification token is invalid',
+    ),
+  passwordResetTokenInvalid: () =>
+    new IdentityError(
+      'PASSWORD_RESET_TOKEN_INVALID',
+      400,
+      'The password reset token is invalid',
+    ),
+  emailVerificationRequired: () =>
+    new IdentityError(
+      'EMAIL_VERIFICATION_REQUIRED',
+      403,
+      'Email verification is required',
+    ),
 };

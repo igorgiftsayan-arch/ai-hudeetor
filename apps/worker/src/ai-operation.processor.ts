@@ -54,15 +54,23 @@ export class AiOperationProcessor extends WorkerHost {
       return result.rows[0] ?? null;
     });
     if (!claimed) return;
-    const consent =
+    const authorization =
       this.adapter.providerName === 'fake' ||
       Boolean(
         (
           await this.database.query(
-            `select 1 from user_consents
-              where user_id=$1 and consent_type='aiProviderProcessing'
-              limit 1`,
-            [claimed.user_id],
+            `select 1 from users u
+              where u.id=$1 and u.email_verified_at is not null
+                and exists (
+                  select 1 from user_consents c
+                   where c.user_id=u.id
+                     and c.consent_type='aiProviderProcessing'
+                     and c.document_version=$2
+                )`,
+            [
+              claimed.user_id,
+              process.env.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+            ],
           )
         ).rows[0],
       );
@@ -75,11 +83,11 @@ export class AiOperationProcessor extends WorkerHost {
       [claimed.conversation_id],
     );
     const startedAt = Date.now();
-    const result = consent
+    const result = authorization
       ? await this.adapter.execute({
           operationId,
           promptVersion: 'quick-reply-v1',
-        personaId: claimed.persona_id,
+          personaId: claimed.persona_id,
           memoryContext: await this.memoryContext.build(
             claimed.user_id,
             history.rows.at(-1)?.content ?? '',

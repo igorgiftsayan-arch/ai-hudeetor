@@ -81,6 +81,9 @@ export class RegistrationResourceDto {
 
   @ApiProperty()
   csrfToken!: string;
+
+  @ApiProperty()
+  emailVerified!: boolean;
 }
 
 export class SessionResourceDto {
@@ -98,6 +101,9 @@ export class SessionResourceDto {
 
   @ApiProperty()
   csrfToken!: string;
+
+  @ApiProperty()
+  emailVerified!: boolean;
 }
 
 export class CurrentUserResourceDto {
@@ -109,4 +115,60 @@ export class CurrentUserResourceDto {
   })
   onboardingStatus!:
     'registered' | 'profileReady' | 'personaReady' | 'completed';
+
+  @ApiProperty()
+  emailVerified!: boolean;
+}
+
+export class IdentityAcceptedResourceDto {
+  @ApiProperty({ enum: [true] }) accepted!: true;
+}
+
+export class VerifyEmailRequestDto {
+  @ApiProperty({ minLength: 20, writeOnly: true })
+  @IsString()
+  @Length(20, 200)
+  token!: string;
+}
+
+export class EmailVerificationResourceDto {
+  @ApiProperty({ enum: [true] }) emailVerified!: true;
+}
+
+export class PasswordResetRequestDto {
+  @ApiProperty({ example: 'person@example.com', maxLength: 254 })
+  @IsEmail()
+  @Length(3, 254)
+  email!: string;
+}
+
+export class ResetPasswordRequestDto {
+  @ApiProperty({ minLength: 20, writeOnly: true })
+  @IsString()
+  @Length(20, 200)
+  token!: string;
+
+  @ApiProperty({ minLength: 12, maxLength: 128, writeOnly: true })
+  @IsString()
+  @Length(12, 128)
+  @Matches(/[\p{L}]/u)
+  @Matches(/\d/u)
+  newPassword!: string;
+}
+
+export class PasswordResetResourceDto {
+  @ApiProperty({ enum: [true] }) passwordReset!: true;
+}
+
+export class AiProviderConsentResourceDto {
+  @ApiProperty() accepted!: boolean;
+  @ApiProperty() currentVersion!: string;
+  @ApiProperty({ nullable: true, type: String }) acceptedVersion!:
+    string | null;
+  @ApiProperty() disclosure!: string;
+}
+
+export class AcceptAiProviderConsentRequestDto {
+  @ApiProperty() @IsString() @Length(1, 100) documentVersion!: string;
+  @ApiProperty({ enum: [true] }) @IsBoolean() @IsIn([true]) accepted!: true;
 }

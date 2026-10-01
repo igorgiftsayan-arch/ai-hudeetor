@@ -106,6 +106,10 @@ export function readChatError(cause: unknown): string {
       return 'Предыдущий ответ ещё готовится. Подождите немного.';
     if (cause.code === 'AI_ACTION_PRICE_CHANGED')
       return 'Стоимость сообщения изменилась. Обновите чат и повторите.';
+    if (cause.code === 'EMAIL_VERIFICATION_REQUIRED')
+      return 'Подтвердите email, чтобы начать разговор с AI.';
+    if (cause.code === 'AI_PROVIDER_CONSENT_REQUIRED')
+      return 'Перед разговором ознакомьтесь с обработкой данных AI.';
     if (cause.code === 'IDEMPOTENCY_KEY_REUSED')
       return 'Не удалось безопасно повторить изменённое сообщение. Отправьте его ещё раз.';
   }

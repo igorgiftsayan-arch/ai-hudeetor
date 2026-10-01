@@ -16,6 +16,11 @@ export interface IdentitySecurityOptions {
   loginWindowMs: number;
   registrationMaxAttempts: number;
   registrationWindowMs: number;
+  emailPayloadSecret: string;
+  emailVerificationTtlMs: number;
+  passwordResetTtlMs: number;
+  aiProviderConsentVersion: string;
+  aiProviderConsentDisclosure: string;
 }
 
 const csrfCookieName = 'atlas_csrf';
@@ -95,7 +100,10 @@ export class CsrfService {
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
     return (
       request.path === '/api/v1/registrations' ||
-      request.path === '/api/v1/sessions'
+      request.path === '/api/v1/sessions' ||
+      request.path === '/api/v1/email-verifications' ||
+      request.path === '/api/v1/password-reset-requests' ||
+      request.path === '/api/v1/password-resets'
     );
   }
 

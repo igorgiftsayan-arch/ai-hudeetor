@@ -18,6 +18,7 @@ export class GetCurrentUserUseCase {
     return {
       userId: session.userId,
       onboardingStatus: session.onboardingStatus ?? 'registered',
+      emailVerified: session.emailVerified ?? false,
     };
   }
 }

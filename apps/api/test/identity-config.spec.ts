@@ -1,9 +1,18 @@
 import { loadApiConfig } from '../src/config/load-config';
 
+const identityEmailConfig = {
+  IDENTITY_AI_PROVIDER_PROCESSING_VERSION: 'v1',
+  IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE:
+    'Production disclosure for external AI provider processing and privacy.',
+  IDENTITY_EMAIL_PAYLOAD_SECRET:
+    'production-email-secret-at-least-32-characters',
+};
+
 describe('Identity production configuration', () => {
   it('rejects insecure identity cookies in production', () => {
     expect(() =>
       loadApiConfig({
+        ...identityEmailConfig,
         APP_ENV: 'production',
         DATABASE_URL: 'postgresql://atlas:test@localhost:5432/atlas',
         REDIS_URL: 'redis://localhost:6379/0',
@@ -19,6 +28,7 @@ describe('Identity production configuration', () => {
   it('rejects a non-HTTPS browser origin in production', () => {
     expect(() =>
       loadApiConfig({
+        ...identityEmailConfig,
         APP_ENV: 'production',
         DATABASE_URL: 'postgresql://atlas:test@postgres:5432/atlas',
         REDIS_URL: 'redis://redis:6379/0',
@@ -40,6 +50,7 @@ describe('Identity production configuration', () => {
   ])('rejects a non-canonical browser origin in production: %s', (origin) => {
     expect(() =>
       loadApiConfig({
+        ...identityEmailConfig,
         APP_ENV: 'production',
         DATABASE_URL: 'postgresql://atlas:test@postgres:5432/atlas',
         REDIS_URL: 'redis://redis:6379/0',
@@ -57,6 +68,7 @@ describe('Identity production configuration', () => {
   it('normalizes an explicit HTTPS default port to the browser origin', () => {
     expect(
       loadApiConfig({
+        ...identityEmailConfig,
         APP_ENV: 'production',
         DATABASE_URL: 'postgresql://atlas:test@postgres:5432/atlas',
         REDIS_URL: 'redis://redis:6379/0',
@@ -74,6 +86,7 @@ describe('Identity production configuration', () => {
   it('requires a trusted reverse-proxy hop in production', () => {
     expect(() =>
       loadApiConfig({
+        ...identityEmailConfig,
         APP_ENV: 'production',
         DATABASE_URL: 'postgresql://atlas:test@postgres:5432/atlas',
         REDIS_URL: 'redis://redis:6379/0',
