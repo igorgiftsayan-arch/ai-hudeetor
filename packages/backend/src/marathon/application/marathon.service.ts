@@ -421,8 +421,8 @@ export class MarathonService {
         await client.query(
           `insert into marathons(
              id,name,starts_on,ends_on,timezone,created_by_user_id,status,
-             duration_days,enrollment_opened_at
-           ) values($1,'Герби-Марафон',null,null,$2,$3,'enrollmentOpen',$4,now())`,
+             duration_days,enrollment_opened_at,enrollment_mode
+           ) values($1,'Герби-Марафон',null,null,$2,$3,'enrollmentOpen',$4,now(),'publicEnrollment')`,
           [marathonId, profile.timezone, user.userId, input.durationDays],
         );
         await client.query(
@@ -431,9 +431,7 @@ export class MarathonService {
           [
             teamId,
             marathonId,
-            createHash('sha256')
-              .update(`enrollment:${marathonId}`)
-              .digest('hex'),
+            createHash('sha256').update(randomBytes(32)).digest('hex'),
           ],
         );
         await client.query(
@@ -635,8 +633,8 @@ export class MarathonService {
               where membership.marathon_id=$1
                 and membership.baseline_weight_entry_id is null
                 and entry.is_current
-                and entry.local_date between $2 and $3
-              order by membership.id,entry.local_date,entry.created_at,entry.id
+                and (entry.recorded_at at time zone $4)::date between $2 and $3
+              order by membership.id,entry.recorded_at,entry.created_at,entry.id
            )
            update marathon_memberships membership
               set baseline_weight_kg=first_weights.weight_kg,
@@ -645,7 +643,7 @@ export class MarathonService {
              from first_weights
             where membership.id=first_weights.membership_id
               and membership.baseline_weight_entry_id is null`,
-          [marathonId, startsOn, endsOn],
+          [marathonId, startsOn, endsOn, marathon.timezone],
         );
         return {
           marathonId,
@@ -670,8 +668,12 @@ export class MarathonService {
           id: string;
           marathon_id: string;
           timezone: string;
+          status: MarathonLifecycleStatus;
+          enrollment_mode: 'legacyCode' | 'publicEnrollment';
         }>(
-          `select mt.id,mt.marathon_id,m.timezone from marathon_teams mt join marathons m on m.id=mt.marathon_id where mt.join_code_hash=$1 for share`,
+          `select mt.id,mt.marathon_id,m.timezone,m.status,m.enrollment_mode
+             from marathon_teams mt join marathons m on m.id=mt.marathon_id
+            where mt.join_code_hash=$1 for share`,
           [hash],
         );
         if (!team.rows[0])
@@ -679,6 +681,12 @@ export class MarathonService {
             'MARATHON_NOT_FOUND',
             404,
             'Marathon team not found',
+          );
+        if (team.rows[0].enrollment_mode !== 'legacyCode')
+          throw new IdentityError(
+            'MARATHON_JOIN_CODE_UNAVAILABLE',
+            409,
+            'This marathon does not accept join codes',
           );
         const profile = await c.query<{ timezone: string }>(
           `select timezone from user_profiles where user_id=$1`,
@@ -932,10 +940,24 @@ export class MarathonService {
        left join user_profiles up on up.user_id=mm.user_id
        left join marathon_wellness_reports wr on wr.membership_id=mm.id and wr.report_date=$3::date-1
        left join marathon_task_completions tc on tc.membership_id=mm.id and tc.task_id=$4
-       left join weight_entries yesterday_weight on yesterday_weight.user_id=mm.user_id and yesterday_weight.local_date=$3::date-1 and yesterday_weight.is_current
-       left join weight_entries today_weight on today_weight.user_id=mm.user_id and today_weight.local_date=$3 and today_weight.is_current
+       left join lateral (
+         select entry.id,entry.weight_kg
+           from weight_entries entry
+          where entry.user_id=mm.user_id and entry.is_current
+            and (entry.recorded_at at time zone $5)::date=$3::date-1
+          order by entry.recorded_at desc,entry.created_at desc,entry.id desc
+          limit 1
+       ) yesterday_weight on true
+       left join lateral (
+         select entry.id,entry.weight_kg
+           from weight_entries entry
+          where entry.user_id=mm.user_id and entry.is_current
+            and (entry.recorded_at at time zone $5)::date=$3::date
+          order by entry.recorded_at desc,entry.created_at desc,entry.id desc
+          limit 1
+       ) today_weight on true
        where mm.team_id=$2 order by mm.created_at`,
-      [user.userId, m.team_id, displayDate, task?.id ?? null],
+      [user.userId, m.team_id, displayDate, task?.id ?? null, m.timezone],
     );
     const safeMembers = members.rows.map((x) => ({
       membershipId: x.membershipId,

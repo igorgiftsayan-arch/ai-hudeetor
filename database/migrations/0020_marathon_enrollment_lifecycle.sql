@@ -29,6 +29,7 @@ $$;
 
 ALTER TABLE marathons
   ADD COLUMN status text,
+  ADD COLUMN enrollment_mode text NOT NULL DEFAULT 'legacyCode',
   ADD COLUMN duration_days integer,
   ADD COLUMN enrollment_opened_at timestamptz,
   ADD COLUMN enrollment_closed_at timestamptz,
@@ -57,6 +58,9 @@ ALTER TABLE marathons
   ALTER COLUMN enrollment_opened_at SET NOT NULL,
   ADD CONSTRAINT ck_marathons_status CHECK (
     status IN ('enrollmentOpen','enrollmentClosed','inProgress','completed')
+  ),
+  ADD CONSTRAINT ck_marathons_enrollment_mode CHECK (
+    enrollment_mode IN ('legacyCode','publicEnrollment')
   ),
   ADD CONSTRAINT ck_marathons_duration_days CHECK (
     duration_days BETWEEN 1 AND 365
@@ -92,8 +96,9 @@ BEGIN
     AND marathon.status IN ('inProgress','completed')
     AND marathon.starts_on IS NOT NULL
     AND marathon.ends_on IS NOT NULL
-    AND entry.local_date BETWEEN marathon.starts_on AND marathon.ends_on
-  ORDER BY entry.local_date, entry.created_at, entry.id
+    AND (entry.recorded_at AT TIME ZONE marathon.timezone)::date
+        BETWEEN marathon.starts_on AND marathon.ends_on
+  ORDER BY entry.recorded_at, entry.created_at, entry.id
   LIMIT 1;
 
   IF baseline_entry.id IS NOT NULL THEN
@@ -116,16 +121,16 @@ AS $$
 DECLARE
   source_weight numeric(6,2);
   source_entry_id uuid;
-  source_local_date date;
+  source_recorded_at timestamptz;
 BEGIN
   IF TG_OP = 'UPDATE' THEN
     source_weight := OLD.weight_kg;
     source_entry_id := OLD.id;
-    source_local_date := OLD.local_date;
+    source_recorded_at := OLD.recorded_at;
   ELSE
     source_weight := NEW.weight_kg;
     source_entry_id := NEW.id;
-    source_local_date := NEW.local_date;
+    source_recorded_at := NEW.recorded_at;
   END IF;
 
   UPDATE marathon_memberships AS membership
@@ -139,7 +144,8 @@ BEGIN
     AND marathon.status IN ('inProgress','completed')
     AND marathon.starts_on IS NOT NULL
     AND marathon.ends_on IS NOT NULL
-    AND source_local_date BETWEEN marathon.starts_on AND marathon.ends_on;
+    AND (source_recorded_at AT TIME ZONE marathon.timezone)::date
+        BETWEEN marathon.starts_on AND marathon.ends_on;
 
   RETURN NEW;
 END;
