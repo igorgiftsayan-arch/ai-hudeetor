@@ -27,6 +27,11 @@
 
 ## [Unreleased]
 
+- Mobile navigation keeps the existing five destinations and accessible link
+  names, while placing each icon above its label in its own responsive grid
+  cell. Long labels may wrap inside their own cell on 320 px and 393 px
+  viewports instead of overlapping a neighbouring destination. No API,
+  backend, deployment or route changes were made.
 - Food analysis now renders known missing-data keys as Russian labels and
   replaces unknown technical identifiers with a neutral readable fallback;
   provider payloads and the food lifecycle are unchanged. The existing

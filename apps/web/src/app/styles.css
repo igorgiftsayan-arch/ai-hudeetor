@@ -607,7 +607,6 @@ button:disabled {
   left: 50%;
   bottom: max(0.8rem, env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: repeat(2, minmax(6rem, 1fr));
   width: min(calc(100% - 2rem), 24rem);
   padding: 0.35rem;
   border: 1px solid rgb(210 205 194 / 0.9);
@@ -618,16 +617,24 @@ button:disabled {
   transform: translateX(-50%);
 }
 
+.mobile-navigation--five-items {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .mobile-navigation a {
-  display: flex;
-  min-height: 3.1rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
+  display: grid;
+  min-width: 0;
+  min-height: 3.45rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.16rem;
+  padding: 0.25rem 0.1rem;
   border-radius: 0.95rem;
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: clamp(0.55rem, 2.6vw, 0.72rem);
   font-weight: 650;
+  line-height: 1.05;
+  text-align: center;
   text-decoration: none;
 }
 
@@ -637,7 +644,14 @@ button:disabled {
 }
 
 .nav-mark {
-  font-size: 1rem;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.nav-label {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .boundary-page {

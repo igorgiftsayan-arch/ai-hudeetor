@@ -5,8 +5,7 @@ type MobileNavigationProps = {
 export function MobileNavigation({ active }: MobileNavigationProps) {
   return (
     <nav
-      className="mobile-navigation"
-      style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}
+      className="mobile-navigation mobile-navigation--five-items"
       aria-label="Основная навигация"
     >
       <a
@@ -17,7 +16,7 @@ export function MobileNavigation({ active }: MobileNavigationProps) {
         <span aria-hidden="true" className="nav-mark">
           ○
         </span>
-        Сегодня
+        <span className="nav-label">Сегодня</span>
       </a>
       <a
         href="/quick-reply"
@@ -27,7 +26,7 @@ export function MobileNavigation({ active }: MobileNavigationProps) {
         <span aria-hidden="true" className="nav-mark">
           ✦
         </span>
-        AI
+        <span className="nav-label">AI</span>
       </a>
       <a
         href="/food"
@@ -37,7 +36,7 @@ export function MobileNavigation({ active }: MobileNavigationProps) {
         <span aria-hidden="true" className="nav-mark">
           ◌
         </span>
-        Еда
+        <span className="nav-label">Еда</span>
       </a>
       <a
         href="/marathon"
@@ -47,15 +46,17 @@ export function MobileNavigation({ active }: MobileNavigationProps) {
         <span aria-hidden="true" className="nav-mark">
           ↗
         </span>
-        Марафон
+        <span className="nav-label">Марафон</span>
       </a>
       <a
-        style={{ fontSize: '0.72rem' }}
         href="/notifications"
         className={active === 'notifications' ? 'is-active' : undefined}
         aria-current={active === 'notifications' ? 'page' : undefined}
       >
-        Напоминания
+        <span aria-hidden="true" className="nav-mark">
+          ◔
+        </span>
+        <span className="nav-label">Напоминания</span>
       </a>
     </nav>
   );

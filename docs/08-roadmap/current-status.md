@@ -1,5 +1,15 @@
 # Текущий статус
 
+## Mobile navigation visual fix — prepared, not deployed, 2026-10-01
+
+В отдельной UI-ветке от release commit `38ef5dc` устранено перекрытие
+«Марафон» и «Напоминания» на узких экранах: сохранены пять существующих ссылок
+и их доступные имена, а знак и подпись каждой ссылки размещены вертикально в
+собственной responsive grid-ячейке. Focused web-test подтверждает все пять
+ссылок, href, names и active state; backend/API, новые экраны, root worktree,
+deploy и merge не затрагивались. Перед публикацией остаётся browser acceptance
+на 320 px и 393 px.
+
 ## Новый набор без кода — финальная сборка, 2026-10-01
 
 В `release/marathon-enrollment-20261001` интегрирован новый lifecycle: длительность,
