@@ -1172,7 +1172,7 @@ button:disabled {
   }
 }
 
-+.food-draft,
+.food-draft,
 .food-confirmation,
 .push-permission-card {
   display: grid;
