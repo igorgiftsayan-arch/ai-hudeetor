@@ -38,6 +38,10 @@
 
 ## [Unreleased]
 
+- Integrated final-report UI uses the regenerated backend-owned finale DTO;
+  no parallel handwritten API schema remains. Combined web184/184,
+  typecheck and lint PASS; final runtime acceptance is pending.
+
 - Prepared the final marathon report UI for the server-owned one-day `finale`
   window: it keeps a next enrollment visible while allowing the previous
   participant to create or update the final report. The completion branch uses

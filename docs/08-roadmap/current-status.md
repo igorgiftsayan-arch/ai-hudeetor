@@ -2,6 +2,13 @@
 
 ## Актуальный публичный runtime и приёмка, 2026-10-01
 
+Integration checkpoint: finale/query-scope sources and both UI fixes integrated;
+frontend now imports the generated backend-owned finale contract. Combined
+web184/184, typecheck/lint PASS. Independent review additionally identified
+transaction-start `now()` backdating when start waits on a weight write;
+actual transition timestamp and reverse-concurrency regression are being fixed
+before final build/publication.
+
 Production опубликован до `38ef5dc`: набор без кода, длительность и отдельный
 первый день доступны в runtime; миграции21/до0020, все семь сервисов healthy,
 существующие данные сохранены по before/after fingerprints. Main не менялся.

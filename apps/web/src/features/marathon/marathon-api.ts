@@ -6,6 +6,7 @@ import type {
   MarathonEnrollmentClosedDto,
   MarathonEnrollmentCreatedDto,
   MarathonLobbyDto,
+  MarathonLobbyFinaleDto,
   MarathonMembershipCreatedDto,
   MarathonStartedDto,
   OpenMarathonEnrollmentDto,
@@ -29,16 +30,8 @@ export type MarathonCurrent = CurrentMarathonDto;
 
 export type MarathonTeamToday = TeamTodayDto;
 
-export type MarathonFinale = {
-  marathonId: string;
-  endsOn: string;
-  membershipId: string;
-  role: 'captain' | 'participant';
-};
-
-export type MarathonLobbyData = MarathonLobbyDto & {
-  finale?: MarathonFinale | null;
-};
+export type MarathonFinale = MarathonLobbyFinaleDto;
+export type MarathonLobbyData = MarathonLobbyDto;
 
 export type MarathonLobbyScreenData = {
   csrfToken: string;
