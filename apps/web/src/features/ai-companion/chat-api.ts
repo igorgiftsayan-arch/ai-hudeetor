@@ -30,6 +30,7 @@ export type ChatOperation = {
   inputMessageId: string;
   outputMessageId?: string;
   errorCode?: string;
+  runtimeAdapter: 'fake' | 'genapi';
 };
 
 const primaryConversationKey = 'atlas-primary-chat-v1';

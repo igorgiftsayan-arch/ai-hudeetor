@@ -261,7 +261,11 @@ export default function QuickReplyPage() {
             <h1>AI-друг</h1>
           </div>
           <div className="chat-header-actions">
-            <span className="fake-runtime-badge">тестовый AI</span>
+            {operation?.runtimeAdapter === 'fake' ? (
+              <span className="fake-runtime-badge">тестовый AI</span>
+            ) : (
+              <span>AI может ошибаться</span>
+            )}
             <LogoutButton csrfToken={csrfToken} />
           </div>
         </header>
