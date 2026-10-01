@@ -1,28 +1,12 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import type {
+  MarathonLobbyDto,
+  MarathonLobbyMarathonDto,
+} from '@atlas/api-contracts';
 
-export type MarathonLobbyMarathon = {
-  id: string;
-  name: string;
-  status: 'enrollmentOpen' | 'enrollmentClosed' | 'inProgress' | 'completed';
-  durationDays: number;
-  timezone: string;
-  startsOn: string | null;
-  endsOn: string | null;
-  enrollmentOpenedAt: string;
-  enrollmentClosedAt: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
-};
-
-export type MarathonLobbyData = {
-  marathon: MarathonLobbyMarathon | null;
-  enrollment: { isOpen: boolean; memberCount: number } | null;
-  currentMembership: { id: string; role: 'captain' | 'participant' } | null;
-  canManage: boolean;
-  canOpenEnrollment: boolean;
-};
+export type MarathonLobbyData = MarathonLobbyDto;
 
 export type MarathonLobbyAction = 'join' | 'openEnrollment' | 'closeEnrollment' | 'start';
 
@@ -223,7 +207,7 @@ function MarathonSummary({
   marathon,
   memberCount,
 }: {
-  marathon: MarathonLobbyMarathon;
+  marathon: MarathonLobbyMarathonDto;
   memberCount?: number;
 }) {
   return (

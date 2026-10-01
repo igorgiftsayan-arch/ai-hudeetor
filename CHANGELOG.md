@@ -23,9 +23,12 @@
   replaces unknown technical identifiers with a neutral readable fallback;
   provider payloads and the food lifecycle are unchanged. The existing
   10 MiB image limit is shown as `до 10 МБ` without changing accepted bytes.
-- Prepared the mobile-first Gerbi enrollment and pre-start UI states against
-  the confirmed lobby contract. The presentation component has no API binding
-  until generated DTOs are available; no deployment was performed.
+- Added the mobile-first Gerbi enrollment and pre-start UI against the
+  generated lobby contract: code-free join, captain open/close/start actions,
+  retry-safe mutations and the legacy daily screen only for an in-progress
+  membership.
+  Backend-generated contracts remain backend-owned; no deployment was
+  performed.
 - Terms and privacy source now describe enrollment without an invitation code
   while preserving the existing team-data disclosure boundary.
 

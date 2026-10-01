@@ -6,21 +6,33 @@ import { MobileNavigation } from '../mobile-navigation';
 import { TeamLeaderboard } from '../../features/marathon/team-leaderboard';
 import { YesterdayReport } from '../../features/marathon/yesterday-report';
 import { CaptainTaskEditor } from '../../features/marathon/captain-task-editor';
+import {
+  MarathonLobby,
+  type MarathonLobbyAction,
+} from '../../features/marathon/marathon-lobby';
 import { ProviderConsentNotice } from '../../features/ai-companion/provider-consent';
 import {
+  closeMarathonEnrollment,
   completeCaptainTask,
-  joinMarathonTeam,
+  joinMarathonEnrollment,
+  loadMarathonLobbyScreen,
   loadMarathonScreen,
+  openMarathonEnrollment,
   saveCaptainTask,
   saveWellnessReport,
+  startMarathon,
 } from '../../features/marathon/marathon-api';
-import type { MarathonScreenData, WellnessValues } from '../../features/marathon/marathon-api';
-import { ApiError, apiRequest, newIdempotencyKey } from '../../shared/api';
-import type { OnboardingResourceDto } from '@atlas/api-contracts';
+import type {
+  MarathonLobbyScreenData,
+  MarathonScreenData,
+  WellnessValues,
+} from '../../features/marathon/marathon-api';
+import { ApiError, newIdempotencyKey } from '../../shared/api';
 
-type ViewState = 'loading' | 'ready' | 'error' | 'onboarding' | 'notFound' | 'noMembership' | 'notActive';
+type ViewState = 'loading' | 'ready' | 'error' | 'onboarding' | 'notFound';
 type Pending = { payload: string; key: string };
 type PendingCompletion = Pending & { taskId: string; completed: boolean };
+type PendingLobbyAction = Pending & { action: MarathonLobbyAction };
 
 const habits: Array<{ id: keyof WellnessValues; label: string }> = [
   { id: 'morningShake', label: 'Утренний коктейль' },
@@ -37,6 +49,9 @@ export default function MarathonPage() {
   const { replace } = useRouter();
   const [viewState, setViewState] = useState<ViewState>('loading');
   const [data, setData] = useState<MarathonScreenData>();
+  const [lobbyData, setLobbyData] = useState<MarathonLobbyScreenData>();
+  const [lobbyError, setLobbyError] = useState<string>();
+  const [pendingLobbyAction, setPendingLobbyAction] = useState<MarathonLobbyAction>();
   const [reportError, setReportError] = useState<string>();
   const [taskError, setTaskError] = useState<string>();
   const [saved, setSaved] = useState<string>();
@@ -44,19 +59,28 @@ export default function MarathonPage() {
   const pendingReport = useRef<Pending | undefined>(undefined);
   const pendingTask = useRef<Pending | undefined>(undefined);
   const pendingCompletion = useRef<PendingCompletion | undefined>(undefined);
+  const pendingLobby = useRef<PendingLobbyAction | undefined>(undefined);
 
   const load = useCallback(async () => {
     setViewState('loading');
     try {
-      const next = await loadMarathonScreen();
-      setData(next);
+      const nextLobby = await loadMarathonLobbyScreen();
+      const canOpenDailyScreen =
+        nextLobby.lobby.marathon?.status === 'inProgress' &&
+        Boolean(nextLobby.lobby.currentMembership);
+      if (canOpenDailyScreen) {
+        const next = await loadMarathonScreen();
+        setData(next);
+        setLobbyData(undefined);
+      } else {
+        setData(undefined);
+        setLobbyData(nextLobby);
+      }
       setViewState('ready');
     } catch (cause) {
       if (cause instanceof ApiError && cause.kind === 'session') replace('/login');
       else if (cause instanceof ApiError && cause.kind === 'onboarding') setViewState('onboarding');
       else if (cause instanceof ApiError && cause.code === 'MARATHON_NOT_FOUND') setViewState('notFound');
-      else if (cause instanceof ApiError && cause.code === 'MARATHON_MEMBERSHIP_REQUIRED') setViewState('noMembership');
-      else if (cause instanceof ApiError && cause.code === 'MARATHON_NOT_ACTIVE') setViewState('notActive');
       else setViewState('error');
     }
   }, [replace]);
@@ -207,23 +231,114 @@ export default function MarathonPage() {
     }
   }
 
-  async function joinTeam(joinCode: string) {
+  async function runLobbyAction(
+    action: MarathonLobbyAction,
+    payload: string,
+    request: (idempotencyKey: string) => Promise<unknown>,
+  ) {
+    if (!lobbyData) return;
+    if (
+      pendingLobby.current?.action !== action ||
+      pendingLobby.current.payload !== payload
+    ) {
+      pendingLobby.current = { action, payload, key: newIdempotencyKey() };
+    }
+    setPendingLobbyAction(action);
+    setLobbyError(undefined);
     try {
-      const onboarding = await apiRequest<OnboardingResourceDto>('/users/me/onboarding');
-      await joinMarathonTeam({
-        joinCode,
-        csrfToken: onboarding.csrfToken,
-        idempotencyKey: newIdempotencyKey(),
-      });
+      await request(pendingLobby.current.key);
+      pendingLobby.current = undefined;
       await load();
     } catch (cause) {
-      if (cause instanceof ApiError && cause.kind === 'session') replace('/login');
-      throw cause;
+      if (cause instanceof ApiError && cause.kind === 'session') {
+        replace('/login');
+        return;
+      }
+      setLobbyError(formatLobbyActionError(cause));
+    } finally {
+      setPendingLobbyAction(undefined);
     }
   }
 
-  if (viewState !== 'ready' || !data) {
-    return <MarathonBoundary state={viewState === 'ready' ? 'loading' : viewState} onRetry={load} onJoin={joinTeam} />;
+  function joinLobbyEnrollment() {
+    const marathonId = lobbyData?.lobby.marathon?.id;
+    if (!lobbyData || !marathonId) return;
+    void runLobbyAction('join', JSON.stringify({ marathonId }), (idempotencyKey) =>
+      joinMarathonEnrollment({
+        marathonId,
+        csrfToken: lobbyData.csrfToken,
+        idempotencyKey,
+      }),
+    );
+  }
+
+  function openLobbyEnrollment(durationDays: number) {
+    if (!lobbyData) return;
+    void runLobbyAction(
+      'openEnrollment',
+      JSON.stringify({ durationDays }),
+      (idempotencyKey) =>
+        openMarathonEnrollment({
+          durationDays,
+          csrfToken: lobbyData.csrfToken,
+          idempotencyKey,
+        }),
+    );
+  }
+
+  function closeLobbyEnrollment() {
+    const marathonId = lobbyData?.lobby.marathon?.id;
+    if (!lobbyData || !marathonId) return;
+    void runLobbyAction(
+      'closeEnrollment',
+      JSON.stringify({ marathonId }),
+      (idempotencyKey) =>
+        closeMarathonEnrollment({
+          marathonId,
+          csrfToken: lobbyData.csrfToken,
+          idempotencyKey,
+        }),
+    );
+  }
+
+  function startLobbyMarathon() {
+    const marathonId = lobbyData?.lobby.marathon?.id;
+    if (!lobbyData || !marathonId) return;
+    void runLobbyAction('start', JSON.stringify({ marathonId }), (idempotencyKey) =>
+      startMarathon({
+        marathonId,
+        csrfToken: lobbyData.csrfToken,
+        idempotencyKey,
+      }),
+    );
+  }
+
+  if (viewState !== 'ready') {
+    return <MarathonBoundary state={viewState} onRetry={load} />;
+  }
+
+  if (lobbyData) {
+    return (
+      <main className="app-shell marathon-shell">
+        <div className="app-page">
+          <a className="marathon-brand" href="/today">↗ Герби-Марафон</a>
+          <MarathonLobby
+            lobby={lobbyData.lobby}
+            pendingAction={pendingLobbyAction}
+            error={lobbyError}
+            onJoin={joinLobbyEnrollment}
+            onOpenEnrollment={openLobbyEnrollment}
+            onCloseEnrollment={closeLobbyEnrollment}
+            onStart={startLobbyMarathon}
+          />
+        </div>
+        <MobileNavigation active="marathon" />
+      </main>
+    );
+  }
+
+  if (!data) {
+    return <MarathonBoundary state="loading" onRetry={load} />;
   }
 
   const reportValues = data.report.status === 'reported' ? data.report.report ?? undefined : undefined;
@@ -339,28 +454,30 @@ export default function MarathonPage() {
   );
 }
 
-function MarathonBoundary({ state, onRetry, onJoin }: { state: Exclude<ViewState, 'ready'>; onRetry: () => Promise<void>; onJoin: (joinCode: string) => Promise<void> }) {
+function MarathonBoundary({ state, onRetry }: { state: Exclude<ViewState, 'ready'>; onRetry: () => Promise<void> }) {
   if (state === 'loading') return <main className="app-shell"><div className="app-page loading-state" aria-live="polite"><span className="loading-orbit" aria-hidden="true" /><p>Загружаем марафон…</p></div></main>;
-  const canJoin = state === 'notFound' || state === 'noMembership';
-  const message = canJoin ? ['Присоединитесь к команде', 'Введите код приглашения от капитана.'] : state === 'onboarding' ? ['Завершите настройку', 'После настройки можно присоединиться к марафону.'] : state === 'notActive' ? ['Марафон сейчас не активен', 'Дневной маршрут появится, когда период будет активен.'] : ['Не удалось загрузить марафон', 'Данные не пропали. Попробуйте ещё раз.'];
-  return <main className="app-shell"><div className="app-page boundary-page"><div className="boundary-message" role={state === 'error' ? 'alert' : undefined}><p className="section-label">Герби-Марафон</p><h1>{message[0]}</h1><p>{message[1]}</p>{state === 'onboarding' ? <a href="/onboarding" className="primary-link">Продолжить настройку</a> : canJoin ? <JoinMarathon onJoin={onJoin} /> : <button type="button" className="primary-action" onClick={() => void onRetry()}>Попробовать снова</button>}</div></div></main>;
-}
-
-function JoinMarathon({ onJoin }: { onJoin: (joinCode: string) => Promise<void> }) {
-  const [joinCode, setJoinCode] = useState('');
-  const [error, setError] = useState<string>();
-  const [joining, setJoining] = useState(false);
-  async function submit() {
-    if (!joinCode.trim()) return setError('Введите код приглашения.');
-    setJoining(true);
-    setError(undefined);
-    try { await onJoin(joinCode.trim()); }
-    catch (cause) { setError(cause instanceof ApiError && cause.code === 'MARATHON_TIMEZONE_MISMATCH' ? 'Для участия timezone профиля должен совпадать с timezone марафона. Изменение timezone выполняется отдельно в профиле.' : cause instanceof Error ? cause.message : 'Не удалось присоединиться к команде.'); }
-    finally { setJoining(false); }
-  }
-  return <div className="marathon-join"><label>Код приглашения<input value={joinCode} onChange={(event) => setJoinCode(event.target.value)} disabled={joining} /></label><button type="button" className="primary-action" onClick={() => void submit()} disabled={joining}>{joining ? 'Присоединяем…' : 'Присоединиться'}</button>{error && <p role="alert">{error}</p>}</div>;
+  const message = state === 'onboarding'
+    ? ['Завершите настройку', 'После настройки можно открыть марафон.']
+    : state === 'notFound'
+      ? ['Марафон не найден', 'Обновите экран и попробуйте снова.']
+      : ['Не удалось загрузить марафон', 'Данные не пропали. Попробуйте ещё раз.'];
+  return <main className="app-shell"><div className="app-page boundary-page"><div className="boundary-message" role={state === 'error' ? 'alert' : undefined}><p className="section-label">Герби-Марафон</p><h1>{message[0]}</h1><p>{message[1]}</p>{state === 'onboarding' ? <a href="/onboarding" className="primary-link">Продолжить настройку</a> : <button type="button" className="primary-action" onClick={() => void onRetry()}>Попробовать снова</button>}</div></div><MobileNavigation active="marathon" /></main>;
 }
 
 function formatDay(date: string) { return `Сегодня · ${date}`; }
 function formatReportDate(date: string) { return `Вчера · ${date}`; }
 function formatPercent(value: number) { return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} %`; }
+
+function formatLobbyActionError(cause: unknown) {
+  if (!(cause instanceof ApiError)) {
+    return 'Не удалось обновить набор. Попробуйте снова.';
+  }
+  if (cause.code === 'MARATHON_ENROLLMENT_CLOSED') return 'Набор уже завершён. Экран обновлён — можно продолжить.';
+  if (cause.code === 'MARATHON_START_REQUIRES_CLOSED_ENROLLMENT') return 'Сначала завершите набор.';
+  if (cause.code === 'MARATHON_ACTIVE_EXISTS') return 'У вас уже есть незавершённый марафон.';
+  if (cause.code === 'MARATHON_TIMEZONE_REQUIRED') return 'Укажите часовой пояс в профиле, чтобы открыть набор.';
+  if (cause.code === 'MARATHON_CAPTAIN_REQUIRED' || cause.code === 'MARATHON_BOOTSTRAP_FORBIDDEN') {
+    return 'Это действие доступно только капитану с разрешением на набор.';
+  }
+  return cause.message;
+}

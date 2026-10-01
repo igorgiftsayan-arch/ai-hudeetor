@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { MarathonLobbyDto } from '@atlas/api-contracts';
 import MarathonPage from './page';
 
 const api = '/api/v1';
@@ -27,6 +28,150 @@ describe('marathon page', () => {
       'href',
       '/quick-reply',
     );
+  });
+
+  it('loads the lobby and joins an open enrollment without an invitation code', async () => {
+    const user = userEvent.setup();
+    let joined = false;
+    let joinAttempts = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/users/me/onboarding`) return json(onboarding());
+      if (url === `${api}/marathons/lobby`) {
+        return json(lobby({
+          currentMembership: joined ? { id: 'membership-1', role: 'participant' } : null,
+        }));
+      }
+      if (url === `${api}/marathons/marathon-1/memberships` && init?.method === 'POST') {
+        joinAttempts += 1;
+        if (joinAttempts === 1) {
+          return json({ error: { code: 'TEMPORARY', message: 'Временная ошибка.' } }, 500);
+        }
+        joined = true;
+        return json({ membershipId: 'membership-1', marathonId: 'marathon-1', role: 'participant', createdAt: '2026-10-01T00:00:00.000Z' }, 201);
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Вступить в марафон' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Временная ошибка.');
+    await user.click(screen.getByRole('button', { name: 'Вступить в марафон' }));
+    expect(await screen.findByText('Вы уже в марафоне. Набор ещё открыт.')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/код приглашения/i)).not.toBeInTheDocument();
+
+    const join = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url) === `${api}/marathons/marathon-1/memberships` &&
+        (init as RequestInit | undefined)?.method === 'POST',
+    );
+    expect(join?.[1]?.body).toBe(JSON.stringify({}));
+    const joinCalls = fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        String(url) === `${api}/marathons/marathon-1/memberships` &&
+        (init as RequestInit | undefined)?.method === 'POST',
+    );
+    expect(joinCalls).toHaveLength(2);
+    expect((joinCalls[0]?.[1]?.headers as Record<string, string>)['Idempotency-Key']).toBe(
+      (joinCalls[1]?.[1]?.headers as Record<string, string>)['Idempotency-Key'],
+    );
+  });
+
+  it('lets an allowed captain open, close and start an enrollment before loading the legacy daily screen', async () => {
+    const user = userEvent.setup();
+    let status: 'empty' | 'enrollmentOpen' | 'enrollmentClosed' | 'inProgress' = 'empty';
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/users/me/onboarding`) return json(onboarding());
+      if (url === `${api}/marathons/lobby`) {
+        if (status === 'empty') {
+          return json({ marathon: null, enrollment: null, currentMembership: null, canManage: false, canOpenEnrollment: true });
+        }
+        return json(lobby({
+          marathon: {
+            ...marathon(),
+            status,
+            startsOn: status === 'inProgress' ? '2026-10-01' : null,
+            endsOn: status === 'inProgress' ? '2026-10-21' : null,
+            startedAt: status === 'inProgress' ? '2026-10-01T00:00:00.000Z' : null,
+            enrollmentClosedAt: status === 'enrollmentOpen' ? null : '2026-10-01T00:00:00.000Z',
+          },
+          enrollment: { isOpen: status === 'enrollmentOpen', memberCount: 1 },
+          currentMembership: { id: 'captain-1', role: 'captain' },
+          canManage: status !== 'inProgress',
+          canOpenEnrollment: false,
+        }));
+      }
+      if (url === `${api}/marathons/enrollment` && init?.method === 'POST') {
+        status = 'enrollmentOpen';
+        return json({ marathonId: 'marathon-1', status: 'enrollmentOpen', durationDays: 28, timezone: 'Asia/Irkutsk', membershipId: 'captain-1', role: 'captain' }, 201);
+      }
+      if (url === `${api}/marathons/marathon-1/enrollment-close` && init?.method === 'POST') {
+        status = 'enrollmentClosed';
+        return json({ marathonId: 'marathon-1', status: 'enrollmentClosed', enrollmentClosedAt: '2026-10-01T00:00:00.000Z' });
+      }
+      if (url === `${api}/marathons/marathon-1/start` && init?.method === 'POST') {
+        status = 'inProgress';
+        return json({ marathonId: 'marathon-1', status: 'inProgress', startsOn: '2026-10-01', endsOn: '2026-10-21', startedAt: '2026-10-01T00:00:00.000Z' });
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+
+    const duration = await screen.findByLabelText('Длительность, дней');
+    await user.clear(duration);
+    await user.type(duration, '28');
+    await user.click(screen.getByRole('button', { name: 'Открыть набор' }));
+    await user.click(await screen.findByRole('button', { name: 'Завершить набор' }));
+    await user.click(await screen.findByRole('button', { name: 'Начать первый день' }));
+    expect(await screen.findByText('Команда Антонины')).toBeInTheDocument();
+
+    expect(
+      fetchMock.mock.calls.find(
+        ([url, init]) => String(url) === `${api}/marathons/enrollment` && (init as RequestInit | undefined)?.method === 'POST',
+      )?.[1]?.body,
+    ).toBe(JSON.stringify({ durationDays: 28 }));
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) => String(url) === `${api}/marathons/marathon-1/enrollment-close` && (init as RequestInit | undefined)?.method === 'POST',
+      ),
+    ).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) => String(url) === `${api}/marathons/marathon-1/start` && (init as RequestInit | undefined)?.method === 'POST',
+      ),
+    ).toBe(true);
+  });
+
+  it('does not load the legacy daily APIs for a late user without membership', async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `${api}/marathons/lobby`) {
+        return json(lobby({
+          marathon: {
+            ...marathon(),
+            status: 'inProgress',
+            startsOn: '2026-10-01',
+            endsOn: '2026-10-21',
+            startedAt: '2026-10-01T00:00:00.000Z',
+          },
+          enrollment: { isOpen: false, memberCount: 12 },
+          currentMembership: null,
+        }));
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+
+    expect(await screen.findByText('Набор завершён, вступить уже нельзя.')).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url) === `${api}/marathons/current`),
+    ).toBe(false);
   });
 
   it('saves the selected yesterday items through the confirmed report endpoint', async () => {
@@ -88,46 +233,23 @@ describe('marathon page', () => {
     );
   });
 
-  it('lets a user without membership join the current marathon with a provided code', async () => {
-    const user = userEvent.setup();
-    let joined = false;
-    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      if (url === `${api}/marathons/current`) {
-        return joined
-          ? json(current())
-          : json({ error: { code: 'MARATHON_MEMBERSHIP_REQUIRED', message: 'Нет membership.' } }, 403);
-      }
-      if (url === `${api}/marathon-team-memberships` && init?.method === 'POST') {
-        joined = true;
-        return json({ role: 'participant' }, 201);
-      }
-      return responseFor(input, init);
-    });
-    vi.stubGlobal('fetch', fetchMock);
-
-    render(<MarathonPage />);
-    expect(await screen.findByText('Присоединитесь к команде')).toBeInTheDocument();
-    await user.type(screen.getByLabelText('Код приглашения'), 'team-code');
-    await user.click(screen.getByRole('button', { name: 'Присоединиться' }));
-
-    expect(await screen.findByText('Команда Антонины')).toBeInTheDocument();
-    const join = fetchMock.mock.calls.find(
-      ([url, init]) => String(url) === `${api}/marathon-team-memberships` && (init as RequestInit | undefined)?.method === 'POST',
-    );
-    expect(join?.[1]?.body).toBe(JSON.stringify({ joinCode: 'team-code' }));
-  });
-
-  it('shows a calm period state when the server marks the marathon inactive', async () => {
+  it('shows the empty lobby instead of treating an unmaterialized marathon as an error', async () => {
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === `${api}/marathons/current`) {
-        return json({ error: { code: 'MARATHON_NOT_ACTIVE', message: 'Не активен.' } }, 409);
+      if (String(input) === `${api}/marathons/lobby`) {
+        return json({
+          marathon: null,
+          enrollment: null,
+          currentMembership: null,
+          canManage: false,
+          canOpenEnrollment: false,
+        });
       }
       return responseFor(input, init);
     }));
 
     render(<MarathonPage />);
-    expect(await screen.findByText('Марафон сейчас не активен')).toBeInTheDocument();
+    expect(await screen.findByText('Набор ещё не открыт')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Основная навигация' })).toBeVisible();
     expect(screen.queryByText('Не удалось загрузить марафон')).not.toBeInTheDocument();
   });
 
@@ -374,6 +496,19 @@ describe('marathon page', () => {
 function responseFor(input: RequestInfo | URL, init?: RequestInit): Response {
   const url = String(input);
   if (url === `${api}/users/me/onboarding`) return json(onboarding());
+  if (url === `${api}/marathons/lobby`) {
+    return json(lobby({
+      marathon: {
+        ...marathon(),
+        status: 'inProgress',
+        startsOn: '2026-09-28',
+        endsOn: '2026-10-11',
+        startedAt: '2026-09-28T00:00:00.000Z',
+      },
+      enrollment: { isOpen: false, memberCount: 1 },
+      currentMembership: { id: 'membership-1', role: 'participant' },
+    }));
+  }
   if (url === `${api}/marathons/current`) return json(current());
   if (url === `${api}/marathon-wellness-reports/2026-09-28`) {
     if (init?.method === 'PUT') return json(report(true));
@@ -402,6 +537,33 @@ function current() {
     displayDate: '2026-09-29',
     reportDate: '2026-09-28',
   };
+}
+
+function lobby(overrides: Partial<MarathonLobbyDto> = {}): MarathonLobbyDto {
+  const defaultLobby: MarathonLobbyDto = {
+    marathon: {
+      id: 'marathon-1',
+      name: 'Герби-Марафон',
+      status: 'enrollmentOpen',
+      durationDays: 21,
+      timezone: 'Asia/Irkutsk',
+      startsOn: null,
+      endsOn: null,
+      enrollmentOpenedAt: '2026-10-01T00:00:00.000Z',
+      enrollmentClosedAt: null,
+      startedAt: null,
+      completedAt: null,
+    },
+    enrollment: { isOpen: true, memberCount: 12 },
+    currentMembership: null,
+    canManage: false,
+    canOpenEnrollment: false,
+  };
+  return { ...defaultLobby, ...overrides };
+}
+
+function marathon(): NonNullable<MarathonLobbyDto['marathon']> {
+  return lobby().marathon!;
 }
 
 function report(waterTarget: boolean) {

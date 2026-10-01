@@ -2,7 +2,13 @@ import type {
   CaptainTaskDto,
   CaptainTaskResponseDto,
   CurrentMarathonDto,
-  JoinMarathonDto,
+  EmptyMarathonCommandDto,
+  MarathonEnrollmentClosedDto,
+  MarathonEnrollmentCreatedDto,
+  MarathonLobbyDto,
+  MarathonMembershipCreatedDto,
+  MarathonStartedDto,
+  OpenMarathonEnrollmentDto,
   OnboardingResourceDto,
   TaskCompletionDto,
   TaskCompletionResponseDto,
@@ -22,6 +28,11 @@ export type WellnessReport = WellnessReportReadDto;
 export type MarathonCurrent = CurrentMarathonDto;
 
 export type MarathonTeamToday = TeamTodayDto;
+
+export type MarathonLobbyScreenData = {
+  csrfToken: string;
+  lobby: MarathonLobbyDto;
+};
 
 export type MarathonScreenData = {
   csrfToken: string;
@@ -45,13 +56,67 @@ export async function loadMarathonScreen(): Promise<MarathonScreenData> {
   return { csrfToken: onboarding.csrfToken, current, report, team, consent };
 }
 
-export function joinMarathonTeam(input: {
-  joinCode: string;
+export async function loadMarathonLobbyScreen(): Promise<MarathonLobbyScreenData> {
+  const onboarding = await apiRequest<OnboardingResourceDto>('/users/me/onboarding');
+  if (onboarding.status !== 'completed') {
+    throw new ApiError('onboarding', 'Завершите настройку, чтобы открыть марафон.');
+  }
+  const lobby = await apiRequest<MarathonLobbyDto>('/marathons/lobby');
+  return { csrfToken: onboarding.csrfToken, lobby };
+}
+
+export function openMarathonEnrollment(input: {
+  durationDays: number;
   csrfToken: string;
   idempotencyKey: string;
 }) {
-  const payload: JoinMarathonDto = { joinCode: input.joinCode };
-  return apiRequest('/marathon-team-memberships', {
+  const payload: OpenMarathonEnrollmentDto = { durationDays: input.durationDays };
+  return apiRequest<MarathonEnrollmentCreatedDto>('/marathons/enrollment', {
+    method: 'POST',
+    headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
+    body: JSON.stringify(payload),
+  });
+}
+
+export function joinMarathonEnrollment(input: {
+  marathonId: string;
+  csrfToken: string;
+  idempotencyKey: string;
+}) {
+  const payload: EmptyMarathonCommandDto = {};
+  return apiRequest<MarathonMembershipCreatedDto>(
+    `/marathons/${input.marathonId}/memberships`,
+    {
+    method: 'POST',
+    headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
+    body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function closeMarathonEnrollment(input: {
+  marathonId: string;
+  csrfToken: string;
+  idempotencyKey: string;
+}) {
+  const payload: EmptyMarathonCommandDto = {};
+  return apiRequest<MarathonEnrollmentClosedDto>(
+    `/marathons/${input.marathonId}/enrollment-close`,
+    {
+      method: 'POST',
+      headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function startMarathon(input: {
+  marathonId: string;
+  csrfToken: string;
+  idempotencyKey: string;
+}) {
+  const payload: EmptyMarathonCommandDto = {};
+  return apiRequest<MarathonStartedDto>(`/marathons/${input.marathonId}/start`, {
     method: 'POST',
     headers: mutationHeaders(input.csrfToken, input.idempotencyKey),
     body: JSON.stringify(payload),

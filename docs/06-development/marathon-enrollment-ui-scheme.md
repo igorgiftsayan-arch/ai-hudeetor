@@ -26,7 +26,8 @@ backend от фактического `startedAt`.
 
 ## Точки подключения
 
-После OpenAPI regeneration страница использует generated DTO/client для:
+Страница использует generated DTO из опубликованного backend OpenAPI checkpoint
+для:
 
 - `GET /marathons/lobby`;
 - `POST /marathons/enrollment` с `durationDays`;
@@ -35,6 +36,7 @@ backend от фактического `startedAt`.
 - `POST /marathons/:id/start`.
 
 Каждая mutation использует существующие CSRF, allowed Origin и стабильный
-`Idempotency-Key` для безопасного retry одинакового payload. До regeneration
-`MarathonLobby` остаётся чистым presentation-компонентом: он не содержит
-fetch, локального mock API или бизнес-правил.
+`Idempotency-Key` для безопасного retry одинакового payload. `MarathonLobby`
+остаётся чистым presentation-компонентом: он не содержит fetch, локального
+mock API или бизнес-правил. Backend-owned generated artifacts должны войти в
+итоговую ветку вместе с backend checkpoint, а не отдельным UI commit.
