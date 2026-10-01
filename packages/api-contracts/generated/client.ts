@@ -691,6 +691,21 @@ export interface MarathonLobbyMembershipDto {
   role: MarathonLobbyMembershipDtoRole;
 }
 
+export type MarathonLobbyFinaleDtoRole = typeof MarathonLobbyFinaleDtoRole[keyof typeof MarathonLobbyFinaleDtoRole];
+
+
+export const MarathonLobbyFinaleDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface MarathonLobbyFinaleDto {
+  marathonId: string;
+  endsOn: string;
+  membershipId: string;
+  role: MarathonLobbyFinaleDtoRole;
+}
+
 export interface MarathonLobbyDto {
   /** @nullable */
   marathon?: MarathonLobbyMarathonDto | null;
@@ -698,6 +713,8 @@ export interface MarathonLobbyDto {
   enrollment?: MarathonEnrollmentSummaryDto | null;
   /** @nullable */
   currentMembership?: MarathonLobbyMembershipDto | null;
+  /** @nullable */
+  finale?: MarathonLobbyFinaleDto | null;
   canManage: boolean;
   canOpenEnrollment: boolean;
 }

@@ -193,7 +193,21 @@ export class MarathonService {
     missingCode = 'MARATHON_MEMBERSHIP_REQUIRED',
   ): Promise<Membership> {
     const result = await this.db.query<Membership>(
-      `select mm.id,mm.marathon_id,mm.team_id,mm.role,m.timezone,m.name marathon_name,m.starts_on::text,m.ends_on::text,m.status,mt.name team_name from marathon_memberships mm join marathons m on m.id=mm.marathon_id join marathon_teams mt on mt.id=mm.team_id where mm.user_id=$1 order by (m.status in ('enrollmentOpen','enrollmentClosed','inProgress')) desc,m.created_at desc limit 1`,
+      `select mm.id,mm.marathon_id,mm.team_id,mm.role,m.timezone,m.name marathon_name,m.starts_on::text,m.ends_on::text,m.status,mt.name team_name
+         from marathon_memberships mm
+         join marathons m on m.id=mm.marathon_id
+         join marathon_teams mt on mt.id=mm.team_id
+        where mm.user_id=$1
+        order by case
+                   when m.status in ('inProgress','completed')
+                    and m.ends_on is not null
+                    and (now() at time zone m.timezone)::date=m.ends_on+1
+                   then 0
+                   else 1
+                 end,
+                 (m.status in ('enrollmentOpen','enrollmentClosed','inProgress')) desc,
+                 m.created_at desc
+        limit 1`,
       [userId],
     );
     if (!result.rows[0])
@@ -323,6 +337,7 @@ export class MarathonService {
         marathon: null,
         enrollment: null,
         currentMembership: null,
+        finale: null,
         canManage: false,
         canOpenEnrollment: this.canOpen(user.userId),
       };
@@ -334,6 +349,25 @@ export class MarathonService {
         `select id,role from marathon_memberships
           where marathon_id=$1 and user_id=$2`,
         [marathon.id, user.userId],
+      )
+    ).rows[0];
+    const finale = (
+      await this.db.query<{
+        marathon_id: string;
+        ends_on: string;
+        membership_id: string;
+        role: 'captain' | 'participant';
+      }>(
+        `select m.id marathon_id,m.ends_on::text,mm.id membership_id,mm.role
+           from marathon_memberships mm
+           join marathons m on m.id=mm.marathon_id
+          where mm.user_id=$1
+            and m.status in ('inProgress','completed')
+            and m.ends_on is not null
+            and (now() at time zone m.timezone)::date=m.ends_on+1
+          order by m.created_at desc,m.id desc
+          limit 1`,
+        [user.userId],
       )
     ).rows[0];
     const count =
@@ -369,6 +403,14 @@ export class MarathonService {
       },
       currentMembership: membership
         ? { id: membership.id, role: membership.role }
+        : null,
+      finale: finale
+        ? {
+            marathonId: finale.marathon_id,
+            endsOn: finale.ends_on,
+            membershipId: finale.membership_id,
+            role: finale.role,
+          }
         : null,
       canManage: membership?.role === 'captain' && this.canOpen(user.userId),
       canOpenEnrollment: this.canOpen(user.userId) && !unfinished,
@@ -586,11 +628,12 @@ export class MarathonService {
             status: MarathonLifecycleStatus;
             timezone: string;
             duration_days: number;
+            enrollment_mode: 'legacyCode' | 'publicEnrollment';
             starts_on: string | null;
             ends_on: string | null;
             started_at: Date | null;
           }>(
-            `select status,timezone,duration_days,starts_on::text,ends_on::text,started_at
+            `select status,timezone,duration_days,enrollment_mode,starts_on::text,ends_on::text,started_at
                from marathons where id=$1 for update`,
             [marathonId],
           )
@@ -634,6 +677,7 @@ export class MarathonService {
                 and membership.baseline_weight_entry_id is null
                 and entry.is_current
                 and (entry.recorded_at at time zone $4)::date between $2 and $3
+                and ($5::text<>'publicEnrollment' or entry.recorded_at >= $6)
               order by membership.id,entry.recorded_at,entry.created_at,entry.id
            )
            update marathon_memberships membership
@@ -643,7 +687,14 @@ export class MarathonService {
              from first_weights
             where membership.id=first_weights.membership_id
               and membership.baseline_weight_entry_id is null`,
-          [marathonId, startsOn, endsOn, marathon.timezone],
+          [
+            marathonId,
+            startsOn,
+            endsOn,
+            marathon.timezone,
+            marathon.enrollment_mode,
+            updated.rows[0]!.started_at,
+          ],
         );
         return {
           marathonId,
@@ -738,7 +789,7 @@ export class MarathonService {
     const user = await this.user(token),
       m = await this.membership(user.userId, 'MARATHON_NOT_FOUND'),
       displayDate = calendarDateInTimezone(new Date(), m.timezone);
-    this.assertActive(m);
+    this.assertDailyReadable(m);
     return {
       marathon: {
         id: m.marathon_id,
@@ -792,6 +843,25 @@ export class MarathonService {
       today < m.starts_on ||
       today > m.ends_on
     )
+      throw new IdentityError(
+        'MARATHON_NOT_ACTIVE',
+        409,
+        'The marathon is not active',
+      );
+  }
+  private assertDailyReadable(m: Membership) {
+    const today = calendarDateInTimezone(new Date(), m.timezone);
+    const active =
+      m.status === 'inProgress' &&
+      Boolean(m.starts_on) &&
+      Boolean(m.ends_on) &&
+      today >= m.starts_on! &&
+      today <= m.ends_on!;
+    const finalWindow =
+      (m.status === 'inProgress' || m.status === 'completed') &&
+      Boolean(m.ends_on) &&
+      today === addCalendarDays(m.ends_on!, 1);
+    if (!active && !finalWindow)
       throw new IdentityError(
         'MARATHON_NOT_ACTIVE',
         409,
@@ -921,7 +991,7 @@ export class MarathonService {
       m = await this.membership(user.userId),
       displayDate = calendarDateInTimezone(new Date(), m.timezone),
       reportDate = previousCalendarDate(displayDate);
-    this.assertActive(m);
+    this.assertDailyReadable(m);
     const task = (
       await this.db.query<CaptainTaskRow>(
         `select t.id,t.task_date::text "taskDate",t.title,t.description,c.completed,c.updated_at "completionUpdatedAt" from marathon_captain_tasks t left join marathon_task_completions c on c.task_id=t.id and c.membership_id=$1 where t.team_id=$2 and t.task_date=$3`,

@@ -295,6 +295,11 @@ describeWithDatabase(
       );
       const today = calendarDateInTimezone(new Date(), 'Europe/Moscow');
       await weight(db, participantId, today, '90.00');
+      await db.query(
+        `update weight_entries set recorded_at=now()-interval '1 hour'
+          where user_id=$1 and local_date=$2 and is_current`,
+        [participantId, today],
+      );
       await expect(service.today(participantId)).rejects.toMatchObject({
         code: 'MARATHON_NOT_ACTIVE',
       });
@@ -312,16 +317,23 @@ describeWithDatabase(
         randomUUID(),
       );
       await service.startMarathon(captainId, created.marathonId, randomUUID());
-      await weight(db, participantId, today, '89.50');
       await db.query(
-        'update weight_entries set weight_kg=88.00,updated_at=now() where user_id=$1 and local_date=$2 and is_current',
+        `update weight_entries
+            set weight_kg=89.50,recorded_at=now()+interval '1 second',updated_at=now()
+          where user_id=$1 and local_date=$2 and is_current`,
+        [participantId, today],
+      );
+      await db.query(
+        `update weight_entries
+            set weight_kg=88.00,recorded_at=now()+interval '2 seconds',updated_at=now()
+          where user_id=$1 and local_date=$2 and is_current`,
         [participantId, today],
       );
       const baseline = await db.query<{ baseline_weight_kg: string }>(
         'select baseline_weight_kg::text from marathon_memberships where marathon_id=$1 and user_id=$2',
         [created.marathonId, participantId],
       );
-      expect(baseline.rows[0]?.baseline_weight_kg).toBe('90.00');
+      expect(baseline.rows[0]?.baseline_weight_kg).toBe('89.50');
     });
 
     it('uses the captain calendar for cross-timezone weight comparison without changing user local dates', async () => {

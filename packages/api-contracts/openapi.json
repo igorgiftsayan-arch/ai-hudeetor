@@ -3540,6 +3540,33 @@
           "role"
         ]
       },
+      "MarathonLobbyFinaleDto": {
+        "type": "object",
+        "properties": {
+          "marathonId": {
+            "type": "string"
+          },
+          "endsOn": {
+            "type": "string"
+          },
+          "membershipId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "captain",
+              "participant"
+            ]
+          }
+        },
+        "required": [
+          "marathonId",
+          "endsOn",
+          "membershipId",
+          "role"
+        ]
+      },
       "MarathonLobbyDto": {
         "type": "object",
         "properties": {
@@ -3567,6 +3594,15 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/MarathonLobbyMembershipDto"
+              }
+            ]
+          },
+          "finale": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarathonLobbyFinaleDto"
               }
             ]
           },
