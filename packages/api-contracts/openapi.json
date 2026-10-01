@@ -185,6 +185,221 @@
         ]
       }
     },
+    "/api/v1/users/me/ai-provider-consent": {
+      "get": {
+        "operationId": "IdentityController_getProviderConsent_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConsentResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "identity"
+        ]
+      },
+      "post": {
+        "operationId": "IdentityController_acceptProviderConsent_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptAiProviderConsentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderConsentResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/email-verification-requests": {
+      "post": {
+        "operationId": "IdentityController_requestVerification_api/v1",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityAcceptedResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/email-verifications": {
+      "post": {
+        "operationId": "IdentityController_confirmEmail_api/v1",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailVerificationResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/password-reset-requests": {
+      "post": {
+        "operationId": "IdentityController_requestReset_api/v1",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityAcceptedResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/password-resets": {
+      "post": {
+        "operationId": "IdentityController_confirmReset_api/v1",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetResourceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/ai-action-prices/quick-reply": {
       "get": {
         "operationId": "AiCompanionController_price_api/v1",
@@ -868,13 +1083,17 @@
           },
           "csrfToken": {
             "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
           }
         },
         "required": [
           "userId",
           "onboardingStatus",
           "sessionExpiresAt",
-          "csrfToken"
+          "csrfToken",
+          "emailVerified"
         ]
       },
       "CreateSessionRequestDto": {
@@ -918,13 +1137,17 @@
           },
           "csrfToken": {
             "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
           }
         },
         "required": [
           "userId",
           "expiresAt",
           "onboardingStatus",
-          "csrfToken"
+          "csrfToken",
+          "emailVerified"
         ]
       },
       "CurrentUserResourceDto": {
@@ -942,11 +1165,145 @@
               "personaReady",
               "completed"
             ]
+          },
+          "emailVerified": {
+            "type": "boolean"
           }
         },
         "required": [
           "userId",
-          "onboardingStatus"
+          "onboardingStatus",
+          "emailVerified"
+        ]
+      },
+      "AiProviderConsentResourceDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "currentVersion": {
+            "type": "string"
+          },
+          "acceptedVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "disclosure": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accepted",
+          "currentVersion",
+          "acceptedVersion",
+          "disclosure"
+        ]
+      },
+      "AcceptAiProviderConsentRequestDto": {
+        "type": "object",
+        "properties": {
+          "documentVersion": {
+            "type": "string"
+          },
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "documentVersion",
+          "accepted"
+        ]
+      },
+      "IdentityAcceptedResourceDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
+      "VerifyEmailRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "EmailVerificationResourceDto": {
+        "type": "object",
+        "properties": {
+          "emailVerified": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "emailVerified"
+        ]
+      },
+      "PasswordResetRequestDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "person@example.com",
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "writeOnly": true
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "PasswordResetResourceDto": {
+        "type": "object",
+        "properties": {
+          "passwordReset": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "passwordReset"
         ]
       },
       "AiActionPriceResourceDto": {

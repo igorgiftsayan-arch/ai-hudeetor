@@ -45,6 +45,14 @@ const config = loadApiConfig();
       loginWindowMs: config.IDENTITY_LOGIN_WINDOW_SECONDS * 1_000,
       registrationMaxAttempts: config.IDENTITY_REGISTRATION_MAX_ATTEMPTS,
       registrationWindowMs: config.IDENTITY_REGISTRATION_WINDOW_SECONDS * 1_000,
+      emailPayloadSecret: config.IDENTITY_EMAIL_PAYLOAD_SECRET,
+      emailVerificationTtlMs:
+        config.IDENTITY_EMAIL_VERIFICATION_TTL_SECONDS * 1_000,
+      passwordResetTtlMs: config.IDENTITY_PASSWORD_RESET_TTL_SECONDS * 1_000,
+      aiProviderConsentVersion:
+        config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+      aiProviderConsentDisclosure:
+        config.IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE,
     }),
     AiCompanionModule.forRoot(),
     ProfilesModule.forRoot({

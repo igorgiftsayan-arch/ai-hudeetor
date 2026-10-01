@@ -14,6 +14,7 @@ export interface RegisteredIdentity {
   registrationIdempotencyKey: string;
   registrationRequestHash: string;
   consents: ConsentAcceptance[];
+  emailVerified?: boolean;
 }
 
 export interface IdentitySessionRecord {
@@ -41,9 +42,11 @@ export interface IssuedIdentitySession {
 
 export type IssuedIdentitySessionWithOnboarding = IssuedIdentitySession & {
   onboardingStatus: OnboardingStatus;
+  emailVerified: boolean;
 };
 
 export interface CurrentIdentity {
   userId: string;
   onboardingStatus: OnboardingStatus;
+  emailVerified: boolean;
 }

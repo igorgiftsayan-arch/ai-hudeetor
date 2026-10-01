@@ -7,6 +7,11 @@ const testDefaults = {
   IDENTITY_TERMS_VERSION: 'test-v1',
   IDENTITY_PRIVACY_VERSION: 'test-v1',
   IDENTITY_AI_WELLNESS_NOTICE_VERSION: 'test-v1',
+  IDENTITY_AI_PROVIDER_PROCESSING_VERSION: 'test-v1',
+  IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE:
+    'Test disclosure for external AI provider processing and privacy.',
+  IDENTITY_EMAIL_PAYLOAD_SECRET:
+    'test-only-email-payload-secret-at-least-32-characters',
   // Supertest's in-memory HTTP agent is not an HTTPS browser; production and
   // test-server environments still keep Secure cookies enabled explicitly.
   IDENTITY_SECURE_COOKIES: 'false',

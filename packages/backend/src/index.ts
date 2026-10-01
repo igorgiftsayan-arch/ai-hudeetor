@@ -27,6 +27,12 @@ export { RegistrationAttemptLimiter } from './identity/application/registration-
 export { Argon2PasswordHasher } from './identity/infrastructure/argon2-password-hasher';
 export { CryptoSessionTokenService } from './identity/infrastructure/crypto-session-token.service';
 export { PostgresIdentityRepository } from './identity/infrastructure/postgres-identity.repository';
+export { IdentityEmailTokenService } from './identity/application/identity-email-token.service';
+export { RequestEmailVerificationUseCase } from './identity/application/request-email-verification.use-case';
+export { VerifyEmailUseCase } from './identity/application/verify-email.use-case';
+export { RequestPasswordResetUseCase } from './identity/application/request-password-reset.use-case';
+export { ResetPasswordUseCase } from './identity/application/reset-password.use-case';
+export { AiProviderConsentService } from './identity/application/ai-provider-consent.service';
 export { RedisLoginAttemptLimiter } from './identity/infrastructure/redis-login-attempt-limiter';
 export { RedisRegistrationAttemptLimiter } from './identity/infrastructure/redis-registration-attempt-limiter';
 export { RegisterUserUseCase } from './identity/application/register-user.use-case';

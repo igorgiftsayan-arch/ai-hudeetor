@@ -7,6 +7,7 @@ describe('StartQuickReplyUseCase', () => {
       execute: jest.fn().mockResolvedValue({
         userId: '43d7cb11-c958-4266-8946-6ee644095ec1',
         onboardingStatus: 'completed',
+        emailVerified: true,
       }),
     };
     const repository = {
@@ -71,6 +72,36 @@ describe('StartQuickReplyUseCase', () => {
       }),
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', status: 422 });
 
+    expect(database.transactionCalls).toBe(0);
+  });
+
+  it('rejects an unverified user before opening a transaction', async () => {
+    const database = new TransactionProbe();
+    const useCase = new StartQuickReplyUseCase(
+      database as never,
+      {
+        execute: jest.fn().mockResolvedValue({
+          userId: '43d7cb11-c958-4266-8946-6ee644095ec1',
+          onboardingStatus: 'completed',
+          emailVerified: false,
+        }),
+      } as never,
+      { startQuickReply: jest.fn() } as never,
+    );
+
+    await expect(
+      useCase.execute({
+        accessToken: 'opaque-access-token',
+        idempotencyKey: 'a-valid-idempotency-key',
+        conversationId: '773a7e6e-cb1a-42f0-9dca-24f94c5cc5af',
+        content: 'Помоги',
+        expectedPriceTokens: 1,
+        priceVersion: 1,
+      }),
+    ).rejects.toMatchObject({
+      code: 'EMAIL_VERIFICATION_REQUIRED',
+      status: 403,
+    });
     expect(database.transactionCalls).toBe(0);
   });
 });
