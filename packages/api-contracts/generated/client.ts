@@ -639,6 +639,149 @@ export interface WeightEntryPageDto {
   nextCursor: WeightEntryPageDtoNextCursor;
 }
 
+export type MarathonLobbyMarathonDtoStatus = typeof MarathonLobbyMarathonDtoStatus[keyof typeof MarathonLobbyMarathonDtoStatus];
+
+
+export const MarathonLobbyMarathonDtoStatus = {
+  enrollmentOpen: 'enrollmentOpen',
+  enrollmentClosed: 'enrollmentClosed',
+  inProgress: 'inProgress',
+  completed: 'completed',
+} as const;
+
+export interface MarathonLobbyMarathonDto {
+  id: string;
+  name: string;
+  status: MarathonLobbyMarathonDtoStatus;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  durationDays: number;
+  timezone: string;
+  /** @nullable */
+  startsOn: string | null;
+  /** @nullable */
+  endsOn: string | null;
+  enrollmentOpenedAt: string;
+  /** @nullable */
+  enrollmentClosedAt: string | null;
+  /** @nullable */
+  startedAt: string | null;
+  /** @nullable */
+  completedAt: string | null;
+}
+
+export interface MarathonEnrollmentSummaryDto {
+  isOpen: boolean;
+  /** @minimum 1 */
+  memberCount: number;
+}
+
+export type MarathonLobbyMembershipDtoRole = typeof MarathonLobbyMembershipDtoRole[keyof typeof MarathonLobbyMembershipDtoRole];
+
+
+export const MarathonLobbyMembershipDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface MarathonLobbyMembershipDto {
+  id: string;
+  role: MarathonLobbyMembershipDtoRole;
+}
+
+export interface MarathonLobbyDto {
+  /** @nullable */
+  marathon?: MarathonLobbyMarathonDto | null;
+  /** @nullable */
+  enrollment?: MarathonEnrollmentSummaryDto | null;
+  /** @nullable */
+  currentMembership?: MarathonLobbyMembershipDto | null;
+  canManage: boolean;
+  canOpenEnrollment: boolean;
+}
+
+export interface OpenMarathonEnrollmentDto {
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  durationDays: number;
+}
+
+export type MarathonEnrollmentCreatedDtoStatus = typeof MarathonEnrollmentCreatedDtoStatus[keyof typeof MarathonEnrollmentCreatedDtoStatus];
+
+
+export const MarathonEnrollmentCreatedDtoStatus = {
+  enrollmentOpen: 'enrollmentOpen',
+} as const;
+
+export type MarathonEnrollmentCreatedDtoRole = typeof MarathonEnrollmentCreatedDtoRole[keyof typeof MarathonEnrollmentCreatedDtoRole];
+
+
+export const MarathonEnrollmentCreatedDtoRole = {
+  captain: 'captain',
+} as const;
+
+export interface MarathonEnrollmentCreatedDto {
+  marathonId: string;
+  status: MarathonEnrollmentCreatedDtoStatus;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  durationDays: number;
+  timezone: string;
+  membershipId: string;
+  role: MarathonEnrollmentCreatedDtoRole;
+}
+
+export interface EmptyMarathonCommandDto { [key: string]: unknown }
+
+export type MarathonMembershipCreatedDtoRole = typeof MarathonMembershipCreatedDtoRole[keyof typeof MarathonMembershipCreatedDtoRole];
+
+
+export const MarathonMembershipCreatedDtoRole = {
+  captain: 'captain',
+  participant: 'participant',
+} as const;
+
+export interface MarathonMembershipCreatedDto {
+  membershipId: string;
+  marathonId: string;
+  role: MarathonMembershipCreatedDtoRole;
+  createdAt: string;
+}
+
+export type MarathonEnrollmentClosedDtoStatus = typeof MarathonEnrollmentClosedDtoStatus[keyof typeof MarathonEnrollmentClosedDtoStatus];
+
+
+export const MarathonEnrollmentClosedDtoStatus = {
+  enrollmentClosed: 'enrollmentClosed',
+} as const;
+
+export interface MarathonEnrollmentClosedDto {
+  marathonId: string;
+  status: MarathonEnrollmentClosedDtoStatus;
+  enrollmentClosedAt: string;
+}
+
+export type MarathonStartedDtoStatus = typeof MarathonStartedDtoStatus[keyof typeof MarathonStartedDtoStatus];
+
+
+export const MarathonStartedDtoStatus = {
+  inProgress: 'inProgress',
+} as const;
+
+export interface MarathonStartedDto {
+  marathonId: string;
+  status: MarathonStartedDtoStatus;
+  startsOn: string;
+  endsOn: string;
+  startedAt: string;
+}
+
 export interface CreateMarathonDto {
   name: string;
   startsOn: string;
@@ -2480,6 +2623,209 @@ export const trackingControllerEntriesApiV1 = async ( options?: RequestInit): Pr
 
   const data: trackingControllerEntriesApiV1Response['data'] = body ? JSON.parse(body) : {}
   return { data, status: res.status, headers: res.headers } as trackingControllerEntriesApiV1Response
+}
+
+
+
+export type marathonControllerLobbyApiV1Response200 = {
+  data: MarathonLobbyDto
+  status: 200
+}
+
+export type marathonControllerLobbyApiV1ResponseSuccess = (marathonControllerLobbyApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerLobbyApiV1Response = (marathonControllerLobbyApiV1ResponseSuccess)
+
+export const getMarathonControllerLobbyApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathons/lobby`
+}
+
+export const marathonControllerLobbyApiV1 = async ( options?: RequestInit): Promise<marathonControllerLobbyApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerLobbyApiV1Url(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerLobbyApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerLobbyApiV1Response
+}
+
+
+
+export type marathonControllerOpenEnrollmentApiV1Response201 = {
+  data: MarathonEnrollmentCreatedDto
+  status: 201
+}
+
+export type marathonControllerOpenEnrollmentApiV1ResponseSuccess = (marathonControllerOpenEnrollmentApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerOpenEnrollmentApiV1Response = (marathonControllerOpenEnrollmentApiV1ResponseSuccess)
+
+export const getMarathonControllerOpenEnrollmentApiV1Url = () => {
+
+
+
+
+  return `/api/v1/marathons/enrollment`
+}
+
+export const marathonControllerOpenEnrollmentApiV1 = async (openMarathonEnrollmentDto: OpenMarathonEnrollmentDto, options?: RequestInit): Promise<marathonControllerOpenEnrollmentApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerOpenEnrollmentApiV1Url(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(openMarathonEnrollmentDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerOpenEnrollmentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerOpenEnrollmentApiV1Response
+}
+
+
+
+export type marathonControllerJoinEnrollmentApiV1Response201 = {
+  data: MarathonMembershipCreatedDto
+  status: 201
+}
+
+export type marathonControllerJoinEnrollmentApiV1ResponseSuccess = (marathonControllerJoinEnrollmentApiV1Response201) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerJoinEnrollmentApiV1Response = (marathonControllerJoinEnrollmentApiV1ResponseSuccess)
+
+export const getMarathonControllerJoinEnrollmentApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/marathons/${id}/memberships`
+}
+
+export const marathonControllerJoinEnrollmentApiV1 = async (id: string,
+    emptyMarathonCommandDto: EmptyMarathonCommandDto, options?: RequestInit): Promise<marathonControllerJoinEnrollmentApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerJoinEnrollmentApiV1Url(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(emptyMarathonCommandDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerJoinEnrollmentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerJoinEnrollmentApiV1Response
+}
+
+
+
+export type marathonControllerCloseEnrollmentApiV1Response200 = {
+  data: MarathonEnrollmentClosedDto
+  status: 200
+}
+
+export type marathonControllerCloseEnrollmentApiV1ResponseSuccess = (marathonControllerCloseEnrollmentApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerCloseEnrollmentApiV1Response = (marathonControllerCloseEnrollmentApiV1ResponseSuccess)
+
+export const getMarathonControllerCloseEnrollmentApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/marathons/${id}/enrollment-close`
+}
+
+export const marathonControllerCloseEnrollmentApiV1 = async (id: string,
+    emptyMarathonCommandDto: EmptyMarathonCommandDto, options?: RequestInit): Promise<marathonControllerCloseEnrollmentApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerCloseEnrollmentApiV1Url(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(emptyMarathonCommandDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerCloseEnrollmentApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerCloseEnrollmentApiV1Response
+}
+
+
+
+export type marathonControllerStartApiV1Response200 = {
+  data: MarathonStartedDto
+  status: 200
+}
+
+export type marathonControllerStartApiV1ResponseSuccess = (marathonControllerStartApiV1Response200) & {
+  headers: Headers;
+};
+;
+
+export type marathonControllerStartApiV1Response = (marathonControllerStartApiV1ResponseSuccess)
+
+export const getMarathonControllerStartApiV1Url = (id: string,) => {
+
+
+
+
+  return `/api/v1/marathons/${id}/start`
+}
+
+export const marathonControllerStartApiV1 = async (id: string,
+    emptyMarathonCommandDto: EmptyMarathonCommandDto, options?: RequestInit): Promise<marathonControllerStartApiV1Response> => {
+
+  const res = await fetch(getMarathonControllerStartApiV1Url(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(emptyMarathonCommandDto)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: marathonControllerStartApiV1Response['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as marathonControllerStartApiV1Response
 }
 
 

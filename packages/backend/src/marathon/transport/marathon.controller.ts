@@ -26,7 +26,14 @@ import {
   CaptainTaskResponseDto,
   CreateMarathonDto,
   CurrentMarathonDto,
+  EmptyMarathonCommandDto,
   JoinMarathonDto,
+  MarathonEnrollmentClosedDto,
+  MarathonEnrollmentCreatedDto,
+  MarathonLobbyDto,
+  MarathonMembershipCreatedDto,
+  MarathonStartedDto,
+  OpenMarathonEnrollmentDto,
   TaskCompletionDto,
   TaskCompletionResponseDto,
   TeamTodayDto,
@@ -49,6 +56,69 @@ function key(value?: string) {
 @Controller()
 export class MarathonController {
   constructor(private readonly service: MarathonService) {}
+  @Get('marathons/lobby')
+  @ApiOkResponse({ type: MarathonLobbyDto })
+  lobby(@Req() r: Request) {
+    return this.service.lobby(r.cookies?.atlas_access ?? '');
+  }
+  @Post('marathons/enrollment')
+  @ApiCreatedResponse({ type: MarathonEnrollmentCreatedDto })
+  openEnrollment(
+    @Req() r: Request,
+    @Headers('idempotency-key') k: string | undefined,
+    @Body() body: OpenMarathonEnrollmentDto,
+  ) {
+    return this.service.openEnrollment(
+      r.cookies?.atlas_access ?? '',
+      key(k),
+      body,
+    );
+  }
+  @Post('marathons/:id/memberships')
+  @ApiCreatedResponse({ type: MarathonMembershipCreatedDto })
+  joinEnrollment(
+    @Req() r: Request,
+    @Headers('idempotency-key') k: string | undefined,
+    @Param('id') id: string,
+    @Body() _body: EmptyMarathonCommandDto,
+  ) {
+    void _body;
+    return this.service.joinEnrollment(
+      r.cookies?.atlas_access ?? '',
+      id,
+      key(k),
+    );
+  }
+  @Post('marathons/:id/enrollment-close')
+  @ApiOkResponse({ type: MarathonEnrollmentClosedDto })
+  closeEnrollment(
+    @Req() r: Request,
+    @Headers('idempotency-key') k: string | undefined,
+    @Param('id') id: string,
+    @Body() _body: EmptyMarathonCommandDto,
+  ) {
+    void _body;
+    return this.service.closeEnrollment(
+      r.cookies?.atlas_access ?? '',
+      id,
+      key(k),
+    );
+  }
+  @Post('marathons/:id/start')
+  @ApiOkResponse({ type: MarathonStartedDto })
+  start(
+    @Req() r: Request,
+    @Headers('idempotency-key') k: string | undefined,
+    @Param('id') id: string,
+    @Body() _body: EmptyMarathonCommandDto,
+  ) {
+    void _body;
+    return this.service.startMarathon(
+      r.cookies?.atlas_access ?? '',
+      id,
+      key(k),
+    );
+  }
   @Post('marathons') @ApiCreatedResponse() create(
     @Req() r: Request,
     @Headers('idempotency-key') k: string | undefined,
