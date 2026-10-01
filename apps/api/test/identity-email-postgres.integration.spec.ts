@@ -164,6 +164,34 @@ describeWithDatabase('Identity email PostgreSQL integration', () => {
     );
     expect(state.rows[0]).toEqual({ sessions: '0', tokens: '0' });
   });
+
+  it('does not create a stale old-password session after reset wins the user lock', async () => {
+    const registered = await register.execute(registrationCommand());
+    const oldCredential = await database.query<{ password_hash: string }>(
+      'select password_hash from password_credentials where user_id=$1',
+      [registered.user.id],
+    );
+    const resetToken = emailTokens.issue('passwordReset', 1_800_000);
+    await repository.createPasswordReset('person@example.com', resetToken);
+    await new ResetPasswordUseCase(
+      repository,
+      new Argon2PasswordHasher(),
+      emailTokens,
+    ).execute({
+      token: resetToken.rawToken,
+      newPassword: 'Changed-pass-2026',
+    });
+    const issued = new CryptoSessionTokenService({
+      accessTtlMs: 900_000,
+      refreshTtlMs: 2_592_000_000,
+    }).issue({ userId: registered.user.id });
+    await expect(
+      repository.createSessionIfCredentialCurrent(
+        issued.session,
+        oldCredential.rows[0]!.password_hash,
+      ),
+    ).resolves.toBeNull();
+  });
 });
 
 function registrationCommand() {

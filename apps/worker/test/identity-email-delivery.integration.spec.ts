@@ -60,7 +60,10 @@ describeWithDatabase('identity email delivery PostgreSQL integration', () => {
   it('does not send expired tokens and removes their encrypted payload', async () => {
     const delivery = await insertDelivery('passwordReset');
     await database.query(
-      `update identity_tokens set expires_at=now()-interval '1 second' where id=$1`,
+      `update identity_tokens
+          set created_at=now()-interval '2 hours',
+              expires_at=now()-interval '1 hour'
+        where id=$1`,
       [delivery.id],
     );
     await service.deliverPending();

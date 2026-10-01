@@ -1,4 +1,3 @@
-import { identityErrors } from '../domain/identity-error';
 import type { GetCurrentUserUseCase } from './get-current-user.use-case';
 import type { IdentityEmailTokenService } from './identity-email-token.service';
 import type { IdentityRepository } from './identity-repository';
