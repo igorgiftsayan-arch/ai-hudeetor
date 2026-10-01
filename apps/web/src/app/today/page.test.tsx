@@ -154,6 +154,29 @@ describe('today weight screen', () => {
     expect(chart.innerHTML).not.toContain('NaN');
   });
 
+  it('keeps two decimal places in chart weight labels', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/weight-entries`)
+          return json({
+            items: [entry('weight-1', '80.20', '2026-07-22T01:00:00.000Z')],
+            nextCursor: null,
+          });
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<TodayPage />);
+
+    const chart = await screen.findByRole('img', {
+      name: 'График изменения веса',
+    });
+    expect(chart).toHaveTextContent('80,20');
+  });
+
   it('keeps several entries from the same day visible on the chart', async () => {
     vi.stubGlobal(
       'fetch',

@@ -141,7 +141,7 @@ function chartDate(recordedAt: string, timezone: string): string {
 
 function formatChartWeight(value: number): string {
   return new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: 1,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
