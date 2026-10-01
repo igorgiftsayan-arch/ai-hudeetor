@@ -1,6 +1,15 @@
 # Текущий статус
 
 - Дата: 2026-10-01
+- Последнее уточнение: владелец вернул S3 backup в scope; доступ к целевому
+  хранилищу ожидается. Новый пароль SMTP проверен: TLS auth и одно тестовое
+  письмо help→help с получением по IMAP успешны. Protected env обновлён без
+  перезапуска production; application verification/reset ещё не проверены.
+- Актуальное решение владельца: резервные копии отложены и не блокируют этот
+  выпуск; данные работы с GenAPI подтверждены владельцем. Это не означает
+  наличие backup или независимо проверенных гарантий провайдера. SMTP отмечен
+  включённым в панели, но проверка с прежним паролем вернула 535; реальные
+  письма ещё не подтверждены. Исторические gate-списки ниже не отменяют это решение.
 - Backend identity release candidate находится в отдельной ветке
   `back/rebody38-email-identity`: email verification, password reset, durable
   retry-safe email delivery и versioned external-provider consent реализованы и

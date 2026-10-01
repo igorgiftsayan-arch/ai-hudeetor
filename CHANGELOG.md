@@ -6,6 +6,10 @@
 
 ### Added
 
+- Release scope records the owner's backup deferral and GenAPI processing
+  confirmation; SMTP activation remains subject to real authentication and
+  verify/reset delivery checks, not the control-panel checkbox alone.
+
 - Rebody identity release candidate: email ownership verification and password
   recovery use one-time hashed tokens, encrypted durable delivery payloads,
   bounded SMTP retries, enumeration-safe APIs and session revocation after a

@@ -2,6 +2,32 @@
 
 Status: IN PROGRESS. Publication alone is not acceptance.
 
+## Owner scope update — 2026-10-01
+
+Latest instruction supersedes the backup deferral below: the owner requested
+S3 backups. Destination and scoped credentials are requested; implementation
+preparation can proceed, but no unrelated project storage may be used.
+
+SMTP update: with the newly provided password, TLS465 authentication passed.
+One synthetic service message sent from help@rebody38.ru to the same mailbox
+was accepted by SMTP and found through read-only IMAP. SMTP fields and a
+distinct persistent email-payload secret were saved atomically in the existing
+root-only production runtime env (mode600), outside Git. Running services were
+not changed. Real application verification/reset flows remain unverified.
+
+The owner explicitly deferred backups for this release and confirmed the
+GenAPI processing information. Off-host backup, restore drill and RPO/RTO are
+therefore deferred, not passed, and no longer block this release. Loss of the
+production host may cause unrecoverable data loss; no durability promise is
+introduced. Existing backups are not deleted. Provider confirmation is an
+owner decision, not independent proof of specific countries, retention or
+training exclusions that were not supplied; public text must not invent them.
+
+The owner reports SMTP enabled. A fresh TLS SMTP authentication check against
+smtp.jino.ru:465 using the previously supplied mailbox password still returned
+535 authentication failed. No message was submitted. Current password or
+provider-side activation must be resolved before real verify/reset acceptance.
+
 Coordinator verification on 2026-10-01, integrated revision
 `46bf4a89d35d6075df3716adc88de2b86bdcb7cc`: full monorepo build passed with
 synthetic legal build versions; contracts generation/drift passed; web tests
@@ -48,7 +74,7 @@ were removed after verification. This supersedes the local skipped-test gap.
 | Real AI | Verified synthetic user explicitly consents, receives GenAPI response in browser; ledger confirms one charge on idempotent retry | Model listing and one direct synthetic generation returned 200; application journey remains unverified |
 | AI failures | Integration evidence for technical-error refund and outcomeUnknown without automatic refund/retry | Revalidate against integrated release |
 | Abuse protection | Enumeration-safe reset responses, resend/reset limits, unverified AI rejected before reservation/outbox, owner isolation | Identity API/database checks passed; final public gateway journey still pending |
-| Backup | Encrypted scheduled copy outside production host; freshness/failure alert; restore from that copy into isolated DB | External destination/access requested; local host backup is insufficient |
+| Backup | Owner reinstated S3 backup after the earlier deferral | Destination/credentials pending; not implemented or accepted |
 | Documents | Published claims match actual email, AI provider and backup behavior; consent versions consistent | Existing pages published; final text must follow actual release configuration |
 | Public journey | Signup → real email → verification → onboarding → weight/update → real AI → logout/login → recovery, desktop/mobile | Earlier tests cover pre-verification/fake release only |
 
@@ -92,9 +118,9 @@ This direct call does not verify application consent, ledger or browser UI.
 Provider reported completion usage above requested max_tokens; do not treat
 that parameter as a verified billing cap.
 
-## Backup decision pending
+## Backup deferred by owner
 
-Proposed initial policy, not yet configured or approved: nightly encrypted
+Future proposed policy, not a requirement for the current owner-approved release: nightly encrypted
 logical backup, seven daily copies, RPO at most 24 hours. RTO must be measured
 from a real off-host restore drill, including application readiness and data
 checks, not inferred from archive creation. Destination credentials and alert
@@ -136,5 +162,6 @@ Draft disclosure content for final legal reconciliation (not yet published):
 Не отправляйте пароли, документы, медицинские сведения и чужие персональные
 данные. AI может ошибаться и не заменяет врача. Вы можете пользоваться
 дневником веса без согласия на AI-обработку».
-Before activation, resolve downstream processing geography and data-use terms;
-this draft does not substitute for those facts.
+The owner subsequently confirmed the GenAPI processing information for release.
+This does not supply unmentioned factual details; do not invent those in the
+published disclosure or claim independent legal certification.
