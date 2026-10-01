@@ -4,9 +4,27 @@ import type { DatabaseService } from '../../infrastructure/database/database.ser
 import type { GetCurrentUserUseCase } from '../../identity/application/get-current-user.use-case';
 import { IdentityError } from '../../identity/domain/identity-error';
 import {
+  addCalendarDays,
   calendarDateInTimezone,
   previousCalendarDate,
 } from '../domain/marathon-date';
+
+type MarathonLifecycleStatus =
+  'enrollmentOpen' | 'enrollmentClosed' | 'inProgress' | 'completed';
+
+type EnrollmentMarathonRow = {
+  id: string;
+  name: string;
+  status: MarathonLifecycleStatus;
+  duration_days: number;
+  timezone: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  enrollment_opened_at: Date;
+  enrollment_closed_at: Date | null;
+  started_at: Date | null;
+  completed_at: Date | null;
+};
 
 type Report = {
   morningShake: boolean;
@@ -25,8 +43,9 @@ type Membership = {
   role: 'captain' | 'participant';
   timezone: string;
   marathon_name: string;
-  starts_on: string;
-  ends_on: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  status: MarathonLifecycleStatus;
   team_name: string;
 };
 type CaptainTaskRow = {
@@ -87,12 +106,52 @@ export class MarathonService {
   private async user(token: string) {
     return this.currentUser.execute(token);
   }
+  private canOpen(userId: string) {
+    return (
+      this.options.bootstrapEnabled && this.options.bootstrapUserIds.has(userId)
+    );
+  }
+  private assertBootstrapManager(userId: string) {
+    if (!this.canOpen(userId))
+      throw new IdentityError(
+        'MARATHON_BOOTSTRAP_FORBIDDEN',
+        403,
+        'Marathon management is not allowed',
+      );
+  }
+  private async assertCaptain(
+    client: PoolClient,
+    marathonId: string,
+    userId: string,
+  ) {
+    this.assertBootstrapManager(userId);
+    const membership = await client.query<{ id: string }>(
+      `select id from marathon_memberships
+        where marathon_id=$1 and user_id=$2 and role='captain'`,
+      [marathonId, userId],
+    );
+    if (!membership.rows[0])
+      throw new IdentityError(
+        'MARATHON_CAPTAIN_REQUIRED',
+        403,
+        'Captain membership is required',
+      );
+  }
+  private async completeExpiredMarathons(client: DatabaseService | PoolClient) {
+    await (client.query as DatabaseService['query'])(
+      `update marathons
+          set status='completed',completed_at=coalesce(completed_at,now())
+        where status='inProgress'
+          and ends_on < (now() at time zone timezone)::date`,
+    );
+  }
   private async idempotent<T>(
     userId: string,
     scope: string,
     key: string,
     payload: unknown,
     action: (client: PoolClient) => Promise<T>,
+    responseStatus = 200,
   ): Promise<T> {
     const hash = createHash('sha256')
       .update(JSON.stringify(payload))
@@ -123,8 +182,8 @@ export class MarathonService {
         return record.rows[0]!.response_body;
       const response = await action(client);
       await client.query(
-        `update idempotency_records set state='completed',response_status=200,response_body=$1::jsonb,completed_at=now() where user_id=$2 and operation_scope=$3 and idempotency_key=$4`,
-        [JSON.stringify(response), userId, scope, key],
+        `update idempotency_records set state='completed',response_status=$5,response_body=$1::jsonb,completed_at=now() where user_id=$2 and operation_scope=$3 and idempotency_key=$4`,
+        [JSON.stringify(response), userId, scope, key, responseStatus],
       );
       return response;
     });
@@ -134,7 +193,7 @@ export class MarathonService {
     missingCode = 'MARATHON_MEMBERSHIP_REQUIRED',
   ): Promise<Membership> {
     const result = await this.db.query<Membership>(
-      `select mm.id,mm.marathon_id,mm.team_id,mm.role,m.timezone,m.name marathon_name,m.starts_on::text,m.ends_on::text,mt.name team_name from marathon_memberships mm join marathons m on m.id=mm.marathon_id join marathon_teams mt on mt.id=mm.team_id where mm.user_id=$1 order by m.created_at desc limit 1`,
+      `select mm.id,mm.marathon_id,mm.team_id,mm.role,m.timezone,m.name marathon_name,m.starts_on::text,m.ends_on::text,m.status,mt.name team_name from marathon_memberships mm join marathons m on m.id=mm.marathon_id join marathon_teams mt on mt.id=mm.team_id where mm.user_id=$1 order by (m.status in ('enrollmentOpen','enrollmentClosed','inProgress')) desc,m.created_at desc limit 1`,
       [userId],
     );
     if (!result.rows[0])
@@ -173,18 +232,46 @@ export class MarathonService {
         422,
         'Marathon dates are invalid',
       );
+    const durationDays =
+      Math.round(
+        (new Date(`${input.endsOn}T12:00:00.000Z`).getTime() -
+          new Date(`${input.startsOn}T12:00:00.000Z`).getTime()) /
+          86_400_000,
+      ) + 1;
+    if (durationDays < 1 || durationDays > 365)
+      throw new IdentityError(
+        'VALIDATION_ERROR',
+        422,
+        'Marathon duration must be between 1 and 365 days',
+      );
     return this.idempotent(
       user.userId,
       'marathonCreate',
       key,
       input,
       async (c) => {
+        await c.query(
+          `select pg_advisory_xact_lock(hashtext('marathon-active-lifecycle'))`,
+        );
+        await this.completeExpiredMarathons(c);
+        const active = await c.query(
+          `select id from marathons
+            where status in ('enrollmentOpen','enrollmentClosed','inProgress')
+            for update`,
+        );
+        if (active.rows[0])
+          throw new IdentityError(
+            'MARATHON_ACTIVE_EXISTS',
+            409,
+            'An unfinished marathon already exists',
+          );
         const joinCode = randomBytes(24).toString('base64url');
         const marathonId = randomUUID(),
           teamId = randomUUID(),
           membershipId = randomUUID();
         await c.query(
-          `insert into marathons(id,name,starts_on,ends_on,timezone,created_by_user_id) values($1,$2,$3,$4,$5,$6)`,
+          `insert into marathons(id,name,starts_on,ends_on,timezone,created_by_user_id,status,duration_days,enrollment_opened_at,enrollment_closed_at,started_at)
+           values($1,$2,$3,$4,$5,$6,'inProgress',$7,now(),now(),now())`,
           [
             marathonId,
             input.name,
@@ -192,6 +279,7 @@ export class MarathonService {
             input.endsOn,
             input.timezone,
             user.userId,
+            durationDays,
           ],
         );
         await c.query(
@@ -213,6 +301,358 @@ export class MarathonService {
           membershipId,
           role: 'captain' as const,
           joinCode,
+        };
+      },
+    );
+  }
+  async lobby(token: string) {
+    const user = await this.user(token);
+    await this.completeExpiredMarathons(this.db);
+    const marathon = (
+      await this.db.query<EnrollmentMarathonRow>(
+        `select id,name,status,duration_days,timezone,starts_on::text,ends_on::text,
+                enrollment_opened_at,enrollment_closed_at,started_at,completed_at
+           from marathons
+          order by (status in ('enrollmentOpen','enrollmentClosed','inProgress')) desc,
+                   created_at desc,id desc
+          limit 1`,
+      )
+    ).rows[0];
+    if (!marathon)
+      return {
+        marathon: null,
+        enrollment: null,
+        currentMembership: null,
+        canManage: false,
+        canOpenEnrollment: this.canOpen(user.userId),
+      };
+    const membership = (
+      await this.db.query<{
+        id: string;
+        role: 'captain' | 'participant';
+      }>(
+        `select id,role from marathon_memberships
+          where marathon_id=$1 and user_id=$2`,
+        [marathon.id, user.userId],
+      )
+    ).rows[0];
+    const count =
+      (
+        await this.db.query<{ count: number }>(
+          `select count(*)::int count from marathon_memberships where marathon_id=$1`,
+          [marathon.id],
+        )
+      ).rows[0]?.count ?? 0;
+    const unfinished = [
+      'enrollmentOpen',
+      'enrollmentClosed',
+      'inProgress',
+    ].includes(marathon.status);
+    return {
+      marathon: {
+        id: marathon.id,
+        name: marathon.name,
+        status: marathon.status,
+        durationDays: marathon.duration_days,
+        timezone: marathon.timezone,
+        startsOn: marathon.starts_on,
+        endsOn: marathon.ends_on,
+        enrollmentOpenedAt: marathon.enrollment_opened_at.toISOString(),
+        enrollmentClosedAt:
+          marathon.enrollment_closed_at?.toISOString() ?? null,
+        startedAt: marathon.started_at?.toISOString() ?? null,
+        completedAt: marathon.completed_at?.toISOString() ?? null,
+      },
+      enrollment: {
+        isOpen: marathon.status === 'enrollmentOpen',
+        memberCount: count,
+      },
+      currentMembership: membership
+        ? { id: membership.id, role: membership.role }
+        : null,
+      canManage: membership?.role === 'captain' && this.canOpen(user.userId),
+      canOpenEnrollment: this.canOpen(user.userId) && !unfinished,
+    };
+  }
+  async openEnrollment(
+    token: string,
+    key: string,
+    input: { durationDays: number },
+  ) {
+    const user = await this.user(token);
+    this.assertBootstrapManager(user.userId);
+    const profile = (
+      await this.db.query<{ timezone: string | null }>(
+        'select timezone from user_profiles where user_id=$1',
+        [user.userId],
+      )
+    ).rows[0];
+    if (!profile?.timezone)
+      throw new IdentityError(
+        'MARATHON_TIMEZONE_REQUIRED',
+        409,
+        'Captain profile timezone is required',
+      );
+    calendarDateInTimezone(new Date(), profile.timezone);
+    return this.idempotent(
+      user.userId,
+      'marathonEnrollmentOpen',
+      key,
+      input,
+      async (client) => {
+        await client.query(
+          `select pg_advisory_xact_lock(hashtext('marathon-active-lifecycle'))`,
+        );
+        await this.completeExpiredMarathons(client);
+        const active = await client.query(
+          `select id from marathons
+            where status in ('enrollmentOpen','enrollmentClosed','inProgress')
+            for update`,
+        );
+        if (active.rows[0])
+          throw new IdentityError(
+            'MARATHON_ACTIVE_EXISTS',
+            409,
+            'An unfinished marathon already exists',
+          );
+        const marathonId = randomUUID();
+        const teamId = randomUUID();
+        const membershipId = randomUUID();
+        await client.query(
+          `insert into marathons(
+             id,name,starts_on,ends_on,timezone,created_by_user_id,status,
+             duration_days,enrollment_opened_at
+           ) values($1,'Герби-Марафон',null,null,$2,$3,'enrollmentOpen',$4,now())`,
+          [marathonId, profile.timezone, user.userId, input.durationDays],
+        );
+        await client.query(
+          `insert into marathon_teams(id,marathon_id,name,join_code_hash)
+           values($1,$2,'Общая команда',$3)`,
+          [
+            teamId,
+            marathonId,
+            createHash('sha256')
+              .update(`enrollment:${marathonId}`)
+              .digest('hex'),
+          ],
+        );
+        await client.query(
+          `insert into marathon_memberships(id,marathon_id,team_id,user_id,role)
+           values($1,$2,$3,$4,'captain')`,
+          [membershipId, marathonId, teamId, user.userId],
+        );
+        return {
+          marathonId,
+          status: 'enrollmentOpen' as const,
+          durationDays: input.durationDays,
+          timezone: profile.timezone,
+          membershipId,
+          role: 'captain' as const,
+        };
+      },
+      201,
+    );
+  }
+  async joinEnrollment(token: string, marathonId: string, key: string) {
+    const user = await this.user(token);
+    return this.idempotent(
+      user.userId,
+      'marathonEnrollmentJoin',
+      key,
+      { marathonId },
+      async (client) => {
+        const marathon = (
+          await client.query<{ status: MarathonLifecycleStatus }>(
+            'select status from marathons where id=$1 for update',
+            [marathonId],
+          )
+        ).rows[0];
+        if (!marathon)
+          throw new IdentityError(
+            'MARATHON_NOT_FOUND',
+            404,
+            'Marathon not found',
+          );
+        if (marathon.status !== 'enrollmentOpen')
+          throw new IdentityError(
+            'MARATHON_ENROLLMENT_CLOSED',
+            409,
+            'Marathon enrollment is closed',
+          );
+        const existing = (
+          await client.query<{
+            id: string;
+            role: 'captain' | 'participant';
+            created_at: Date;
+          }>(
+            `select id,role,created_at from marathon_memberships
+              where marathon_id=$1 and user_id=$2`,
+            [marathonId, user.userId],
+          )
+        ).rows[0];
+        if (existing)
+          return {
+            membershipId: existing.id,
+            marathonId,
+            role: existing.role,
+            createdAt: existing.created_at.toISOString(),
+          };
+        const team = (
+          await client.query<{ id: string }>(
+            `select id from marathon_teams where marathon_id=$1 order by created_at,id limit 1`,
+            [marathonId],
+          )
+        ).rows[0];
+        if (!team)
+          throw new IdentityError(
+            'MARATHON_NOT_FOUND',
+            404,
+            'Marathon team not found',
+          );
+        const membershipId = randomUUID();
+        const inserted = await client.query<{ created_at: Date }>(
+          `insert into marathon_memberships(id,marathon_id,team_id,user_id,role)
+           values($1,$2,$3,$4,'participant') returning created_at`,
+          [membershipId, marathonId, team.id, user.userId],
+        );
+        return {
+          membershipId,
+          marathonId,
+          role: 'participant' as const,
+          createdAt: inserted.rows[0]!.created_at.toISOString(),
+        };
+      },
+      201,
+    );
+  }
+  async closeEnrollment(token: string, marathonId: string, key: string) {
+    const user = await this.user(token);
+    return this.idempotent(
+      user.userId,
+      'marathonEnrollmentClose',
+      key,
+      { marathonId },
+      async (client) => {
+        const marathon = (
+          await client.query<{
+            status: MarathonLifecycleStatus;
+            enrollment_closed_at: Date | null;
+          }>(
+            'select status,enrollment_closed_at from marathons where id=$1 for update',
+            [marathonId],
+          )
+        ).rows[0];
+        if (!marathon)
+          throw new IdentityError(
+            'MARATHON_NOT_FOUND',
+            404,
+            'Marathon not found',
+          );
+        await this.assertCaptain(client, marathonId, user.userId);
+        if (marathon.status === 'inProgress' || marathon.status === 'completed')
+          throw new IdentityError(
+            'MARATHON_ENROLLMENT_CLOSED',
+            409,
+            'Marathon enrollment is already closed',
+          );
+        if (marathon.status === 'enrollmentClosed')
+          return {
+            marathonId,
+            status: 'enrollmentClosed' as const,
+            enrollmentClosedAt: marathon.enrollment_closed_at!.toISOString(),
+          };
+        const updated = await client.query<{ enrollment_closed_at: Date }>(
+          `update marathons set status='enrollmentClosed',enrollment_closed_at=now()
+            where id=$1 returning enrollment_closed_at`,
+          [marathonId],
+        );
+        return {
+          marathonId,
+          status: 'enrollmentClosed' as const,
+          enrollmentClosedAt:
+            updated.rows[0]!.enrollment_closed_at.toISOString(),
+        };
+      },
+    );
+  }
+  async startMarathon(token: string, marathonId: string, key: string) {
+    const user = await this.user(token);
+    return this.idempotent(
+      user.userId,
+      'marathonStart',
+      key,
+      { marathonId },
+      async (client) => {
+        const marathon = (
+          await client.query<{
+            status: MarathonLifecycleStatus;
+            timezone: string;
+            duration_days: number;
+            starts_on: string | null;
+            ends_on: string | null;
+            started_at: Date | null;
+          }>(
+            `select status,timezone,duration_days,starts_on::text,ends_on::text,started_at
+               from marathons where id=$1 for update`,
+            [marathonId],
+          )
+        ).rows[0];
+        if (!marathon)
+          throw new IdentityError(
+            'MARATHON_NOT_FOUND',
+            404,
+            'Marathon not found',
+          );
+        await this.assertCaptain(client, marathonId, user.userId);
+        if (marathon.status === 'inProgress')
+          return {
+            marathonId,
+            status: 'inProgress' as const,
+            startsOn: marathon.starts_on!,
+            endsOn: marathon.ends_on!,
+            startedAt: marathon.started_at!.toISOString(),
+          };
+        if (marathon.status !== 'enrollmentClosed')
+          throw new IdentityError(
+            'MARATHON_START_REQUIRES_CLOSED_ENROLLMENT',
+            409,
+            'Enrollment must be closed before the marathon starts',
+          );
+        const startsOn = calendarDateInTimezone(new Date(), marathon.timezone);
+        const endsOn = addCalendarDays(startsOn, marathon.duration_days - 1);
+        const updated = await client.query<{ started_at: Date }>(
+          `update marathons
+              set status='inProgress',starts_on=$2,ends_on=$3,started_at=now()
+            where id=$1 returning started_at`,
+          [marathonId, startsOn, endsOn],
+        );
+        await client.query(
+          `with first_weights as (
+             select distinct on (membership.id)
+                    membership.id membership_id,entry.id entry_id,entry.weight_kg
+               from marathon_memberships membership
+               join weight_entries entry on entry.user_id=membership.user_id
+              where membership.marathon_id=$1
+                and membership.baseline_weight_entry_id is null
+                and entry.is_current
+                and entry.local_date between $2 and $3
+              order by membership.id,entry.local_date,entry.created_at,entry.id
+           )
+           update marathon_memberships membership
+              set baseline_weight_kg=first_weights.weight_kg,
+                  baseline_weight_entry_id=first_weights.entry_id,
+                  baseline_captured_at=now()
+             from first_weights
+            where membership.id=first_weights.membership_id
+              and membership.baseline_weight_entry_id is null`,
+          [marathonId, startsOn, endsOn],
+        );
+        return {
+          marathonId,
+          status: 'inProgress' as const,
+          startsOn,
+          endsOn,
+          startedAt: updated.rows[0]!.started_at.toISOString(),
         };
       },
     );
@@ -290,6 +730,7 @@ export class MarathonService {
     const user = await this.user(token),
       m = await this.membership(user.userId, 'MARATHON_NOT_FOUND'),
       displayDate = calendarDateInTimezone(new Date(), m.timezone);
+    this.assertActive(m);
     return {
       marathon: {
         id: m.marathon_id,
@@ -307,7 +748,7 @@ export class MarathonService {
   async getReport(token: string, date: string) {
     const user = await this.user(token),
       m = await this.membership(user.userId);
-    if (date < m.starts_on || date > m.ends_on)
+    if (!m.starts_on || !m.ends_on || date < m.starts_on || date > m.ends_on)
       return { status: 'notApplicable', reportDate: date, report: null };
     const r = await this.db.query(
       `select morning_shake "morningShake",physical_activity "physicalActivity",water_target "waterTarget",second_shake "secondShake",healthy_dinner "healthyDinner",good_sleep "goodSleep",no_junk_food "noJunkFood",no_smoking "noSmoking",updated_at "updatedAt" from marathon_wellness_reports where membership_id=$1 and report_date=$2`,
@@ -321,7 +762,13 @@ export class MarathonService {
     const expected = previousCalendarDate(
       calendarDateInTimezone(new Date(), m.timezone),
     );
-    if (date !== expected || date < m.starts_on || date > m.ends_on)
+    if (
+      !m.starts_on ||
+      !m.ends_on ||
+      date !== expected ||
+      date < m.starts_on ||
+      date > m.ends_on
+    )
       throw new IdentityError(
         'MARATHON_REPORT_DATE_INVALID',
         409,
@@ -330,7 +777,13 @@ export class MarathonService {
   }
   private assertActive(m: Membership) {
     const today = calendarDateInTimezone(new Date(), m.timezone);
-    if (today < m.starts_on || today > m.ends_on)
+    if (
+      m.status !== 'inProgress' ||
+      !m.starts_on ||
+      !m.ends_on ||
+      today < m.starts_on ||
+      today > m.ends_on
+    )
       throw new IdentityError(
         'MARATHON_NOT_ACTIVE',
         409,
@@ -460,6 +913,7 @@ export class MarathonService {
       m = await this.membership(user.userId),
       displayDate = calendarDateInTimezone(new Date(), m.timezone),
       reportDate = previousCalendarDate(displayDate);
+    this.assertActive(m);
     const task = (
       await this.db.query<CaptainTaskRow>(
         `select t.id,t.task_date::text "taskDate",t.title,t.description,c.completed,c.updated_at "completionUpdatedAt" from marathon_captain_tasks t left join marathon_task_completions c on c.task_id=t.id and c.membership_id=$1 where t.team_id=$2 and t.task_date=$3`,

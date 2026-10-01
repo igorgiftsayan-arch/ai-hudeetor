@@ -2,10 +2,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsDateString,
+  IsInt,
   IsNotEmpty,
   IsString,
   IsTimeZone,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -18,6 +21,78 @@ export class CreateMarathonDto {
 }
 export class JoinMarathonDto {
   @ApiProperty() @IsString() @IsNotEmpty() joinCode!: string;
+}
+export class OpenMarathonEnrollmentDto {
+  @ApiProperty({ minimum: 1, maximum: 365 })
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  durationDays!: number;
+}
+export class EmptyMarathonCommandDto {}
+export class MarathonEnrollmentCreatedDto {
+  @ApiProperty() marathonId!: string;
+  @ApiProperty({ enum: ['enrollmentOpen'] }) status!: 'enrollmentOpen';
+  @ApiProperty({ minimum: 1, maximum: 365 }) durationDays!: number;
+  @ApiProperty() timezone!: string;
+  @ApiProperty() membershipId!: string;
+  @ApiProperty({ enum: ['captain'] }) role!: 'captain';
+}
+export class MarathonMembershipCreatedDto {
+  @ApiProperty() membershipId!: string;
+  @ApiProperty() marathonId!: string;
+  @ApiProperty({ enum: ['captain', 'participant'] }) role!:
+    'captain' | 'participant';
+  @ApiProperty() createdAt!: string;
+}
+export class MarathonEnrollmentClosedDto {
+  @ApiProperty() marathonId!: string;
+  @ApiProperty({ enum: ['enrollmentClosed'] })
+  status!: 'enrollmentClosed';
+  @ApiProperty() enrollmentClosedAt!: string;
+}
+export class MarathonStartedDto {
+  @ApiProperty() marathonId!: string;
+  @ApiProperty({ enum: ['inProgress'] }) status!: 'inProgress';
+  @ApiProperty() startsOn!: string;
+  @ApiProperty() endsOn!: string;
+  @ApiProperty() startedAt!: string;
+}
+export class MarathonLobbyMarathonDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty({
+    enum: ['enrollmentOpen', 'enrollmentClosed', 'inProgress', 'completed'],
+  })
+  status!: 'enrollmentOpen' | 'enrollmentClosed' | 'inProgress' | 'completed';
+  @ApiProperty({ minimum: 1, maximum: 365 }) durationDays!: number;
+  @ApiProperty() timezone!: string;
+  @ApiProperty({ type: String, nullable: true }) startsOn!: string | null;
+  @ApiProperty({ type: String, nullable: true }) endsOn!: string | null;
+  @ApiProperty() enrollmentOpenedAt!: string;
+  @ApiProperty({ type: String, nullable: true })
+  enrollmentClosedAt!: string | null;
+  @ApiProperty({ type: String, nullable: true }) startedAt!: string | null;
+  @ApiProperty({ type: String, nullable: true }) completedAt!: string | null;
+}
+export class MarathonEnrollmentSummaryDto {
+  @ApiProperty() isOpen!: boolean;
+  @ApiProperty({ minimum: 1 }) memberCount!: number;
+}
+export class MarathonLobbyMembershipDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ enum: ['captain', 'participant'] }) role!:
+    'captain' | 'participant';
+}
+export class MarathonLobbyDto {
+  @ApiPropertyOptional({ type: MarathonLobbyMarathonDto, nullable: true })
+  marathon!: MarathonLobbyMarathonDto | null;
+  @ApiPropertyOptional({ type: MarathonEnrollmentSummaryDto, nullable: true })
+  enrollment!: MarathonEnrollmentSummaryDto | null;
+  @ApiPropertyOptional({ type: MarathonLobbyMembershipDto, nullable: true })
+  currentMembership!: MarathonLobbyMembershipDto | null;
+  @ApiProperty() canManage!: boolean;
+  @ApiProperty() canOpenEnrollment!: boolean;
 }
 export class WellnessReportDto {
   @ApiProperty() @IsBoolean() morningShake!: boolean;

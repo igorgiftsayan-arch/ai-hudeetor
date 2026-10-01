@@ -987,6 +987,203 @@
         ]
       }
     },
+    "/api/v1/marathons/lobby": {
+      "get": {
+        "operationId": "MarathonController_lobby_api/v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarathonLobbyDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathons/enrollment": {
+      "post": {
+        "operationId": "MarathonController_openEnrollment_api/v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenMarathonEnrollmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarathonEnrollmentCreatedDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathons/{id}/memberships": {
+      "post": {
+        "operationId": "MarathonController_joinEnrollment_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyMarathonCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarathonMembershipCreatedDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathons/{id}/enrollment-close": {
+      "post": {
+        "operationId": "MarathonController_closeEnrollment_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyMarathonCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarathonEnrollmentClosedDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
+    "/api/v1/marathons/{id}/start": {
+      "post": {
+        "operationId": "MarathonController_start_api/v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyMarathonCommandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarathonStartedDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "marathon"
+        ]
+      }
+    },
     "/api/v1/marathons": {
       "post": {
         "operationId": "MarathonController_create_api/v1",
@@ -3242,6 +3439,282 @@
         "required": [
           "items",
           "nextCursor"
+        ]
+      },
+      "MarathonLobbyMarathonDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "enrollmentOpen",
+              "enrollmentClosed",
+              "inProgress",
+              "completed"
+            ]
+          },
+          "durationDays": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "startsOn": {
+            "type": "string",
+            "nullable": true
+          },
+          "endsOn": {
+            "type": "string",
+            "nullable": true
+          },
+          "enrollmentOpenedAt": {
+            "type": "string"
+          },
+          "enrollmentClosedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "startedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "durationDays",
+          "timezone",
+          "startsOn",
+          "endsOn",
+          "enrollmentOpenedAt",
+          "enrollmentClosedAt",
+          "startedAt",
+          "completedAt"
+        ]
+      },
+      "MarathonEnrollmentSummaryDto": {
+        "type": "object",
+        "properties": {
+          "isOpen": {
+            "type": "boolean"
+          },
+          "memberCount": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "isOpen",
+          "memberCount"
+        ]
+      },
+      "MarathonLobbyMembershipDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "captain",
+              "participant"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "role"
+        ]
+      },
+      "MarathonLobbyDto": {
+        "type": "object",
+        "properties": {
+          "marathon": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarathonLobbyMarathonDto"
+              }
+            ]
+          },
+          "enrollment": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarathonEnrollmentSummaryDto"
+              }
+            ]
+          },
+          "currentMembership": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarathonLobbyMembershipDto"
+              }
+            ]
+          },
+          "canManage": {
+            "type": "boolean"
+          },
+          "canOpenEnrollment": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "canManage",
+          "canOpenEnrollment"
+        ]
+      },
+      "OpenMarathonEnrollmentDto": {
+        "type": "object",
+        "properties": {
+          "durationDays": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 365
+          }
+        },
+        "required": [
+          "durationDays"
+        ]
+      },
+      "MarathonEnrollmentCreatedDto": {
+        "type": "object",
+        "properties": {
+          "marathonId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "enrollmentOpen"
+            ]
+          },
+          "durationDays": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "membershipId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "captain"
+            ]
+          }
+        },
+        "required": [
+          "marathonId",
+          "status",
+          "durationDays",
+          "timezone",
+          "membershipId",
+          "role"
+        ]
+      },
+      "EmptyMarathonCommandDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "MarathonMembershipCreatedDto": {
+        "type": "object",
+        "properties": {
+          "membershipId": {
+            "type": "string"
+          },
+          "marathonId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "captain",
+              "participant"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "membershipId",
+          "marathonId",
+          "role",
+          "createdAt"
+        ]
+      },
+      "MarathonEnrollmentClosedDto": {
+        "type": "object",
+        "properties": {
+          "marathonId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "enrollmentClosed"
+            ]
+          },
+          "enrollmentClosedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "marathonId",
+          "status",
+          "enrollmentClosedAt"
+        ]
+      },
+      "MarathonStartedDto": {
+        "type": "object",
+        "properties": {
+          "marathonId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "inProgress"
+            ]
+          },
+          "startsOn": {
+            "type": "string"
+          },
+          "endsOn": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "marathonId",
+          "status",
+          "startsOn",
+          "endsOn",
+          "startedAt"
         ]
       },
       "CreateMarathonDto": {

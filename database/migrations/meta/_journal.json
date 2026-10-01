@@ -141,6 +141,13 @@
       "when": 1790312400000,
       "tag": "0019_ai_recovery_deadline",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790812800000,
+      "tag": "0020_marathon_enrollment_lifecycle",
+      "breakpoints": true
     }
   ]
 }
