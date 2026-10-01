@@ -18,6 +18,14 @@ PostgreSQL — источник бизнес-истины по [ADR-005](archite
 
 Naming: таблицы/колонки snake_case, таблицы множественные, FK `<entity>_id`, `idx_*`, `uq_*`. Constraints обеспечивают неотрицательные integer balance/reserve, однократность и допустимые transitions.
 
+Public-enrollment marathon baseline не может использовать weight row с
+`recorded_at < marathons.started_at`. Start и weight trigger сериализуются
+через PostgreSQL row lock; `started_at` и `starts_on` вычисляются из
+одного `clock_timestamp()` после получения lock, а не из timestamp
+начала транзакции. Первое qualifying INSERT/UPDATE атомарно
+фиксирует `NEW` weight и entry ID. После фиксации baseline неизменяем.
+Legacy-code marathons сохраняют историческую семантику baseline.
+
 ## История и удаление
 
 Ledger, audit и outbox append-only. Soft delete не применяется глобально. Account deletion — идемпотентный workflow: revoke sessions, delete/anonymize PII/AI/files/analytics links, сохранить только допустимый финансовый/audit минимум. Retention следует [privacy policy](../05-security/privacy-and-data-policy.md).

@@ -1,5 +1,18 @@
 # Текущий статус
 
+## Marathon final-report/baseline correction — verified branch, not deployed, 2026-10-01
+
+В отдельной backend-ветке от release HEAD `576c3ed` исправлены
+два review-дефекта. `lobby.finale` сообщает однодневное окно
+финального отчёта; `current` и wellness GET/PUT принимают
+необязательный `marathonId`, но default по-прежнему выбирает
+новый активный марафон. Public-enrollment baseline теперь начинается
+только с веса, фактически записанного не раньше `started_at`;
+первая post-start правка дневного веса фиксирует `NEW` значение.
+Миграция `0021` аддитивна, legacyCode поведение сохранено.
+Изолированные PostgreSQL миграции и focused tests прошли;
+`main`, production и frontend не менялись.
+
 ## Mobile navigation visual fix — prepared, not deployed, 2026-10-01
 
 В отдельной UI-ветке от release commit `38ef5dc` устранено перекрытие

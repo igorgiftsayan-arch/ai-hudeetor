@@ -41,3 +41,14 @@ VERT-001.3 реализует `GET /api/v1/users/me/onboarding`, `PATCH /api/v1/
 AI-002 добавляет owner-scoped `GET /api/v1/ai-memory` и `DELETE /api/v1/ai-memory/{id}`. List возвращает только активные структурированные факты. Delete требует cookie session, CSRF и permitted Origin, выполняет soft delete и возвращает `404 RESOURCE_NOT_FOUND` для чужого, неизвестного или уже удалённого ID. Полный контракт — в [AI-002 design](../01-architecture/vertical-slices/AI-002-design.md).
 
 AI-003 добавляет `GET /api/v1/ai-daily-states/today` и `POST /api/v1/ai-daily-states/{id}/transitions`. Read выполняет concurrency-safe lazy initialization одной строки на owner-local date и возвращает структурированный daily context. Transition требует completed onboarding, session, CSRF/Origin и `Idempotency-Key`; разрешены только `notStarted → inProgress → completed` и same-state replay. Полный контракт — в [AI-003 design](../01-architecture/vertical-slices/AI-003-design.md).
+
+Marathon lobby добавляет nullable `finale` с `marathonId`, `endsOn`,
+`membershipId` и `role` только в локальную дату `endsOn + 1` и только
+для собственной membership. `GET /api/v1/marathons/current`, `GET` и
+`PUT /api/v1/marathon-wellness-reports/{reportDate}` принимают optional UUID
+query `marathonId`. Без query сохранён прежний default выбор
+последнего unfinished марафона. Explicit query разрешает только
+собственную membership и active/finale date window; чужой или
+неизвестный ID возвращает `404 MARATHON_NOT_FOUND`. Scoped wellness
+PUT включает `marathonId` в idempotency payload; unscoped retry сохраняет
+прежний payload hash.
