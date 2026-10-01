@@ -6,8 +6,8 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import type { DatabaseService } from '@atlas/backend';
 import {
-  DatabaseService,
   DatabaseService as DatabaseToken,
   IdentityEmailTokenService,
 } from '@atlas/backend';
