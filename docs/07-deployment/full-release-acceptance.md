@@ -2,6 +2,21 @@
 
 Status: IN PROGRESS. Publication alone is not acceptance.
 
+Server image build on 2026-10-01 completed for release `2b274b6` in the
+separate `/opt/projects/rebody38-release-build` checkout, with legal v2 build
+versions. Existing production containers/tags were not replaced:
+
+- API `sha256:5941a7bac91c7205a9c472daae842fee1ba31558d3f8e726bd901140112069a2`
+- Worker `sha256:bc4b8ddbc0cb3e6bdab138904bedbbfd031ac63b5fcf7ad78b0bd894fda5f676`
+- Web `sha256:ace46ee00bdb94e5ba49e38fd21deb544e0ed0b9825cfdd3f4c54e0e87a8d865`
+
+Superseding web artifact after UI-only fix `29be3df`, integrated release
+`3a54e16`: `rebody38-release-web:3a54e16`, image
+`sha256:ed564a9ffd2bdd0a72e168845dc46f901be6c3c88a832994d6d4a60e47c1851e`.
+Server build exited 0. The badge now marks only known fake operations as test
+AI; unknown/GenAPI uses a neutral error warning. Frontend reports 64/64 tests,
+typecheck and lint passing. API/worker code is unchanged from the images above.
+
 ## Owner scope update — 2026-10-01
 
 Latest instruction supersedes the backup deferral below: the owner requested
