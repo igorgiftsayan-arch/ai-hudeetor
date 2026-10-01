@@ -3,6 +3,7 @@ export type AiProviderRequest = {
   promptVersion: 'quick-reply-v1';
   personaId: string;
   memoryContext?: string;
+  nativePayload?: { messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>; is_sync: false };
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
 };
 
@@ -23,9 +24,12 @@ export type AiProviderResult =
       errorClass:
         'providerUnavailable' | 'invalidProviderResponse' | 'safetyRejected';
     }
-  | { kind: 'outcomeUnknown' };
+  | { kind: 'outcomeUnknown'; providerReference?: string };
+
+export type AiProviderLifecycle = { onAccepted(providerRequestId:string):Promise<void> };
 
 export abstract class AiProviderAdapter {
   abstract readonly providerName: 'fake' | 'genapi';
-  abstract execute(request: AiProviderRequest): Promise<AiProviderResult>;
+  prepareRequest(request: AiProviderRequest): AiProviderRequest { return request; }
+  abstract execute(request: AiProviderRequest,lifecycle?:AiProviderLifecycle): Promise<AiProviderResult>;
 }

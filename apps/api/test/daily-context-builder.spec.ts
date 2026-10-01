@@ -5,7 +5,7 @@ describe('DailyContextBuilder', () => {
     const builder = new DailyContextBuilder({
       profile: jest.fn().mockResolvedValue({
         timezone: 'Asia/Irkutsk',
-        displayName: null,
+        displayName: 'Private Profile Name Sentinel',
         targetWeightKg: '75.00',
         personaId: 'analyst',
       }),

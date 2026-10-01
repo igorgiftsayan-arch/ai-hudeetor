@@ -47,6 +47,8 @@ export { IdentityModule } from './identity/transport/identity.module';
 export { ProfilesModule } from './profiles/transport/profiles.module';
 export { TokenEconomyModule } from './token-economy/transport/token-economy.module';
 export { TrackingModule } from './tracking/transport/tracking.module';
+export { FoodModule } from './food/transport/food.module';
+export { NotificationsModule } from './notifications/transport/notifications.module';
 export { CreateWeightEntryUseCase } from './tracking/application/create-weight-entry.use-case';
 export { ListWeightEntriesUseCase } from './tracking/application/list-weight-entries.use-case';
 export {
@@ -84,8 +86,14 @@ export {
 } from './ai-companion/infrastructure/fake-ai-provider.adapter';
 export {
   GenApiAiProviderAdapter,
+  buildGenApiChatPayload,
   type AiTechnicalLogRecord,
 } from './ai-companion/infrastructure/genapi-ai-provider.adapter';
+export { GenApiOutcomeReconciliationClient } from './ai-companion/infrastructure/genapi-outcome-reconciliation.client';
+export {
+  FinalizeReconciledAiOutcomeUseCase,
+  type ReconciledAiSuccess,
+} from './ai-companion/application/finalize-reconciled-ai-outcome.use-case';
 export { ProfilesRepository } from './profiles/application/profiles-repository';
 export {
   GetCompanionProfileContextUseCase,
@@ -123,3 +131,18 @@ export { PostgresProfilesRepository } from './profiles/infrastructure/postgres-p
 export { GetOnboardingUseCase } from './profiles/application/get-onboarding.use-case';
 export { SaveProfileSetupUseCase } from './profiles/application/save-profile-setup.use-case';
 export { SavePersonaPreferenceUseCase } from './profiles/application/save-persona-preference.use-case';
+export { MarathonModule } from './marathon/transport/marathon.module';
+export { MarathonService } from './marathon/application/marathon.service';
+export {
+  calendarDateInTimezone,
+  previousCalendarDate,
+} from './marathon/domain/marathon-date';
+export {
+  FoodImageRetentionService,
+  type FoodImageDeletionPort,
+} from './food/application/food-image-retention.service';
+export { S3FoodImageDeletion } from './food/infrastructure/s3-food-image-deletion';
+export {
+  AiRecoveryDeadlineService,
+  compensateExpiredAiRequest,
+} from './token-economy/application/compensate-expired-ai-request';

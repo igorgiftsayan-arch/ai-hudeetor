@@ -4,14 +4,20 @@ import type { Job } from 'bullmq';
 import type {
   DatabaseService,
   AiProviderAdapter,
+  AiProviderRequest,
   MemoryContextBuilder,
 } from '@atlas/backend';
 import {
+  compensateExpiredAiRequest,
   AiProviderAdapter as AiProviderAdapterToken,
   DatabaseService as DatabaseToken,
   MemoryContextBuilder as MemoryContextBuilderToken,
 } from '@atlas/backend';
 import { MemoryExtractionProcessor } from './memory-extraction.processor';
+import { FoodAnalysisProcessor } from './food-analysis.processor';
+import { createHash, randomUUID } from 'node:crypto';
+import { PushReminderService } from './push-reminder.service';
+import { AiOperationReconciliationProcessor } from './ai-operation-reconciliation.processor';
 
 @Processor('atlas-system')
 export class AiOperationProcessor extends WorkerHost {
@@ -22,6 +28,13 @@ export class AiOperationProcessor extends WorkerHost {
     private readonly memoryContext: MemoryContextBuilder,
     @Inject(MemoryExtractionProcessor)
     private readonly memoryExtraction: MemoryExtractionProcessor,
+    private readonly consentVersion: string = 'v1',
+    @Inject(FoodAnalysisProcessor)
+    private readonly foodAnalysis?: FoodAnalysisProcessor,
+    @Inject(PushReminderService)
+    private readonly pushReminder?: PushReminderService,
+    @Inject(AiOperationReconciliationProcessor)
+    private readonly aiReconciliation?: AiOperationReconciliationProcessor,
   ) {
     super();
   }
@@ -29,6 +42,22 @@ export class AiOperationProcessor extends WorkerHost {
   async process(job: Job<{ outboxId: string }>): Promise<void> {
     if (job.name === 'memory-extraction') {
       await this.memoryExtraction.process(job);
+      return;
+    }
+    if (job.name === 'food-analysis') {
+      if (this.foodAnalysis) await this.foodAnalysis.process(job);
+      return;
+    }
+    if (job.name === 'food-analysis-reconciliation') {
+      if (this.foodAnalysis) await this.foodAnalysis.reconcile(job);
+      return;
+    }
+    if (job.name === 'push-delivery') {
+      if (this.pushReminder) await this.pushReminder.process(job);
+      return;
+    }
+    if (job.name === 'ai-operation-reconciliation') {
+      if(this.aiReconciliation) await this.aiReconciliation.process(job);
       return;
     }
     const event = await this.database.query<{
@@ -39,17 +68,27 @@ export class AiOperationProcessor extends WorkerHost {
     );
     const operationId = event.rows[0]?.payload.operationId;
     if (!operationId) return;
+    const attemptId=randomUUID();
     const claimed = await this.database.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'chat',operationId)) return null;
       const result = await client.query<{
         persona_id: string;
         user_id: string;
         conversation_id: string;
+        saved_request: AiProviderRequest | null;
+        saved_hash: string | null;
+        saved_provider: string | null;
+        saved_model: string | null;
       }>(
-        `update ai_operations set status='processing',runtime_adapter=$2,updated_at=now()
+        `update ai_operations set status='processing',runtime_adapter=$2,processing_attempt_id=$3,updated_at=now()
           where id=$1 and status='queued'
           returning user_id,conversation_id,
-            (select persona_id from ai_preferences where user_id=ai_operations.user_id) as persona_id`,
-        [operationId, this.adapter.providerName],
+            (select persona_id from ai_preferences where user_id=ai_operations.user_id) as persona_id,
+            (select request_payload from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_request,
+            (select request_hash from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_hash,
+            (select provider from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_provider,
+            (select model from ai_operation_request_receipts where operation_id=ai_operations.id) as saved_model`,
+        [operationId, this.adapter.providerName,attemptId],
       );
       return result.rows[0] ?? null;
     });
@@ -69,44 +108,90 @@ export class AiOperationProcessor extends WorkerHost {
                 )`,
             [
               claimed.user_id,
-              process.env.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+              this.consentVersion,
             ],
           )
         ).rows[0],
       );
-    const history = await this.database.query<{
-      role: 'user' | 'assistant';
-      content: string;
-    }>(
-      `select role,content from ai_messages
-        where conversation_id=$1 order by created_at,id`,
-      [claimed.conversation_id],
-    );
+    // A prepared receipt is known not to have been submitted. Its persisted
+    // request is authoritative even when profile, weight or memory has changed.
+    // Consent above is intentionally checked again, independently of the snapshot.
+    if (claimed.saved_request && (
+      claimed.saved_request.operationId !== operationId ||
+      claimed.saved_provider !== this.adapter.providerName ||
+      claimed.saved_model !== (process.env.GENAPI_MODEL ?? this.adapter.providerName)
+    )) throw new Error('AI prepared receipt configuration mismatch');
+    let providerRequest = claimed.saved_request;
+    if (!providerRequest) {
+      const history = await this.database.query<{
+        role: 'user' | 'assistant'; content: string;
+      }>(`select role,content from ai_messages where conversation_id=$1 order by created_at,id`,[claimed.conversation_id]);
+      providerRequest = {
+        operationId,
+        promptVersion: 'quick-reply-v1',
+        personaId: claimed.persona_id,
+        memoryContext: await this.memoryContext.build(claimed.user_id,history.rows.at(-1)?.content ?? ''),
+        messages: history.rows,
+      };
+    }
+    if (!claimed.saved_request) providerRequest = this.adapter.prepareRequest?.(providerRequest) ?? providerRequest;
+    const requestPayload = JSON.stringify(providerRequest);
+    // Preserve the original hash: JSONB may return keys in a different order.
+    const requestHash = claimed.saved_hash ?? createHash('sha256').update(requestPayload).digest('hex');
+    const receiptClaimed=await this.database.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'chat',operationId)) return false;
+      const operation=await client.query(`select 1 from ai_operations where id=$1 and status='processing' and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return false;
+      await client.query(
+        `insert into ai_operation_request_receipts
+          (operation_id,user_id,provider,model,prompt_id,prompt_version,request_payload,request_hash,submission_state)
+         values ($1,$2,$3,$4,'quick-reply','1',$5::jsonb,$6,'prepared')
+         on conflict (operation_id) do nothing`,
+        [operationId,claimed.user_id,this.adapter.providerName,process.env.GENAPI_MODEL ?? this.adapter.providerName,requestPayload,requestHash],
+      );
+      const receipt = await client.query<{ request_hash: string; submission_state: string }>(
+        `select request_hash,submission_state from ai_operation_request_receipts where operation_id=$1 for update`,[operationId]);
+      if (receipt.rows[0]?.request_hash !== requestHash) throw new Error('AI request receipt mismatch');
+      if (receipt.rows[0]?.submission_state !== 'prepared') return false;
+      const submitting=await client.query(`update ai_operation_request_receipts r set submission_state='submitting',submitted_at=now(),updated_at=now() from ai_operations a where r.operation_id=$1 and r.operation_id=a.id and r.submission_state='prepared' and a.status='processing' and a.processing_attempt_id=$2`,[operationId,attemptId]);
+      if(!submitting.rowCount)return false;
+      return true;
+    });
+    if(!receiptClaimed)return;
     const startedAt = Date.now();
     const result = authorization
-      ? await this.adapter.execute({
-          operationId,
-          promptVersion: 'quick-reply-v1',
-          personaId: claimed.persona_id,
-          memoryContext: await this.memoryContext.build(
-            claimed.user_id,
-            history.rows.at(-1)?.content ?? '',
-          ),
-          messages: history.rows,
-        })
+      ? await this.adapter.execute(providerRequest,{onAccepted:async(providerRequestId)=>{
+          await this.database.transaction(async(client)=>{
+            await compensateExpiredAiRequest(client,'chat',operationId);
+            const operation=await client.query<{status:string;error_class:string}>(`select status,error_class from ai_operations where id=$1 and processing_attempt_id=$2 for update`,[operationId,attemptId]);if(!operation.rowCount)return;
+            if(operation.rows[0]?.status==='technicalError' && operation.rows[0]?.error_class==='recoveryDeadlineExceeded'){await client.query(`update ai_operation_request_receipts set provider_request_id=coalesce(provider_request_id,$2) where operation_id=$1`,[operationId,providerRequestId]);return;}
+            if(!['processing','outcomeUnknown'].includes(operation.rows[0]!.status))return;
+            await client.query(`update ai_operation_request_receipts set submission_state='accepted',provider_request_id=$2,updated_at=now() where operation_id=$1 and submission_state in ('submitting','ambiguous')`,[operationId,providerRequestId]);
+            await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) select gen_random_uuid(),'ai-companion.operation_reconciliation_requested.v1','aiOperation',$1,jsonb_build_object('operationId',($1::uuid)::text),now(),now()+interval '15 seconds',0 where exists(select 1 from ai_operations where id=$1 and status='outcomeUnknown') and not exists(select 1 from outbox_messages where event_type='ai-companion.operation_reconciliation_requested.v1' and aggregate_id=$1 and published_at is null)`,[operationId]);
+          });
+        }})
       : ({ kind: 'technicalError', errorClass: 'safetyRejected' } as const);
     const latencyMs = Date.now() - startedAt;
     await this.database.transaction(async (client) => {
+      if(await compensateExpiredAiRequest(client,'chat',operationId)) return;
       const operation = await client.query<{
         user_id: string;
         conversation_id: string;
         input_message_id: string;
       }>(
-        `select user_id,conversation_id,input_message_id from ai_operations where id=$1 and status='processing' for update`,
-        [operationId],
+        `select user_id,conversation_id,input_message_id from ai_operations where id=$1 and status in ('processing','outcomeUnknown') and processing_attempt_id=$2 for update`,
+        [operationId,attemptId],
       );
       if (!operation.rows[0]) return;
       const row = operation.rows[0];
+      const providerReference = 'providerReference' in result ? result.providerReference ?? null : null;
+      await client.query(
+        `update ai_operation_request_receipts set
+           submission_state=$2,
+           provider_request_id=coalesce($3,provider_request_id),
+           updated_at=now()
+         where operation_id=$1`,
+        [operationId,result.kind === 'outcomeUnknown' && providerReference ? 'accepted' : result.kind === 'outcomeUnknown' ? 'ambiguous' : 'completed',providerReference],
+      );
       const reservation = await client.query<{
         id: string;
         wallet_id: string;
@@ -171,11 +256,13 @@ export class AiOperationProcessor extends WorkerHost {
           `update ai_operations set status='technicalError',error_class=$2,updated_at=now() where id=$1`,
           [operationId, result.errorClass],
         );
-      } else
+      } else {
         await client.query(
-          `update ai_operations set status='outcomeUnknown',updated_at=now() where id=$1`,
+          `update ai_operations set status='outcomeUnknown',provider_reference=null,updated_at=now() where id=$1`,
           [operationId],
         );
+        if(providerReference)await client.query(`insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) values(gen_random_uuid(),'ai-companion.operation_reconciliation_requested.v1','aiOperation',$1,jsonb_build_object('operationId',($1::uuid)::text),now(),now()+interval '15 seconds',0)`,[operationId]);
+      }
     });
   }
 }

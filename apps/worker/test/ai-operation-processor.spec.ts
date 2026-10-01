@@ -1,4 +1,9 @@
 import { AiOperationProcessor } from '../src/ai-operation.processor';
+import { createHash } from 'node:crypto';
+
+function requestHash(personaId: string, messages: Array<{role:'user'|'assistant';content:string}>) {
+  return createHash('sha256').update(JSON.stringify({operationId:'op-1',promptVersion:'quick-reply-v1',personaId,memoryContext:'bounded context',messages})).digest('hex');
+}
 
 describe('AiOperationProcessor GenAPI boundary', () => {
   it('does not call GenAPI without provider consent and refunds the reservation', async () => {
@@ -15,6 +20,10 @@ describe('AiOperationProcessor GenAPI boundary', () => {
             },
           ],
         })
+        .mockResolvedValueOnce({ rows: [{ one: 1 }], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [{ request_hash: requestHash('gentleFriend',[{role:'user',content:'Не отправлять провайдеру'}]), submission_state: 'prepared' }] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         .mockResolvedValueOnce({
           rows: [
             {
@@ -24,6 +33,7 @@ describe('AiOperationProcessor GenAPI boundary', () => {
             },
           ],
         })
+        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({
           rows: [
             { id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -1 },
@@ -69,6 +79,11 @@ describe('AiOperationProcessor GenAPI boundary', () => {
   });
 
   it('passes ordered conversation history to a consented GenAPI adapter', async () => {
+    const messages = [
+      { role: 'user' as const, content: 'Первый вопрос' },
+      { role: 'assistant' as const, content: 'Первый ответ' },
+      { role: 'user' as const, content: 'Второй вопрос' },
+    ];
     const client = {
       query: jest
         .fn()
@@ -82,6 +97,10 @@ describe('AiOperationProcessor GenAPI boundary', () => {
             },
           ],
         })
+        .mockResolvedValueOnce({ rows: [{ one: 1 }], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ request_hash: requestHash('analyst',messages), submission_state: 'prepared' }] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         .mockResolvedValueOnce({
           rows: [
             {
@@ -91,6 +110,7 @@ describe('AiOperationProcessor GenAPI boundary', () => {
             },
           ],
         })
+        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({
           rows: [
             { id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -1 },
@@ -101,11 +121,6 @@ describe('AiOperationProcessor GenAPI boundary', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] }),
     };
-    const messages = [
-      { role: 'user', content: 'Первый вопрос' },
-      { role: 'assistant', content: 'Первый ответ' },
-      { role: 'user', content: 'Второй вопрос' },
-    ];
     const database = {
       query: jest
         .fn()
@@ -140,6 +155,7 @@ describe('AiOperationProcessor GenAPI boundary', () => {
         personaId: 'analyst',
         memoryContext: 'bounded context',
       }),
+      expect.objectContaining({ onAccepted: expect.any(Function) }),
     );
     expect(client.query).toHaveBeenCalledWith(
       expect.stringContaining("status='succeeded'"),
