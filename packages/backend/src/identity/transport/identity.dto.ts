@@ -163,7 +163,8 @@ export class PasswordResetResourceDto {
 export class AiProviderConsentResourceDto {
   @ApiProperty() accepted!: boolean;
   @ApiProperty() currentVersion!: string;
-  @ApiProperty({ nullable: true, type: String }) acceptedVersion!: string | null;
+  @ApiProperty({ nullable: true, type: String }) acceptedVersion!:
+    string | null;
   @ApiProperty() disclosure!: string;
 }
 

@@ -166,6 +166,23 @@ export const workerConfigSchema = baseSchema
           });
       }
     }
+    if (config.APP_ENV === 'production' && config.EMAIL_TRANSPORT !== 'smtp') {
+      context.addIssue({
+        code: 'custom',
+        path: ['EMAIL_TRANSPORT'],
+        message: 'SMTP email transport is required in production',
+      });
+    }
+    if (
+      config.APP_ENV === 'production' &&
+      !config.PUBLIC_WEB_URL.startsWith('https://')
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['PUBLIC_WEB_URL'],
+        message: 'HTTPS PUBLIC_WEB_URL is required in production',
+      });
+    }
   });
 
 function optionalEnvironmentValue<T extends z.ZodType<string>>(schema: T) {

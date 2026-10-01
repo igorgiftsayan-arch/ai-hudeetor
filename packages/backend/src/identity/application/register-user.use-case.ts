@@ -86,10 +86,15 @@ export class RegisterUserUseCase {
     const issued = this.tokens.issue({ userId: user.id });
     let result: { user: RegisteredIdentity; session: IdentitySessionRecord };
     try {
-      result = await this.repository.register(user, passwordHash, {
-        ...issued.session,
-        registrationIdempotencyKey: command.idempotencyKey,
-      }, this.emailTokens?.issue('verifyEmail', this.verificationTtlMs));
+      result = await this.repository.register(
+        user,
+        passwordHash,
+        {
+          ...issued.session,
+          registrationIdempotencyKey: command.idempotencyKey,
+        },
+        this.emailTokens?.issue('verifyEmail', this.verificationTtlMs),
+      );
     } catch (error) {
       if (
         error instanceof IdentityError &&

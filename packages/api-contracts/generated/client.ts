@@ -969,12 +969,12 @@ export const identityControllerAcceptProviderConsentApiV1 = async (acceptAiProvi
 
 
 
-export type identityControllerRequestVerificationApiV1Response200 = {
+export type identityControllerRequestVerificationApiV1Response202 = {
   data: IdentityAcceptedResourceDto
-  status: 200
+  status: 202
 }
 
-export type identityControllerRequestVerificationApiV1ResponseSuccess = (identityControllerRequestVerificationApiV1Response200) & {
+export type identityControllerRequestVerificationApiV1ResponseSuccess = (identityControllerRequestVerificationApiV1Response202) & {
   headers: Headers;
 };
 ;
@@ -1049,12 +1049,12 @@ export const identityControllerConfirmEmailApiV1 = async (verifyEmailRequestDto:
 
 
 
-export type identityControllerRequestResetApiV1Response200 = {
+export type identityControllerRequestResetApiV1Response202 = {
   data: IdentityAcceptedResourceDto
-  status: 200
+  status: 202
 }
 
-export type identityControllerRequestResetApiV1ResponseSuccess = (identityControllerRequestResetApiV1Response200) & {
+export type identityControllerRequestResetApiV1ResponseSuccess = (identityControllerRequestResetApiV1Response202) & {
   headers: Headers;
 };
 ;

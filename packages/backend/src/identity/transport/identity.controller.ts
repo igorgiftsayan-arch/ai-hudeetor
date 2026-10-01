@@ -14,6 +14,7 @@ import {
 import {
   ApiCookieAuth,
   ApiBody,
+  ApiAcceptedResponse,
   ApiCreatedResponse,
   ApiHeader,
   ApiNoContentResponse,
@@ -247,7 +248,7 @@ export class IdentityController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiCookieAuth()
   @ApiHeader({ name: 'Origin', required: true })
-  @ApiOkResponse({ type: IdentityAcceptedResourceDto })
+  @ApiAcceptedResponse({ type: IdentityAcceptedResourceDto })
   async requestVerification(
     @Req() request: Request,
   ): Promise<IdentityAcceptedResourceDto> {
@@ -278,7 +279,7 @@ export class IdentityController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiBody({ type: PasswordResetRequestDto })
   @ApiHeader({ name: 'Origin', required: true })
-  @ApiOkResponse({ type: IdentityAcceptedResourceDto })
+  @ApiAcceptedResponse({ type: IdentityAcceptedResourceDto })
   async requestReset(
     @Body() body: PasswordResetRequestDto,
     @Req() request: Request,

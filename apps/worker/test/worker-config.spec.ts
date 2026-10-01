@@ -4,6 +4,9 @@ const base = {
   DATABASE_URL: 'postgresql://atlas:test@postgres:5432/atlas',
   REDIS_URL: 'redis://redis:6379/0',
   AI_FAKE_MODE: 'success',
+  IDENTITY_EMAIL_PAYLOAD_SECRET:
+    'test-email-payload-secret-at-least-32-characters',
+  IDENTITY_AI_PROVIDER_PROCESSING_VERSION: 'test-v1',
 };
 
 describe('workerConfigSchema AI provider selection', () => {
@@ -13,6 +16,18 @@ describe('workerConfigSchema AI provider selection', () => {
     ).toMatchObject({
       AI_PROVIDER: 'fake',
     });
+  });
+
+  it('requires SMTP and HTTPS links in production', () => {
+    expect(() =>
+      workerConfigSchema.parse({
+        ...base,
+        APP_ENV: 'production',
+        AI_PROVIDER: 'fake',
+        EMAIL_TRANSPORT: 'fake',
+        PUBLIC_WEB_URL: 'http://example.test',
+      }),
+    ).toThrow('SMTP email transport is required in production');
   });
 
   it('accepts Compose-provided empty GenAPI settings in fake mode', () => {
