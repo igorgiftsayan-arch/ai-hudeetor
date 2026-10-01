@@ -351,7 +351,7 @@ export default function MarathonPage() {
         <a className="marathon-brand" href="/today">↗ Герби-Марафон</a>
         <TeamLeaderboard
           teamName={data.team.team.name}
-          dayLabel={formatDay(data.current.displayDate)}
+          dayLabel={formatDay(data.current.displayDate, data.current.marathon)}
           metrics={[
             {
               id: 'weight',
@@ -464,7 +464,19 @@ function MarathonBoundary({ state, onRetry }: { state: Exclude<ViewState, 'ready
   return <main className="app-shell"><div className="app-page boundary-page"><div className="boundary-message" role={state === 'error' ? 'alert' : undefined}><p className="section-label">Герби-Марафон</p><h1>{message[0]}</h1><p>{message[1]}</p>{state === 'onboarding' ? <a href="/onboarding" className="primary-link">Продолжить настройку</a> : <button type="button" className="primary-action" onClick={() => void onRetry()}>Попробовать снова</button>}</div></div><MobileNavigation active="marathon" /></main>;
 }
 
-function formatDay(date: string) { return `Сегодня · ${date}`; }
+function formatDay(date: string, marathon: { startsOn: string; endsOn: string }) {
+  // These are calendar dates already resolved in the marathon's timezone by
+  // the server. UTC arithmetic avoids the device timezone and DST offsets.
+  const start = Date.parse(`${marathon.startsOn}T00:00:00Z`);
+  const end = Date.parse(`${marathon.endsOn}T00:00:00Z`);
+  const today = Date.parse(`${date}T00:00:00Z`);
+  const duration = (end - start) / 86_400_000 + 1;
+  const day = (today - start) / 86_400_000 + 1;
+  if (!Number.isInteger(day) || !Number.isInteger(duration) || day < 1 || day > duration) {
+    return `Сегодня · ${date}`;
+  }
+  return `День ${day} из ${duration} · ${date}`;
+}
 function formatReportDate(date: string) { return `Вчера · ${date}`; }
 function formatPercent(value: number) { return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} %`; }
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-01 — enrollment release acceptance fixes (not deployed yet)
+
+- The daily marathon screen now shows day N of total using server calendar dates.
+- Close enrollment and start return their documented HTTP 200, covered by
+  two real Nest HTTP regression tests. Web regression suite: 180/180 PASS.
+- Combined Node 24 image passed 75 PostgreSQL tests and browser enrollment flow;
+  final image rebuild is required after these acceptance fixes.
+
 ## 2026-10-01 — GERBI public runtime deployed, acceptance incomplete
 
 - Integrated marathon, private food photos/diary and recovery with release identity;

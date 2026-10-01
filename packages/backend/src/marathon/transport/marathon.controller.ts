@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
@@ -91,6 +92,7 @@ export class MarathonController {
     );
   }
   @Post('marathons/:id/enrollment-close')
+  @HttpCode(200)
   @ApiOkResponse({ type: MarathonEnrollmentClosedDto })
   closeEnrollment(
     @Req() r: Request,
@@ -106,6 +108,7 @@ export class MarathonController {
     );
   }
   @Post('marathons/:id/start')
+  @HttpCode(200)
   @ApiOkResponse({ type: MarathonStartedDto })
   start(
     @Req() r: Request,

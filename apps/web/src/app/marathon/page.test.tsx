@@ -14,6 +14,21 @@ describe('marathon page', () => {
   beforeEach(() => replaceMock.mockReset());
   afterEach(() => vi.unstubAllGlobals());
 
+  it.each([
+    ['2026-09-28', 'День 1 из 14 · 2026-09-28'],
+    ['2026-09-29', 'День 2 из 14 · 2026-09-29'],
+    ['2026-10-11', 'День 14 из 14 · 2026-10-11'],
+  ])('shows the marathon day from server calendar dates on %s', async (displayDate, label) => {
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+      if (String(input) === `${api}/marathons/current`) {
+        return json({ ...current(), displayDate });
+      }
+      return responseFor(input);
+    }));
+    render(<MarathonPage />);
+    expect(await screen.findByText(label)).toBeInTheDocument();
+  });
+
   it('renders server-provided daily podium groups without deriving ranks in the client', async () => {
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => responseFor(input)));
 
@@ -317,7 +332,7 @@ describe('marathon page', () => {
     expect(
       await screen.findByText('Дата задания изменилась. Экран обновлён — можно продолжить.'),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Сегодня · 2026-09-30')).toBeInTheDocument();
+    expect(await screen.findByText('День 3 из 14 · 2026-09-30')).toBeInTheDocument();
     expect(currentReads).toBe(2);
   });
 
@@ -373,7 +388,7 @@ describe('marathon page', () => {
     expect(
       await screen.findByText('Дата задания изменилась. Экран обновлён — можно продолжить.'),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Сегодня · 2026-09-30')).toBeInTheDocument();
+    expect(await screen.findByText('День 3 из 14 · 2026-09-30')).toBeInTheDocument();
     expect(currentReads).toBe(2);
   });
 

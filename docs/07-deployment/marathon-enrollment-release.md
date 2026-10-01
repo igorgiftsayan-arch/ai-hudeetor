@@ -58,3 +58,24 @@ Backend и frontend работают в отдельных ветках и во�
 Food E2E предыдущего выпуска уже прошёл на synthetic photo, one paid call.
 Общий журнал проверок: 4/15 разрешённых запросов; новые вызовы для изменения
 марафона не требуются. Резервные копии исключены по решению владельца.
+
+## Проверка координатора перед публикацией
+
+- Source `115a1f9`: immutable image
+  `sha256:a77e8e85410f0baa7890c9c614c61e5d1823958c21e8dfe191c7d7ddfb727a80`,
+  Node 24.18.0 / pnpm 11.14.0, общий build PASS, journal 21 entries до 0020.
+- На этой сборке: 12 PostgreSQL suites, **75/75 PASS**, в отдельной
+  `atlas_marathon_verify`; production DB не использовалась для fixture tests.
+- Browser: captain open 14 days → participant join without code → reload
+  membership persisted → captain closes → participant waiting → captain starts
+  actual local 2026-10-01. Before start dates NULL, reports/tasks/baselines zero.
+- Captain task published, participant completion rendered on the tasks podium.
+  No paid provider calls, real captain not assigned, public marathon not created.
+- Runtime guards PASS for anonymous/participant management, malformed UUID,
+  start-before-close and joining after close. Actual HTTP close/start returned
+  201 despite documented 200; fixed with explicit `HttpCode(200)`, two focused
+  HTTP regressions RED→GREEN. This requires a fresh final image/recheck.
+- Browser found the daily screen missing the marathon day number. Added a
+  presentation-only counter from server-resolved calendar dates (not device
+  timezone). First/second/final-day regressions RED→GREEN; web **180/180 PASS**,
+  typecheck/lint and generated contract drift check PASS. Final build pending.
