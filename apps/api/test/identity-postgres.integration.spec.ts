@@ -98,6 +98,7 @@ describeWithDatabase('Identity PostgreSQL integration', () => {
     ).resolves.toEqual({
       userId: result.user.id,
       onboardingStatus: 'registered',
+      emailVerified: false,
     });
   });
 
