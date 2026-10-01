@@ -25,7 +25,7 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
   async function seed(kind: 'chat'|'food', age: number, status='outcomeUnknown') {
     const user=randomUUID(),wallet=randomUUID(),id=randomUUID(),message=randomUUID(),conversation=randomUUID(),image=randomUUID();
     await db.query("insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash,email_verified_at) values($1,$2,'active','completed',$3,'hash',now())",[user,`${user}@example.test`,randomUUID()]);
-    await db.query("insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','test')",[randomUUID(),user]);
+    await db.query("insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','web')",[randomUUID(),user]);
     await db.query('insert into token_wallets(id,user_id) values($1,$2)',[wallet,user]);
     await db.query("insert into token_transactions(id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id) values($1,$2,$3,'starterGrant',100,'onboardingCompletion',$3)",[randomUUID(),wallet,user]);
     if(kind==='chat') {

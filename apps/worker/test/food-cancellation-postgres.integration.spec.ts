@@ -63,7 +63,7 @@ describeWithDatabase(
         [imageId, userId, `test/${imageId}`, '0'.repeat(64)],
       );
       await database.query(
-        "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','test','test')",
+        "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','test','web')",
         [randomUUID(), userId],
       );
       service = new FoodService(
