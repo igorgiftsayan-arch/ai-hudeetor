@@ -87,7 +87,7 @@ export class AiOperationProcessor extends WorkerHost {
       ? await this.adapter.execute({
           operationId,
           promptVersion: 'quick-reply-v1',
-        personaId: claimed.persona_id,
+          personaId: claimed.persona_id,
           memoryContext: await this.memoryContext.build(
             claimed.user_id,
             history.rows.at(-1)?.content ?? '',

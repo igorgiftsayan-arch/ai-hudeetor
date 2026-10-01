@@ -361,9 +361,10 @@ export class PostgresIdentityRepository extends IdentityRepository {
         `update password_credentials set password_hash=$2, updated_at=now() where user_id=$1`,
         [token.rows[0].user_id, passwordHash],
       );
-      await client.query(`update identity_tokens set consumed_at=now() where id=$1`, [
-        token.rows[0].id,
-      ]);
+      await client.query(
+        `update identity_tokens set consumed_at=now() where id=$1`,
+        [token.rows[0].id],
+      );
       await client.query(
         `update identity_tokens set consumed_at=coalesce(consumed_at,now())
           where user_id=$1 and purpose='passwordReset' and consumed_at is null`,

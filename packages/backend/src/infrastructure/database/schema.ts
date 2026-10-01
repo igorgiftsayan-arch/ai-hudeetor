@@ -89,6 +89,70 @@ export const userConsents = pgTable(
   ],
 );
 
+export const identityTokens = pgTable(
+  'identity_tokens',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    purpose: text('purpose').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('uq_identity_tokens_hash').on(table.tokenHash),
+    index('idx_identity_tokens_user_purpose').on(
+      table.userId,
+      table.purpose,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const identityEmailDeliveries = pgTable(
+  'identity_email_deliveries',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenId: uuid('token_id')
+      .notNull()
+      .references(() => identityTokens.id, { onDelete: 'cascade' }),
+    template: text('template').notNull(),
+    tokenCiphertext: text('token_ciphertext').notNull(),
+    tokenIv: text('token_iv').notNull(),
+    tokenAuthTag: text('token_auth_tag').notNull(),
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    availableAt: timestamp('available_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    claimId: uuid('claim_id'),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    lastErrorCode: text('last_error_code'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('uq_identity_email_deliveries_token').on(table.tokenId),
+    index('idx_identity_email_deliveries_pending').on(
+      table.availableAt,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const userSessions = pgTable(
   'user_sessions',
   {

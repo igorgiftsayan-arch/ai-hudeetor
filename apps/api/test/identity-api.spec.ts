@@ -7,6 +7,7 @@ import {
   DatabaseService,
   AiDailyStateRepository,
   DailyContextBuilder,
+  AiProviderConsentService,
   type CreateIdentitySessionInput,
   type IdentitySessionRecord,
   type OnboardingStatus,
@@ -431,6 +432,7 @@ describe('Identity API', () => {
     expect(current.body).toEqual({
       userId: registration.body.userId,
       onboardingStatus: 'registered',
+      emailVerified: false,
     });
   });
 
@@ -454,6 +456,52 @@ describe('Identity API', () => {
       .send({ email: 'person@example.com', password: 'wrong password 123' });
     expect(invalid.status).toBe(401);
     expect(invalid.body.error.code).toBe('AUTHENTICATION_FAILED');
+  });
+
+  it('keeps verification and reset request responses enumeration-safe', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registration = await register(agent);
+    const resend = await agent
+      .post('/api/v1/email-verification-requests')
+      .set('Origin', origin)
+      .set('x-csrf-token', registration.body.csrfToken)
+      .send({});
+    expect(resend.status).toBe(202);
+    expect(resend.body).toEqual({ accepted: true });
+
+    const known = await request(app.getHttpServer())
+      .post('/api/v1/password-reset-requests')
+      .set('Origin', origin)
+      .send({ email: 'person@example.com' });
+    const unknown = await request(app.getHttpServer())
+      .post('/api/v1/password-reset-requests')
+      .set('Origin', origin)
+      .send({ email: 'unknown@example.com' });
+    expect(known.status).toBe(202);
+    expect(unknown.status).toBe(202);
+    expect(known.body).toEqual(unknown.body);
+    expect(known.body).toEqual({ accepted: true });
+  });
+
+  it('uses generic errors for invalid verification and reset tokens', async () => {
+    const verification = await request(app.getHttpServer())
+      .post('/api/v1/email-verifications')
+      .set('Origin', origin)
+      .send({ token: 'invalid-token-value-at-least-20' });
+    expect(verification.status).toBe(400);
+    expect(verification.body.error.code).toBe(
+      'EMAIL_VERIFICATION_TOKEN_INVALID',
+    );
+
+    const reset = await request(app.getHttpServer())
+      .post('/api/v1/password-resets')
+      .set('Origin', origin)
+      .send({
+        token: 'invalid-token-value-at-least-20',
+        newPassword: 'Changed-password-2026',
+      });
+    expect(reset.status).toBe(400);
+    expect(reset.body.error.code).toBe('PASSWORD_RESET_TOKEN_INVALID');
   });
 
   it('returns the persisted onboarding status when creating a session', async () => {
@@ -957,6 +1005,21 @@ async function createApp(repository: InMemoryIdentityRepository) {
         weight: {},
         memories: [],
       })),
+    })
+    .overrideProvider(AiProviderConsentService)
+    .useValue({
+      currentVersion: 'test-v1',
+      disclosure:
+        'Test disclosure for external AI provider processing and privacy.',
+      getStatus: jest.fn().mockResolvedValue({
+        accepted: false,
+        currentVersion: 'test-v1',
+        acceptedVersion: null,
+        disclosure:
+          'Test disclosure for external AI provider processing and privacy.',
+      }),
+      accept: jest.fn().mockResolvedValue(undefined),
+      assertAccepted: jest.fn().mockResolvedValue(undefined),
     })
     .compile();
   const nestApp = moduleRef.createNestApplication();

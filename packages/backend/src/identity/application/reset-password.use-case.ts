@@ -19,12 +19,7 @@ export class ResetPasswordUseCase {
     if (!(await this.repository.hasValidPasswordResetToken(tokenHash)))
       throw identityErrors.passwordResetTokenInvalid();
     const passwordHash = await this.hasher.hash(input.newPassword);
-    if (
-      !(await this.repository.resetPassword(
-        tokenHash,
-        passwordHash,
-      ))
-    )
+    if (!(await this.repository.resetPassword(tokenHash, passwordHash)))
       throw identityErrors.passwordResetTokenInvalid();
     return { passwordReset: true };
   }

@@ -35,6 +35,7 @@ export class SmtpEmailTransport extends EmailTransport {
       host: options.host,
       port: options.port,
       secure: options.secure,
+      requireTLS: !options.secure,
       auth: { user: options.user, pass: options.password },
       connectionTimeout: 30_000,
       greetingTimeout: 30_000,

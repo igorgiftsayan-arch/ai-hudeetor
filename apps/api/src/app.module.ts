@@ -49,8 +49,7 @@ const config = loadApiConfig();
       emailVerificationTtlMs:
         config.IDENTITY_EMAIL_VERIFICATION_TTL_SECONDS * 1_000,
       passwordResetTtlMs: config.IDENTITY_PASSWORD_RESET_TTL_SECONDS * 1_000,
-      aiProviderConsentVersion:
-        config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
+      aiProviderConsentVersion: config.IDENTITY_AI_PROVIDER_PROCESSING_VERSION,
       aiProviderConsentDisclosure:
         config.IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE,
     }),
