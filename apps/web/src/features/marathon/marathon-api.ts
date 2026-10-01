@@ -58,6 +58,10 @@ export type MarathonCompletionScreenData = Pick<
   'csrfToken' | 'current' | 'report'
 >;
 
+function withMarathonScope(path: string, marathonId?: string) {
+  return marathonId ? `${path}?marathonId=${encodeURIComponent(marathonId)}` : path;
+}
+
 export async function loadMarathonScreen(): Promise<MarathonScreenData> {
   const onboarding = await apiRequest<OnboardingResourceDto>('/users/me/onboarding');
   if (onboarding.status !== 'completed') {
@@ -74,10 +78,16 @@ export async function loadMarathonScreen(): Promise<MarathonScreenData> {
 
 export async function loadMarathonCompletionScreen(
   csrfToken: string,
+  marathonId: string,
 ): Promise<MarathonCompletionScreenData> {
-  const current = await apiRequest<MarathonCurrent>('/marathons/current');
+  const current = await apiRequest<MarathonCurrent>(
+    withMarathonScope('/marathons/current', marathonId),
+  );
   const report = await apiRequest<WellnessReport>(
-    `/marathon-wellness-reports/${current.reportDate}`,
+    withMarathonScope(
+      `/marathon-wellness-reports/${current.reportDate}`,
+      marathonId,
+    ),
   );
   return { csrfToken, current, report };
 }
@@ -154,9 +164,13 @@ export function saveWellnessReport(input: {
   values: WellnessValues;
   csrfToken: string;
   idempotencyKey: string;
+  marathonId?: string;
 }) {
   return apiRequest<WellnessReportSavedDto>(
-    `/marathon-wellness-reports/${input.reportDate}`,
+    withMarathonScope(
+      `/marathon-wellness-reports/${input.reportDate}`,
+      input.marathonId,
+    ),
     {
       method: 'PUT',
       headers: mutationHeaders(input.csrfToken, input.idempotencyKey),

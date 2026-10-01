@@ -217,7 +217,7 @@ describe('marathon page', () => {
           },
         });
       }
-      if (url === `${api}/marathons/current`) {
+      if (url === `${api}/marathons/current?marathonId=completed-marathon`) {
         return json({
           ...current(),
           marathon: {
@@ -231,7 +231,7 @@ describe('marathon page', () => {
           reportDate: '2026-10-01',
         });
       }
-      if (url === `${api}/marathon-wellness-reports/2026-10-01`) {
+      if (url === `${api}/marathon-wellness-reports/2026-10-01?marathonId=completed-marathon`) {
         if (init?.method === 'PUT') {
           saved = true;
           return json({
@@ -290,13 +290,166 @@ describe('marathon page', () => {
     expect(
       fetchMock.mock.calls.some(
         ([url, init]) =>
-          String(url) === `${api}/marathon-wellness-reports/2026-10-01` &&
+          String(url) === `${api}/marathon-wellness-reports/2026-10-01?marathonId=completed-marathon` &&
           (init as RequestInit | undefined)?.method === 'PUT',
       ),
     ).toBe(true);
     expect(
       fetchMock.mock.calls.some(([url]) => String(url) === `${api}/marathon-teams/current/today`),
     ).toBe(false);
+  });
+
+  it('shows the final report beside the new active marathon with scoped finale reads', async () => {
+    const user = userEvent.setup();
+    let finalSaved = false;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/users/me/onboarding`) return json(onboarding());
+      if (url === `${api}/marathons/lobby`) {
+        return json({
+          ...lobby({
+            marathon: {
+              ...marathon(),
+              id: 'next-marathon',
+              name: 'Следующий марафон',
+              status: 'inProgress',
+              startsOn: '2026-10-02',
+              endsOn: '2026-10-22',
+              startedAt: '2026-10-02T00:00:00.000Z',
+            },
+            enrollment: { isOpen: false, memberCount: 12 },
+            currentMembership: { id: 'next-membership', role: 'captain' },
+          }),
+          finale: {
+            marathonId: 'completed-marathon',
+            endsOn: '2026-10-01',
+            membershipId: 'completed-membership',
+            role: 'participant',
+          },
+        });
+      }
+      if (url === `${api}/marathons/current`) {
+        return json({
+          ...current(),
+          marathon: {
+            ...current().marathon,
+            id: 'next-marathon',
+            name: 'Следующий марафон',
+            startsOn: '2026-10-02',
+            endsOn: '2026-10-22',
+          },
+          team: { id: 'next-team', name: 'Команда следующего марафона' },
+          membership: { id: 'next-membership', role: 'captain', isCurrentUser: true },
+          displayDate: '2026-10-02',
+          reportDate: '2026-10-01',
+        });
+      }
+      if (url === `${api}/marathons/current?marathonId=completed-marathon`) {
+        return json({
+          ...current(),
+          marathon: {
+            ...current().marathon,
+            id: 'completed-marathon',
+            startsOn: '2026-10-01',
+            endsOn: '2026-10-01',
+          },
+          membership: { id: 'completed-membership', role: 'participant', isCurrentUser: true },
+          displayDate: '2026-10-02',
+          reportDate: '2026-10-01',
+        });
+      }
+      if (url === `${api}/marathon-wellness-reports/2026-10-01`) {
+        return json({ status: 'notApplicable', reportDate: '2026-10-01', report: null });
+      }
+      if (url === `${api}/marathon-wellness-reports/2026-10-01?marathonId=completed-marathon`) {
+        if (init?.method === 'PUT') {
+          finalSaved = true;
+          return json({
+            status: 'reported',
+            reportDate: '2026-10-01',
+            morningShake: false,
+            physicalActivity: false,
+            waterTarget: true,
+            secondShake: false,
+            healthyDinner: false,
+            goodSleep: false,
+            noJunkFood: false,
+            noSmoking: false,
+            markedCount: 1,
+            updatedAt: '2026-10-02T00:00:00.000Z',
+          });
+        }
+        return json(
+          finalSaved
+            ? {
+                status: 'reported',
+                reportDate: '2026-10-01',
+                report: {
+                  morningShake: false,
+                  physicalActivity: false,
+                  waterTarget: true,
+                  secondShake: false,
+                  healthyDinner: false,
+                  goodSleep: false,
+                  noJunkFood: false,
+                  noSmoking: false,
+                  updatedAt: '2026-10-02T00:00:00.000Z',
+                },
+              }
+            : { status: 'unknown', reportDate: '2026-10-01', report: null },
+        );
+      }
+      if (url === `${api}/marathon-teams/current/today`) {
+        return json({
+          ...team(),
+          team: { id: 'next-team', name: 'Команда следующего марафона' },
+          currentMembership: { id: 'next-membership', role: 'captain' },
+          captainTask: {
+            id: 'next-task',
+            taskDate: '2026-10-02',
+            title: 'Новое задание',
+            description: 'Для нового марафона.',
+            currentUserCompletion: { status: 'unknown', updatedAt: null },
+          },
+        });
+      }
+      if (url === `${api}/users/me/ai-provider-consent`) return json(consent());
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+
+    expect(await screen.findByText('Команда следующего марафона')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Задание на сегодня' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Марафон завершён' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Название задания')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Норма воды' }));
+    await user.click(screen.getByRole('button', { name: 'Отправить отчёт' }));
+
+    expect(await screen.findByRole('button', { name: 'Обновить отчёт' })).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          String(url) === `${api}/marathon-wellness-reports/2026-10-01?marathonId=completed-marathon` &&
+          (init as RequestInit | undefined)?.method === 'PUT',
+      ),
+    ).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url) === `${api}/marathons/current`),
+    ).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(
+        ([url]) => String(url) === `${api}/marathons/current?marathonId=completed-marathon`,
+      ),
+    ).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url) === `${api}/marathon-teams/current/today`),
+    ).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url) === `${api}/users/me/ai-provider-consent`),
+    ).toBe(true);
   });
 
   it('does not request or render a final report after the server finale window closes', async () => {

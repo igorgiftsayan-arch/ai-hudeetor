@@ -21,8 +21,13 @@ Important границы: final-day report на следующий день и b
 server-owned `lobby.finale` read-window: рядом со следующим набором участник
 видит «Марафон завершён» и может создать или обновить отчёт за последний день.
 Дата берётся только из server response (`reportDate`/`endsOn`), без device
-timezone. В этой ветке не загружаются team/today, текущий вес, задания
-капитана или AI consent; после закрытия окна без server `finale` формы нет.
+timezone. В отдельном closing-read без нового active marathon не загружаются
+team/today, текущий вес, задания капитана или AI consent; после закрытия окна
+без server `finale` формы нет.
+Если следующий марафон уже `inProgress`, сохраняется его обычный daily flow,
+включая team/task/provider reads для нового membership. Финальная форма прошлого
+марафона показывается рядом с ним и использует явный server-supplied
+`marathonId`; старые team/task operations не вызываются.
 UI не меняет backend или generated artifacts и ждёт их backend-owned
 интеграции до runtime проверки/deploy.
 

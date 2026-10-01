@@ -75,9 +75,24 @@ export default function MarathonPage() {
         const next = await loadMarathonScreen();
         setData(next);
         setLobbyData(undefined);
-        setCompletionData(undefined);
+        if (nextLobby.lobby.finale) {
+          const nextCompletion = await loadMarathonCompletionScreen(
+            nextLobby.csrfToken,
+            nextLobby.lobby.finale.marathonId,
+          );
+          setCompletionData(
+            isCompletionForFinale(nextCompletion, nextLobby.lobby.finale)
+              ? nextCompletion
+              : undefined,
+          );
+        } else {
+          setCompletionData(undefined);
+        }
       } else if (nextLobby.lobby.finale) {
-        const nextCompletion = await loadMarathonCompletionScreen(nextLobby.csrfToken);
+        const nextCompletion = await loadMarathonCompletionScreen(
+          nextLobby.csrfToken,
+          nextLobby.lobby.finale.marathonId,
+        );
         setData(undefined);
         setLobbyData(nextLobby);
         setCompletionData(
@@ -114,6 +129,7 @@ export default function MarathonPage() {
   async function saveReport(
     screen: Pick<MarathonScreenData, 'csrfToken' | 'current'>,
     selectedIds: string[],
+    marathonId?: string,
   ) {
     const values = habits.reduce<WellnessValues>((result, habit) => {
       result[habit.id] = selectedIds.includes(habit.id);
@@ -141,6 +157,7 @@ export default function MarathonPage() {
         values,
         csrfToken: screen.csrfToken,
         idempotencyKey: pendingReport.current.key,
+        marathonId,
       });
       pendingReport.current = undefined;
       setSaved('Отчёт за вчера обновлён');
@@ -352,7 +369,11 @@ export default function MarathonPage() {
               data={completionData}
               isSaving={saving}
               error={reportError}
-              onSave={(selectedIds) => void saveReport(completionData, selectedIds)}
+              onSave={(selectedIds) => void saveReport(
+                completionData,
+                selectedIds,
+                completionData.current.marathon.id,
+              )}
             />
           )}
           {saved && <p className="save-confirmation" aria-live="polite">{saved}</p>}
@@ -470,6 +491,18 @@ export default function MarathonPage() {
           />
         )}
         {data.report.status === 'unknown' && <p className="marathon-unknown-note">Пока нет отчёта за вчера.</p>}
+        {completionData && (
+          <MarathonCompletion
+            data={completionData}
+            isSaving={saving}
+            error={reportError}
+            onSave={(selectedIds) => void saveReport(
+              completionData,
+              selectedIds,
+              completionData.current.marathon.id,
+            )}
+          />
+        )}
         {saved && <p className="save-confirmation" aria-live="polite">{saved}</p>}
         <ProviderConsentNotice consent={data.consent} csrfToken={data.csrfToken} onAccepted={load} onSessionExpired={() => replace('/login')} />
         <a href="/quick-reply" className="ai-secondary-action"><span>Поговорить с AI</span><span aria-hidden="true">→</span></a>

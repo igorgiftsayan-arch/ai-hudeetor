@@ -44,6 +44,10 @@
   the existing current/report responses and does not load team, captain-task or
   AI-consent data. Source-level UI work awaits the backend-owned lobby contract
   and generated client integration; no deployment was performed.
+- When the next marathon has already started, its normal daily flow remains
+  active. The prior finale is read and saved only through its explicit
+  `marathonId`, so team, task and provider reads remain scoped to the new
+  marathon rather than the completed one.
 - Mobile navigation keeps the existing five destinations and accessible link
   names, while placing each icon above its label in its own responsive grid
   cell. Long labels may wrap inside their own cell on 320 px and 393 px
