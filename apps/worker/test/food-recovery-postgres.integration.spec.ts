@@ -290,10 +290,10 @@ describeWithDatabase(
               [operationId],
             );
         }
-        if (consented)
+        if (!consented)
           await observer.query(
-            "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','web')",
-            [randomUUID(), fixture.userId],
+            "delete from user_consents where user_id=$1 and consent_type='aiProviderProcessing' and document_version='v1'",
+            [fixture.userId],
           );
         await observer.query(
           "insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at) values($1,'ai-companion.quick_reply_requested.v1','aiOperation',$2,$3::jsonb,now(),now())",
@@ -579,6 +579,7 @@ describeWithDatabase(
         networkId: 'synthetic-vision',
         modelVersion: 'synthetic-v1',
         timeoutMs: 15_000,
+        consentVersion: 'v1',
         s3: {
           endpoint: 'https://storage.invalid',
           region: 'test',
@@ -621,12 +622,16 @@ describeWithDatabase(
       const analysisId = randomUUID();
       const outboxId = randomUUID();
       await observer.query(
-        "insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash) values($1,$2,'active','completed',$3,'hash')",
+        "insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash,email_verified_at) values($1,$2,'active','completed',$3,'hash',now())",
         [userId, `${userId}@example.test`, randomUUID()],
       );
       await observer.query(
         'insert into token_wallets(id,user_id) values($1,$2)',
         [walletId, userId],
+      );
+      await observer.query(
+        "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','test')",
+        [randomUUID(), userId],
       );
       await observer.query(
         "insert into token_transactions(id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id) values($1,$2,$3,'starterGrant',100,'onboardingCompletion',$4)",

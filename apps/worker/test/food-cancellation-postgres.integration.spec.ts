@@ -47,7 +47,7 @@ describeWithDatabase(
       imageId = randomUUID();
       const walletId = randomUUID();
       await database.query(
-        "insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash) values($1,$2,'active','completed',$3,'hash')",
+        "insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash,email_verified_at) values($1,$2,'active','completed',$3,'hash',now())",
         [userId, `${userId}@example.test`, randomUUID()],
       );
       await database.query(
@@ -61,6 +61,10 @@ describeWithDatabase(
       await database.query(
         "insert into uploaded_images(id,user_id,purpose,object_key,content_type,size_bytes,sha256,status) values($1,$2,'foodAnalysis',$3,'image/jpeg',3,$4,'available')",
         [imageId, userId, `test/${imageId}`, '0'.repeat(64)],
+      );
+      await database.query(
+        "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','test','test')",
+        [randomUUID(), userId],
       );
       service = new FoodService(
         database,
@@ -83,7 +87,7 @@ describeWithDatabase(
       return (await database.query("select amount_tokens,reference_type from token_transactions where food_analysis_id=$1 and entry_type='aiRefund'",[id])).rows;
     }
     function realProcessor() {
-      return new FoodAnalysisProcessor(database,{provider:'genapi',fakeMode:'success',apiKey:'synthetic',nativeBaseUrl:'http://provider.invalid',networkId:'gpt-4o',modelVersion:'gpt-4o',timeoutMs:200,s3:config});
+      return new FoodAnalysisProcessor(database,{provider:'genapi',fakeMode:'success',apiKey:'synthetic',nativeBaseUrl:'http://provider.invalid',networkId:'gpt-4o',modelVersion:'gpt-4o',timeoutMs:200,consentVersion:'test',s3:config});
     }
     it.each(['photo','analysis'] as const)('cancels queued %s deletion exactly once and ignores stale queued deliveries',async(target)=>{
       const {id,price,job}=await queued();
