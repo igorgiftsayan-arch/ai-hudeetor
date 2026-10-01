@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+- Integrated release fixes: preserve exactly two weight decimals; identity
+  confirmation/reset/provider-consent endpoints return documented HTTP 200;
+  queued AI metadata uses configured provider instead of hardcoded fake.
+
 - Rebody production: corrected trusted proxy count to two for host nginx and
   private Docker gateway. Regression reproduces shared proxy IP before the fix
   and verifies distinct visitor IPs and ignored spoofed prefixes afterward.

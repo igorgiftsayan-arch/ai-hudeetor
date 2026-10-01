@@ -1,5 +1,11 @@
 # Текущий статус
 
+- 2026-10-01: release 7bde2a9 интегрирует формат веса 80,20 и backend
+  HTTP/runtimeAdapter fixes. Web65/65 и общий lint прошли у координатора;
+  backend package reports API102/102, worker38/38. Новый API/web build начат,
+  production пока 5b28252. Реальные signup/email/GenAPI/ledger проверены;
+  письмо reset доставлено, ручная смена тестового пароля ожидается.
+
 - 2026-10-01: root подтвердил shared-IP дефект лимитов Rebody и подготовил
   исправление production trust proxy 1 -> 2. Node 24 / реальный Express:
   RED на текущем конфиге, GREEN на исправленном, включая spoofed-prefix.

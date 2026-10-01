@@ -92,7 +92,7 @@ were removed after verification. This supersedes the local skipped-test gap.
 | Recovery | Real reset email; one-use token expires after 30 minutes; new password works; old password and sessions rejected | Implemented; database one-use/session-revocation tests passed; public real-email flow pending |
 | Existing accounts | Login, onboarding and weight remain available; no automatic verified backfill; resend available | Additive migration and regression tests passed; production migration applied twice, 13 metadata entries; existing-user public journey pending |
 | Real AI | Verified synthetic user explicitly consents, receives GenAPI response in browser; ledger confirms one charge on idempotent retry | Model listing and one direct synthetic generation returned 200; application journey remains unverified |
-| AI failures | Integration evidence for technical-error refund and outcomeUnknown without automatic refund/retry | Revalidate against integrated release |
+| AI failures | Integration evidence for technical-error refund and outcomeUnknown without automatic refund/retry | Reviewed worker suite: mocked-query refund test is insufficient for real PostgreSQL transaction/replay proof; isolated processor integration suite requested |
 | Abuse protection | Enumeration-safe reset responses, resend/reset limits, unverified AI rejected before reservation/outbox, owner isolation | Identity API/database checks passed; final public gateway journey still pending |
 | Backup | Owner reinstated S3 backup after the earlier deferral | Tooling implemented and isolated-tested; destination/credentials pending; no upload, restore or measured RPO/RTO |
 | Documents | Published claims match actual email, AI provider and backup behavior; consent versions consistent | Legal v2 published with matching configured versions; complete live consent journey pending |
@@ -308,3 +308,15 @@ success. API has no AI_PROVIDER env while worker has genapi; investigate source
 before any fix. Frontend was informed; root owns backend/config investigation.
 Full reset, idempotent live replay, off-host restore and remaining UI fixes are
 not yet accepted. No full-release claim.
+
+Follow-up integration: weight fix `626510b` cherry-picked as `a1efa1d`;
+backend contract fix `771fb4c` as `7bde2a9`. Backend verification receipt
+`e612a15`: isolated PostgreSQL API 102/102, worker 38/38, migrations twice,
+OpenAPI/client no drift. Coordinator reran web 65/65, full workspace lint PASS
+after moving the proxy regression to ESM (same regression passes on Node 24).
+New API/web images for exact `7bde2a9` requested; not yet deployed.
+
+Real password reset request submitted from browser for synthetic account;
+app-generated reset email delivered with correct HTTPS fragment link. No token
+was printed or consumed. Browser password-change step handed to owner as required;
+waiting for owner to set new password, then verify old session/password rejection.
