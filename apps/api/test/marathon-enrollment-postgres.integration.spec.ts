@@ -35,6 +35,11 @@ describeWithDatabase(
     afterAll(() => db.onApplicationShutdown());
 
     it('opens one canonical enrollment and safely replays the same command', async () => {
+      await expect(service.lobby(captainId)).resolves.toMatchObject({
+        marathon: null,
+        canOpenEnrollment: true,
+        canManage: false,
+      });
       const key = randomUUID();
       const created = await service.openEnrollment(captainId, key, {
         durationDays: 30,
@@ -42,6 +47,9 @@ describeWithDatabase(
       await expect(
         service.openEnrollment(captainId, key, { durationDays: 30 }),
       ).resolves.toEqual(created);
+      await expect(
+        service.openEnrollment(captainId, key, { durationDays: 31 }),
+      ).rejects.toMatchObject({ code: 'IDEMPOTENCY_KEY_REUSED' });
       expect(created).toMatchObject({
         status: 'enrollmentOpen',
         durationDays: 30,
@@ -112,6 +120,17 @@ describeWithDatabase(
           randomUUID(),
         ),
       ).rejects.toMatchObject({ code: 'MARATHON_BOOTSTRAP_FORBIDDEN' });
+      const allowlistedParticipant = marathonService(db, [
+        captainId,
+        participantId,
+      ]);
+      await expect(
+        allowlistedParticipant.closeEnrollment(
+          participantId,
+          created.marathonId,
+          randomUUID(),
+        ),
+      ).rejects.toMatchObject({ code: 'MARATHON_CAPTAIN_REQUIRED' });
       const revoked = marathonService(db, []);
       expect((await revoked.lobby(captainId)).canManage).toBe(false);
       await expect(
@@ -239,6 +258,30 @@ describeWithDatabase(
       expect(state.rows[0]?.member_count).toBe(
         join.status === 'fulfilled' ? 2 : 1,
       );
+    });
+
+    it('serializes close against start without skipping the closed state', async () => {
+      const created = await service.openEnrollment(captainId, randomUUID(), {
+        durationDays: 14,
+      });
+      const [close, start] = await Promise.allSettled([
+        service.closeEnrollment(captainId, created.marathonId, randomUUID()),
+        service.startMarathon(captainId, created.marathonId, randomUUID()),
+      ]);
+      expect(close.status).toBe('fulfilled');
+      if (start.status === 'rejected') {
+        expect(start.reason).toMatchObject({
+          code: 'MARATHON_START_REQUIRES_CLOSED_ENROLLMENT',
+        });
+        await expect(
+          service.startMarathon(captainId, created.marathonId, randomUUID()),
+        ).resolves.toMatchObject({ status: 'inProgress' });
+      }
+      const state = await db.query<{ status: string }>(
+        'select status from marathons where id=$1',
+        [created.marathonId],
+      );
+      expect(state.rows[0]?.status).toBe('inProgress');
     });
 
     it('does not capture baseline before start and keeps the first in-range daily weight immutable', async () => {
