@@ -4,6 +4,7 @@ import {
   Get,
   Headers,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Req,
@@ -79,7 +80,7 @@ export class MarathonController {
   joinEnrollment(
     @Req() r: Request,
     @Headers('idempotency-key') k: string | undefined,
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() _body: EmptyMarathonCommandDto,
   ) {
     void _body;
@@ -94,7 +95,7 @@ export class MarathonController {
   closeEnrollment(
     @Req() r: Request,
     @Headers('idempotency-key') k: string | undefined,
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() _body: EmptyMarathonCommandDto,
   ) {
     void _body;
@@ -109,7 +110,7 @@ export class MarathonController {
   start(
     @Req() r: Request,
     @Headers('idempotency-key') k: string | undefined,
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() _body: EmptyMarathonCommandDto,
   ) {
     void _body;
