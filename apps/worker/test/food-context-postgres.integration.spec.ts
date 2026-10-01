@@ -55,7 +55,7 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
     async function user() {
       const id = randomUUID();
       await db.query(
-        "insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash) values($1,$2,'active','completed',$3,'hash')",
+        "insert into users(id,email_normalized,email_verified_at,status,onboarding_status,registration_idempotency_key,registration_request_hash) values($1,$2,now(),'active','completed',$3,'hash')",
         [id, `${id}@example.test`, randomUUID()],
       );
       return id;

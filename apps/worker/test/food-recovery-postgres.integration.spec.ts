@@ -630,7 +630,7 @@ describeWithDatabase(
         [walletId, userId],
       );
       await observer.query(
-        "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','test')",
+        "insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','web')",
         [randomUUID(), userId],
       );
       await observer.query(
