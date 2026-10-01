@@ -1,6 +1,14 @@
 # Текущий статус
 
-- Дата: 2026-09-30
+- Дата: 2026-10-01
+- В UI-ветке обновлены `/terms` и `/privacy` до
+  `terms-2026-10-01-v2` / `privacy-2026-10-01-v2`: зафиксированы реальные
+  сроки email verification/reset, явная граница «вес без AI», отдельное
+  согласие на внешний AI и ограниченный контекст GenAPI `grok-4-5`. В тексты
+  включён только подтверждённый предел хранения GenAPI до 24 часов; география,
+  обучение моделей, резервное хранение, удаление и экспорт не обещаются. Это
+  source-level подготовка, а не подтверждение deployment или юридической
+  сертификации.
 - Rebody опубликован в отдельном production Compose project
   `atlas-rebody38-production`: public HTTPS `https://rebody38.ru`,
   registration/onboarding/weight/Daily Coach/login и legal pages доступны,
