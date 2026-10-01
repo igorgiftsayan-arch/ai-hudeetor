@@ -5,8 +5,13 @@
 По поручению владельца интегрируются существующие marathon/food/recovery из
 `00bba8d`/`84bba91` с release `7e0ee20`, без изменения `main` и без потери текущего
 identity/SMTP/данных. Старые GERBI контейнеры остановлены, volumes сохранены.
-Подготовлен private food storage overlay и HTTPS upload route; Compose validation
-и isolated nginx syntax PASS. Production не переключён, E2E ещё NOT RUN.
+Production переключён на интегрированный runtime `d021923`, checkout `c8587dc`.
+Миграции 0013–0019 применены; сохранены 13 пользователей, 9 записей веса и 15
+ledger rows. Вход и существующий вес проверены браузером. Фото и марафон
+доступны, но реальный марафон ещё не настроен: нужны даты, команды и капитаны.
+GenAPI food E2E ждёт подтверждения тестового согласия; новых платных запросов нет.
+Исправлен auto-restart PostgreSQL/Redis/gateway без их остановки; политика
+проверена в Compose и runtime. Реальная перезагрузка сервера не выполнялась.
 Резервные копии исключены владельцем из цели. Полный scope, доказательства и
 открытые входные данные: [release journal](../07-deployment/rebody-gerbi-release.md).
 

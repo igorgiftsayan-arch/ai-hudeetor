@@ -2,6 +2,12 @@
 # Use an immutable, verified image ID/digest, then deploy with --no-build.
 # Database/Redis volumes and their images are deliberately not overridden.
 services:
+  postgres:
+    restart: unless-stopped
+  redis:
+    restart: unless-stopped
+  gateway:
+    restart: unless-stopped
   api:
     image: ${REBODY_RELEASE_IMAGE:?REBODY_RELEASE_IMAGE is required}
     pull_policy: never

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-01 — GERBI public runtime deployed, acceptance incomplete
+
+- Integrated marathon, private food photos/diary and recovery with release identity;
+  applied additive migrations while preserving existing users, weight and ledger.
+- Fixed missing production restart policies for PostgreSQL, Redis and gateway;
+  changed live policies without restarting containers. Host reboot not performed.
+- Full real-marathon and GenAPI food acceptance remains open; see release journal.
+
 ## 2026-10-01 — GERBI public integration preparation
 
 - Prepared private food-object storage overlay and dedicated 10 MiB HTTPS upload

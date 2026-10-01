@@ -168,3 +168,35 @@ assets. Ни переключение, ни успешная пользоват�
 Still NOT ACCEPTED: real marathon configuration (owner dates/teams/captains),
 signed food upload and real GenAPI correction/confirmation/history journey,
 captain/participant production acceptance. Goal remains active.
+
+## Перезапуск и подтверждённые границы защиты
+
+Проверка runtime обнаружила `restart=no` у PostgreSQL, Redis и gateway.
+В release overlay добавлен `unless-stopped`, политика применена через Docker
+update без остановки этих контейнеров. Все семь постоянных сервисов имеют
+`unless-stopped`; одноразовые migrate/minio-init не должны перезапускаться.
+Docker и nginx включены в автозапуск ОС. Реальную перезагрузку сервера не делали.
+
+Не использовать прежнюю двухфайловую команду со старым runtime.env для этого
+выпуска. Повторный запуск из `/opt/projects/ai-hudeetor-rebody38-production`:
+
+```sh
+docker compose \
+  --env-file /root/rebody38-production-runtime/gerbi-release.env \
+  -p atlas-rebody38-production \
+  -f compose.yaml \
+  -f infrastructure/compose.production.yaml \
+  -f infrastructure/compose.production-food.yaml \
+  -f infrastructure/compose.production-food-artifacts.yaml \
+  -f infrastructure/compose.release-images.yaml \
+  up -d --no-build --pull never
+```
+
+Секреты и immutable release image берутся из защищённого env. Не печатать
+resolved Compose config; использовать `config --quiet`. Не запускать `down -v`.
+Новый релиз требует отдельной сборки и проверки миграций; команда выше только
+восстанавливает текущий выпуск, не обновляет его автоматически.
+
+Public negative probes: unsigned object GET/PUT and DELETE each return 403;
+readiness remains 200. Browser photo preview and explicit pre-analysis consent
+screen verified; upload/analysis not initiated pending consent confirmation.
