@@ -17,7 +17,7 @@ test('new adult completes onboarding and can return after a fresh login', async 
     .getByRole('checkbox', { name: 'Принимаю условия сервиса' })
     .check();
   await page
-    .getByRole('checkbox', { name: 'Согласен с обработкой данных' })
+    .getByRole('checkbox', { name: 'Согласен с политикой конфиденциальности' })
     .check();
   await page.getByRole('button', { name: 'Создать аккаунт' }).click();
 
