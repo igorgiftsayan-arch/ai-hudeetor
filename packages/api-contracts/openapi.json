@@ -1245,7 +1245,16 @@
     "/api/v1/marathons/current": {
       "get": {
         "operationId": "MarathonController_current_api/v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "marathonId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1279,6 +1288,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "marathonId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1309,6 +1326,14 @@
             "name": "reportDate",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "marathonId",
+            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }

@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
@@ -143,13 +144,22 @@ export class MarathonController {
   }
   @Get('marathons/current')
   @ApiOkResponse({ type: CurrentMarathonDto })
-  current(@Req() r: Request) {
-    return this.service.current(r.cookies?.atlas_access ?? '');
+  current(
+    @Req() r: Request,
+    @Query('marathonId', new ParseUUIDPipe({ optional: true }))
+    marathonId?: string,
+  ) {
+    return this.service.current(r.cookies?.atlas_access ?? '', marathonId);
   }
   @Get('marathon-wellness-reports/:reportDate')
   @ApiOkResponse({ type: WellnessReportReadDto })
-  report(@Req() r: Request, @Param('reportDate') d: string) {
-    return this.service.getReport(r.cookies?.atlas_access ?? '', d);
+  report(
+    @Req() r: Request,
+    @Param('reportDate') d: string,
+    @Query('marathonId', new ParseUUIDPipe({ optional: true }))
+    marathonId?: string,
+  ) {
+    return this.service.getReport(r.cookies?.atlas_access ?? '', d, marathonId);
   }
   @Put('marathon-wellness-reports/:reportDate')
   @ApiOkResponse({ type: WellnessReportSavedDto })
@@ -158,8 +168,16 @@ export class MarathonController {
     @Headers('idempotency-key') k: string | undefined,
     @Param('reportDate') d: string,
     @Body() b: WellnessReportDto,
+    @Query('marathonId', new ParseUUIDPipe({ optional: true }))
+    marathonId?: string,
   ) {
-    return this.service.saveReport(r.cookies?.atlas_access ?? '', key(k), d, b);
+    return this.service.saveReport(
+      r.cookies?.atlas_access ?? '',
+      key(k),
+      d,
+      b,
+      marathonId,
+    );
   }
   @Put('marathon-captain-tasks/:taskDate')
   @ApiOkResponse({ type: CaptainTaskResponseDto })
