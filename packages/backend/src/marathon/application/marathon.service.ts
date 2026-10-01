@@ -655,8 +655,8 @@ export class MarathonService {
             'Enrollment must be closed before the marathon starts',
           );
         const startClock = (
-          await client.query<{ started_at: Date; starts_on: string }>(
-            `select instant started_at,
+          await client.query<{ started_at: string; starts_on: string }>(
+            `select instant::text started_at,
                     (instant at time zone $1)::date::text starts_on
                from (select clock_timestamp() instant) clock`,
             [marathon.timezone],
@@ -696,7 +696,7 @@ export class MarathonService {
             endsOn,
             marathon.timezone,
             marathon.enrollment_mode,
-            updated.rows[0]!.started_at,
+            startClock.started_at,
           ],
         );
         return {
