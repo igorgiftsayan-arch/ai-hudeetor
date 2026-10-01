@@ -200,3 +200,23 @@ resolved Compose config; использовать `config --quiet`. Не зап�
 Public negative probes: unsigned object GET/PUT and DELETE each return 403;
 readiness remains 200. Browser photo preview and explicit pre-analysis consent
 screen verified; upload/analysis not initiated pending consent confirmation.
+
+## Реальный Food E2E после разрешения владельца
+
+Владелец явно разрешил новое тестовое согласие и передачу synthetic food photo
+в GenAPI. На `help@rebody38.ru` через публичный браузер выполнены:
+новый вход после истечения сессии → актуальное согласие → signed HTTPS upload
+2,653,194-byte PNG → GenAPI analysis → correction → explicit consumption time
+confirmation → diary → page reload. Исправленная тестовая запись сохранилась.
+
+Read-only DB evidence: one `food_analyses` row `genapi/analyzed`; one receipt
+`genapi/gpt-4o-2024-08-06/completed`; one reservation -5, one confirmation 0;
+no food consumption before confirmation, exactly one afterward. No duplicate
+provider request was initiated. One additional paid acceptance call; prior
+reported acceptance spending 3/15, now 4/15 (owner traffic counted separately).
+
+Observed UX defect: insufficient-data result exposed raw `targetWeightKg` and
+`facts` keys; recognition was English. Frontend tasked with safe Russian labels
+for missing-data keys and readable 10 MiB limit. Actual recognition localization
+is not proved by this test. No claim of completed real marathon acceptance:
+dates, team names and captain accounts remain pending from owner.
