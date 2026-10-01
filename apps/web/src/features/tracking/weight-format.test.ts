@@ -19,5 +19,6 @@ describe('weight precision', () => {
 
   it('renders stored two-decimal weights without losing precision', () => {
     expect(formatWeight('98.45')).toBe('98,45 кг');
+    expect(formatWeight('80.20')).toBe('80,20 кг');
   });
 });

@@ -23,7 +23,7 @@ test('existing completed user can return, update weight, use Daily Coach, and si
   await page.getByRole('textbox', { name: 'Вес сегодня' }).fill('98,40');
   await page.getByRole('button', { name: 'Обновить вес' }).click();
   await expect(page.getByText('Вес за сегодня обновлён')).toBeVisible();
-  await expect(page.getByTestId('weight-summary')).toContainText('98,4 кг');
+  await expect(page.getByTestId('weight-summary')).toContainText('98,40 кг');
 
   await page.getByRole('button', { name: 'Начать день' }).click();
   await expect(page.getByText('День начат')).toBeVisible();

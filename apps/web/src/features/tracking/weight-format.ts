@@ -23,7 +23,7 @@ export function validateWeight(input: string): WeightValidation {
 
 export function formatWeight(weightKg: string | number): string {
   return `${new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: 1,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(weightKg))} кг`;
 }
