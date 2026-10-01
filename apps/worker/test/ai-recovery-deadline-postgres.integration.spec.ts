@@ -24,7 +24,8 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
   afterAll(async () => { await db?.onApplicationShutdown(); if(schema) await admin.query(`drop schema "${schema}" cascade`); await admin?.onApplicationShutdown(); });
   async function seed(kind: 'chat'|'food', age: number, status='outcomeUnknown') {
     const user=randomUUID(),wallet=randomUUID(),id=randomUUID(),message=randomUUID(),conversation=randomUUID(),image=randomUUID();
-    await db.query("insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash) values($1,$2,'active','completed',$3,'hash')",[user,`${user}@example.test`,randomUUID()]);
+    await db.query("insert into users(id,email_normalized,status,onboarding_status,registration_idempotency_key,registration_request_hash,email_verified_at) values($1,$2,'active','completed',$3,'hash',now())",[user,`${user}@example.test`,randomUUID()]);
+    await db.query("insert into user_consents(id,user_id,consent_type,document_version,source) values($1,$2,'aiProviderProcessing','v1','test')",[randomUUID(),user]);
     await db.query('insert into token_wallets(id,user_id) values($1,$2)',[wallet,user]);
     await db.query("insert into token_transactions(id,wallet_id,user_id,entry_type,amount_tokens,reference_type,reference_id) values($1,$2,$3,'starterGrant',100,'onboardingCompletion',$3)",[randomUUID(),wallet,user]);
     if(kind==='chat') {
@@ -97,7 +98,7 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
     const type=kind==='chat'?'ai-companion.quick_reply_requested.v1':'food.analysis_requested.v1';
     await db.query("insert into outbox_messages(id,event_type,aggregate_type,aggregate_id,payload,occurred_at,available_at,attempts) values($1,$2,$3,$4,$5,now(),now(),0)",[event,type,kind==='chat'?'aiOperation':'foodAnalysis',f.id,JSON.stringify(kind==='chat'?{operationId:f.id}:{analysisId:f.id})]);
     const network=jest.spyOn(global,'fetch').mockRejectedValue(new Error('must not send'));
-    const execute=jest.fn();const processor=kind==='chat'?new AiOperationProcessor(db,{providerName:'genapi',execute} as never,{build:jest.fn()} as never,{process:jest.fn()} as never):new FoodAnalysisProcessor(db,{provider:'genapi',fakeMode:'success',apiKey:'synthetic',nativeBaseUrl:'https://invalid.example',modelVersion:'synthetic',timeoutMs:1});
+    const execute=jest.fn();const processor=kind==='chat'?new AiOperationProcessor(db,{providerName:'genapi',execute} as never,{build:jest.fn()} as never,{process:jest.fn()} as never):new FoodAnalysisProcessor(db,{provider:'genapi',fakeMode:'success',apiKey:'synthetic',nativeBaseUrl:'https://invalid.example',modelVersion:'synthetic',timeoutMs:1,consentVersion:'v1'});
     await processor.process({data:{outboxId:event}} as never);
     expect(execute).not.toHaveBeenCalled();expect(network).not.toHaveBeenCalled();network.mockRestore();
     expect((await db.query(`select status from ${f.table} where id=$1`,[f.id])).rows[0]?.status).toBe('technicalError');
@@ -137,7 +138,7 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
       if(init?.method==='POST'){await db.query('select pg_sleep(0.7)');return new Response(JSON.stringify({request_id:'late-food-id'}));}
       return new Response(JSON.stringify({status:'success',result:[JSON.stringify({recognized:{kind:'food',items:[]},suitability:{status:'insufficientData',source:'none',observations:[],missingData:[]}})]}));
     });
-    const processor=new FoodAnalysisProcessor(db,{provider:'genapi',fakeMode:'success',apiKey:'synthetic',nativeBaseUrl:'https://invalid.example',networkId:'gpt-4o',modelVersion:'synthetic',timeoutMs:1500,s3:{endpoint:'https://invalid.example',region:'test',bucket:'private',accessKeyId:'synthetic',secretAccessKey:'synthetic',forcePathStyle:true}});
+    const processor=new FoodAnalysisProcessor(db,{provider:'genapi',fakeMode:'success',apiKey:'synthetic',nativeBaseUrl:'https://invalid.example',networkId:'gpt-4o',modelVersion:'synthetic',timeoutMs:1500,consentVersion:'v1',s3:{endpoint:'https://invalid.example',region:'test',bucket:'private',accessKeyId:'synthetic',secretAccessKey:'synthetic',forcePathStyle:true}});
     await processor.process({data:{outboxId:event}} as never);
     await processor.process({data:{outboxId:event}} as never);
     expect(network.mock.calls.filter(([,init])=>init?.method==='POST')).toHaveLength(1);

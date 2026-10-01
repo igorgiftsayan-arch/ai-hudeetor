@@ -160,7 +160,7 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
         conversation,
         owner,
       ]);
-      const repository = new PostgresAiCompanionRepository(db);
+      const repository = new PostgresAiCompanionRepository(db, 'genapi');
       const operation = await db.transaction((client) =>
         repository.startQuickReply(client, {
           userId: owner,

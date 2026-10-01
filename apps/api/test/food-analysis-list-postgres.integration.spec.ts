@@ -164,6 +164,8 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
           'uploadedImageId',
           'status',
           'runtimeAdapter',
+          'errorCategory',
+          'refundStatus',
           'createdAt',
           'consumptionStatus',
           'dishName',

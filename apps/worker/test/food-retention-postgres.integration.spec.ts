@@ -30,7 +30,7 @@ withDatabase('Terminal food photo retention on actual PostgreSQL', () => {
       .filter((n) => n.endsWith('.sql'))
       .sort()) {
       const sql = await readFile(resolve(dir, name), 'utf8');
-      if (name >= '0015_food_photo_retention.sql') migration += '\n' + sql;
+      if (name >= '0016_food_photo_retention.sql') migration += '\n' + sql;
       else await db.query(sql);
     }
     userId = randomUUID();
