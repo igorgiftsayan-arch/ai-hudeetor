@@ -349,3 +349,18 @@ refund on technicalError, balance99/no refund on outcomeUnknown, and no repeated
 provider/effect after sequential job replay. Initial fixture failure (strictness
 50) corrected to schema value medium; no application change required. Test
 integrated into release. No paid call, production mutation or off-host claim.
+
+Final graph rollout receipt: production source5e89786, web image
+`sha256:667cf45154ff54c7318b470e6dba547764eb37ea9c52eac8af701be75dc9bb0a`.
+Only web recreated; API remains8ad743ec, other services unchanged/healthy.
+Coordinator browser confirms SVG label80,20 and all other stored-weight surfaces
+80,20, including at393x852 with document width393 (no horizontal overflow).
+Integrated frontend66/66 and full workspace lint passed at coordinator.
+
+Remaining external acceptance blockers: owner has not completed the requested
+test-account password-change handoff; real reset token consumption, old-session
+revocation/old-password rejection and new-password login remain unverified in
+the public journey (isolated integration tests do cover them). S3 scoped target
+credentials remain absent, so upload/restore/RPO/RTO are not verified. Real email
+verification token consumption was tested through public API, not browser link
+click. Preserve these boundaries; do not mark the full release goal complete.
