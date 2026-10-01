@@ -9,6 +9,11 @@
 - Release scope records the owner's backup deferral and GenAPI processing
   confirmation; SMTP activation remains subject to real authentication and
   verify/reset delivery checks, not the control-panel checkbox alone.
+- Prepared fail-closed production PostgreSQL backup tooling: digest-pinned
+  restic encryption for a dedicated private S3 prefix, 24-hour freshness
+  status, scoped seven-daily retention gates and an isolated PostgreSQL 17
+  restore drill. External upload, scheduling and prune remain disabled until a
+  product-specific S3 target is supplied and verified.
 
 - Rebody identity release candidate: email ownership verification and password
   recovery use one-time hashed tokens, encrypted durable delivery payloads,
