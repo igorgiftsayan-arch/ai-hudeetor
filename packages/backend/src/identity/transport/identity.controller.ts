@@ -230,6 +230,7 @@ export class IdentityController {
   }
 
   @Post('users/me/ai-provider-consent')
+  @HttpCode(HttpStatus.OK)
   @ApiCookieAuth()
   @ApiBody({ type: AcceptAiProviderConsentRequestDto })
   @ApiOkResponse({ type: AiProviderConsentResourceDto })
@@ -261,6 +262,7 @@ export class IdentityController {
   }
 
   @Post('email-verifications')
+  @HttpCode(HttpStatus.OK)
   @ApiBody({ type: VerifyEmailRequestDto })
   @ApiHeader({ name: 'Origin', required: true })
   @ApiOkResponse({ type: EmailVerificationResourceDto })
@@ -292,6 +294,7 @@ export class IdentityController {
   }
 
   @Post('password-resets')
+  @HttpCode(HttpStatus.OK)
   @ApiBody({ type: ResetPasswordRequestDto })
   @ApiHeader({ name: 'Origin', required: true })
   @ApiOkResponse({ type: PasswordResetResourceDto })

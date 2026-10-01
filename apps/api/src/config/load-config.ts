@@ -1,6 +1,7 @@
 import { apiConfigSchema, type ApiConfig } from '@atlas/backend';
 
 const testDefaults = {
+  AI_PROVIDER: 'fake',
   DATABASE_URL: 'postgresql://atlas:atlas@localhost:5432/atlas_test',
   REDIS_URL: 'redis://localhost:6379/15',
   CSRF_SECRET: 'test-only-csrf-secret-at-least-32-characters',

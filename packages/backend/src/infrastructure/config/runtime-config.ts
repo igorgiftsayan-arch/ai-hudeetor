@@ -31,6 +31,7 @@ const baseSchema = z.object({
 
 export const apiConfigSchema = baseSchema
   .extend({
+    AI_PROVIDER: z.enum(['fake', 'genapi']),
     API_CORS_ORIGIN: corsOriginSchema.default('http://localhost:3000'),
     API_HOST: z.string().min(1).default('0.0.0.0'),
     API_PORT: z.coerce.number().int().positive().default(3001),

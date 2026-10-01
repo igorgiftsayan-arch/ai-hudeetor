@@ -16,7 +16,10 @@ const quickReplyScope = 'startQuickReply';
 const conversationScope = 'createAiConversation';
 
 export class PostgresAiCompanionRepository extends AiCompanionRepository {
-  constructor(private readonly database: DatabaseService) {
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly runtimeAdapter: 'fake' | 'genapi',
+  ) {
     super();
   }
 
@@ -188,7 +191,7 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
     await client.query(
       `insert into ai_operations
         (id,user_id,conversation_id,input_message_id,status,action_type,price_version,reserved_tokens,runtime_adapter,prompt_version)
-       values ($1,$2,$3,$4,'queued','quickReply',$5,$6,'fake','quick-reply-v1')`,
+       values ($1,$2,$3,$4,'queued','quickReply',$5,$6,$7,'quick-reply-v1')`,
       [
         operationId,
         input.userId,
@@ -196,6 +199,7 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
         messageId,
         currentPrice.version,
         currentPrice.price_tokens,
+        this.runtimeAdapter,
       ],
     );
     await client.query(
@@ -218,7 +222,7 @@ export class PostgresAiCompanionRepository extends AiCompanionRepository {
       reservedTokens: currentPrice.price_tokens,
       priceVersion: currentPrice.version,
       pollUrl: `/api/v1/ai/operations/${operationId}`,
-      runtimeAdapter: 'fake',
+      runtimeAdapter: this.runtimeAdapter,
     };
     await client.query(
       `insert into outbox_messages
