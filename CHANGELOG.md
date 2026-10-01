@@ -21,6 +21,12 @@
   contracts, production SMTP configuration gates and isolated PostgreSQL
   verification were added without enabling SMTP or changing production.
 
+- Legal disclosure v2: `/terms` и `/privacy` описывают подтверждение email
+  (24 часа), восстановление пароля (30 минут), отдельное согласие на внешний
+  AI, GenAPI с моделью `grok-4-5` и фактический ограниченный AI-контекст.
+  Указан предел хранения в GenAPI из публичной оферты; тексты не обещают
+  географию обработки, обучение моделей, резервное хранение, удаление или
+  экспорт. Изменение не является юридической сертификацией или deployment.
 - Rebody production release: `https://rebody38.ru` опубликован через
   отдельный Compose project, Let’s Encrypt TLS для apex/www, rate-limited host
   gateway и отдельные data volumes. В production сохранён fake AI режим; real

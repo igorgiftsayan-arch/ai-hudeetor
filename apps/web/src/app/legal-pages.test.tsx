@@ -2,12 +2,12 @@ import { render, screen } from '@testing-library/react';
 import PrivacyPage from './privacy/page';
 import TermsPage from './terms/page';
 
-describe('legal draft pages', () => {
+describe('legal pages', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('shows the configured terms version and does not promise unavailable features', () => {
+  it('shows the configured terms version and current AI access boundary', () => {
     vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'draft-terms-v1');
 
     render(<TermsPage />);
@@ -16,14 +16,23 @@ describe('legal draft pages', () => {
       screen.getByRole('heading', { name: 'Условия использования сервиса' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Версия: draft-terms-v1')).toBeInTheDocument();
-    expect(screen.getByText(/пока не предоставляет/i)).toBeInTheDocument();
-    expect(screen.getByText(/показывает тестовые ответы/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        name: 'Подтверждение email и восстановление доступа',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/grok-4-5/i)).toBeInTheDocument();
+    expect(screen.getByText(/24 часа/i)).toBeInTheDocument();
+    expect(screen.getByText(/30 минут/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'help@rebody38.ru' }),
+    ).toHaveAttribute('href', 'mailto:help@rebody38.ru');
     expect(
       screen.getByRole('link', { name: 'levnaohote@yandex.ru' }),
     ).toHaveAttribute('href', 'mailto:levnaohote@yandex.ru');
   });
 
-  it('shows the configured privacy version and keeps external AI facts unresolved', () => {
+  it('shows the configured privacy version and external AI disclosure', () => {
     vi.stubEnv('NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION', 'draft-privacy-v1');
 
     render(<PrivacyPage />);
@@ -32,10 +41,11 @@ describe('legal draft pages', () => {
       screen.getByRole('heading', { name: 'Политика конфиденциальности' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Версия: draft-privacy-v1')).toBeInTheDocument();
+    expect(screen.getByText(/GenAPI.*grok-4-5/i)).toBeInTheDocument();
+    expect(screen.getByText(/не более 12/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/внешний AI-провайдер сейчас не/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/не реализованы/i)).toBeInTheDocument();
+      screen.getByRole('link', { name: 'оферте GenAPI' }),
+    ).toHaveAttribute('href', 'https://gen-api.ru/ru/documents');
     expect(
       screen.getByRole('link', { name: 'levnaohote@yandex.ru' }),
     ).toHaveAttribute('href', 'mailto:levnaohote@yandex.ru');

@@ -5,16 +5,22 @@
   хранилищу ожидается. Новый пароль SMTP проверен: TLS auth и одно тестовое
   письмо help→help с получением по IMAP успешны. Protected env обновлён без
   перезапуска production; application verification/reset ещё не проверены.
-- Актуальное решение владельца: резервные копии отложены и не блокируют этот
-  выпуск; данные работы с GenAPI подтверждены владельцем. Это не означает
-  наличие backup или независимо проверенных гарантий провайдера. SMTP отмечен
-  включённым в панели, но проверка с прежним паролем вернула 535; реальные
-  письма ещё не подтверждены. Исторические gate-списки ниже не отменяют это решение.
+- Данные работы с GenAPI подтверждены владельцем; это не означает независимо
+  проверенных гарантий провайдера. Исторические gate-списки ниже не отменяют
+  актуальные решения владельца.
 - Backend identity release candidate находится в отдельной ветке
   `back/rebody38-email-identity`: email verification, password reset, durable
   retry-safe email delivery и versioned external-provider consent реализованы и
   проверены на isolated PostgreSQL. Existing accounts не помечаются verified
   автоматически; production SMTP и integration release пока не развёрнуты.
+- В UI-ветке обновлены `/terms` и `/privacy` до
+  `terms-2026-10-01-v2` / `privacy-2026-10-01-v2`: зафиксированы реальные
+  сроки email verification/reset, явная граница «вес без AI», отдельное
+  согласие на внешний AI и ограниченный контекст GenAPI `grok-4-5`. В тексты
+  включён только подтверждённый предел хранения GenAPI до 24 часов; география,
+  обучение моделей, резервное хранение, удаление и экспорт не обещаются. Это
+  source-level подготовка, а не подтверждение deployment или юридической
+  сертификации.
 - Rebody опубликован в отдельном production Compose project
   `atlas-rebody38-production`: public HTTPS `https://rebody38.ru`,
   registration/onboarding/weight/Daily Coach/login и legal pages доступны,
