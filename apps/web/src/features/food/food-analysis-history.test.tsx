@@ -38,11 +38,10 @@ function baseResponse(url: string) {
     });
   if (url.endsWith('/users/me/ai-provider-consent'))
     return json({
-      providerMode: 'fake',
-      foodProviderMode: 'fake',
-      foodExternalProviderEnabled: false,
-      externalProviderEnabled: false,
-      accepted: false,
+      currentVersion: 'v1',
+      acceptedVersion: 'v1',
+      disclosure: 'External processing.',
+      accepted: true,
     });
   if (url.endsWith('/ai-action-prices/food-photo-analysis'))
     return json({

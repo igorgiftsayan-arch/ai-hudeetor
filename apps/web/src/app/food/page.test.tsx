@@ -54,11 +54,10 @@ describe('food screen', () => {
           });
         if (url === `${api}/users/me/ai-provider-consent`)
           return json({
-            providerMode: 'fake',
-            foodProviderMode: 'fake',
-            foodExternalProviderEnabled: false,
-            externalProviderEnabled: false,
-            accepted: false,
+            currentVersion: 'v1',
+            acceptedVersion: 'v1',
+            disclosure: 'External processing.',
+            accepted: true,
           });
         throw new Error(`Unexpected fetch: ${url}`);
       }),
@@ -105,7 +104,12 @@ describe('food screen', () => {
             profile: { timezone: 'UTC' },
           });
         if (url === `${api}/users/me/ai-provider-consent`)
-          return json({ providerMode: 'fake' });
+          return json({
+            currentVersion: 'v1',
+            acceptedVersion: 'v1',
+            disclosure: 'External processing.',
+            accepted: true,
+          });
         if (url === `${api}/ai-action-prices/food-photo-analysis`)
           return json({
             actionType: 'foodPhotoAnalysis',
@@ -152,7 +156,7 @@ describe('food screen', () => {
       ).toHaveLength(1),
     );
   });
-  it('shows real food consent with fake chat and only enables explicit start after accepting', async () => {
+  it('uses the active provider-consent endpoint before enabling an explicit start', async () => {
     let accepted = false;
     let releaseRefresh!: () => void;
     const refreshPending = new Promise<void>((resolve) => { releaseRefresh = resolve; });
@@ -180,7 +184,8 @@ describe('food screen', () => {
           });
         if (url === `${api}/food-consumptions`) return json({ items: [] });
         if (url === `${api}/users/me/ai-provider-consent`) {
-          if (init?.method === 'PUT') {
+          if (init?.method === 'POST') {
+            expect(new Headers(init.headers).get('X-CSRF-Token')).toBe('csrf');
             expect(JSON.parse(String(init.body))).toEqual({
               accepted: true,
               documentVersion: 'food-v1',
@@ -188,14 +193,10 @@ describe('food screen', () => {
             accepted = true;
           }
           return json({
-            providerMode: 'fake',
-            externalProviderEnabled: false,
-            foodProviderMode: 'genapi',
-            foodExternalProviderEnabled: true,
-            documentVersion: 'food-v1',
+            currentVersion: 'food-v1',
+            acceptedVersion: accepted ? 'food-v1' : null,
             disclosure: 'External processing',
             accepted,
-            acceptedAt: accepted ? '2026-09-25T00:00:00Z' : null,
           });
         }
         throw new Error(`Unexpected request: ${url}`);

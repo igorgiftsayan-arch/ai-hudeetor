@@ -69,11 +69,10 @@ beforeEach(() => {
   vi.resetAllMocks();
   sessionStorage.clear();
   vi.mocked(loadProviderConsent).mockResolvedValue({
-    providerMode: 'fake',
-    foodProviderMode: 'fake',
-    foodExternalProviderEnabled: false,
-    externalProviderEnabled: false,
-    accepted: false,
+    currentVersion: 'v1',
+    acceptedVersion: 'v1',
+    disclosure: 'External processing.',
+    accepted: true,
   } as Awaited<ReturnType<typeof loadProviderConsent>>);
   vi.stubGlobal(
     'fetch',
@@ -439,10 +438,9 @@ it('requires completed upload after a failed upload retry before sending the pai
 
 it('waits for accepted external-provider consent and another explicit start before any upload', async () => {
   const consent = {
-    providerMode: 'genapi',
-    foodProviderMode: 'genapi',
-    foodExternalProviderEnabled: true,
-    externalProviderEnabled: true,
+    currentVersion: 'v1',
+    acceptedVersion: null,
+    disclosure: 'External processing.',
     accepted: false,
   } as Awaited<ReturnType<typeof loadProviderConsent>>;
   vi.mocked(loadProviderConsent).mockResolvedValue(consent);
@@ -463,6 +461,29 @@ it('waits for accepted external-provider consent and another explicit start befo
   expect(food.prepareFoodImage).not.toHaveBeenCalled();
   fireEvent.click(screen.getByText('Начать анализ'));
   await waitFor(() => expect(food.createFoodAnalysis).toHaveBeenCalledTimes(1));
+});
+
+it('points to email verification when the backend requires it for food analysis', async () => {
+  vi.mocked(food.createFoodAnalysis).mockRejectedValue(
+    new ApiError(
+      'request',
+      'Email verification is required for external AI processing',
+      'EMAIL_VERIFICATION_REQUIRED',
+      403,
+    ),
+  );
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Выбрать фото'));
+  fireEvent.click(screen.getByText('Начать анализ'));
+
+  const error = await screen.findByRole('alert');
+  expect(error).toHaveTextContent(
+    'Подтвердите email, чтобы отправить фото на разбор.',
+  );
+  expect(
+    within(error).getByRole('link', { name: 'Подтвердить email' }),
+  ).toHaveAttribute('href', '/verify-email');
 });
 
 it('hides a deleted current analysis immediately and restores its deletion controls after reload', async () => {
@@ -589,29 +610,19 @@ it('stops showing a pending analysis once the server confirms cancellation and a
   expect(food.createFoodAnalysis).not.toHaveBeenCalled();
 });
 
-it.each([
-  ['fake', 'genapi', true],
-  ['genapi', 'fake', false],
-  ['fake', 'fake', false],
-] as const)(
-  'uses the food capability for chat=%s food=%s before allowing upload',
-  async (providerMode, foodProviderMode, requiresConsent) => {
-    vi.mocked(loadProviderConsent).mockResolvedValue({
-      providerMode,
-      externalProviderEnabled: providerMode === 'genapi',
-      foodProviderMode,
-      foodExternalProviderEnabled: foodProviderMode === 'genapi',
-      accepted: false,
-    } as Awaited<ReturnType<typeof loadProviderConsent>>);
-    render(<FoodPage />);
-    await ready();
-    fireEvent.click(screen.getByText('Выбрать фото'));
-    const start = screen.getByText('Начать анализ');
-    if (requiresConsent) expect(start).toBeDisabled();
-    else expect(start).not.toBeDisabled();
-    expect(food.prepareFoodImage).not.toHaveBeenCalled();
-  },
-);
+it('does not infer external-provider capability from an absent legacy flag', async () => {
+  vi.mocked(loadProviderConsent).mockResolvedValue({
+    currentVersion: 'v1',
+    acceptedVersion: null,
+    disclosure: 'External processing.',
+    accepted: false,
+  });
+  render(<FoodPage />);
+  await ready();
+  fireEvent.click(screen.getByText('Выбрать фото'));
+  expect(screen.getByText('Начать анализ')).toBeDisabled();
+  expect(food.prepareFoodImage).not.toHaveBeenCalled();
+});
 
 it.each(['refunded', 'notRefunded'] as const)(
   'restores expired food analysis with %s ledger marker without resubmit',

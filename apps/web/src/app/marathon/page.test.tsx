@@ -347,12 +347,10 @@ function team() {
 
 function consent() {
   return {
-    providerMode: 'fake',
-    externalProviderEnabled: false,
-    documentVersion: 'v1',
-    disclosure: 'Ответы создаёт тестовый режим.',
-    accepted: false,
-    acceptedAt: null,
+    currentVersion: 'v1',
+    acceptedVersion: 'v1',
+    disclosure: 'External processing.',
+    accepted: true,
   };
 }
 
