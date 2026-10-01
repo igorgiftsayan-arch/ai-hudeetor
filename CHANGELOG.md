@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+- Graph weight labels preserve two decimals. Added actual PostgreSQL processor
+  integration coverage for successful completion, full technical-error refund,
+  outcomeUnknown reservation retention and duplicate job delivery.
+
 - Integrated release fixes: preserve exactly two weight decimals; identity
   confirmation/reset/provider-consent endpoints return documented HTTP 200;
   queued AI metadata uses configured provider instead of hardcoded fake.

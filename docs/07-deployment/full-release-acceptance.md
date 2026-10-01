@@ -92,7 +92,7 @@ were removed after verification. This supersedes the local skipped-test gap.
 | Recovery | Real reset email; one-use token expires after 30 minutes; new password works; old password and sessions rejected | Implemented; database one-use/session-revocation tests passed; public real-email flow pending |
 | Existing accounts | Login, onboarding and weight remain available; no automatic verified backfill; resend available | Additive migration and regression tests passed; production migration applied twice, 13 metadata entries; existing-user public journey pending |
 | Real AI | Verified synthetic user explicitly consents, receives GenAPI response in browser; ledger confirms one charge on idempotent retry | Model listing and one direct synthetic generation returned 200; application journey remains unverified |
-| AI failures | Integration evidence for technical-error refund and outcomeUnknown without automatic refund/retry | Reviewed worker suite: mocked-query refund test is insufficient for real PostgreSQL transaction/replay proof; isolated processor integration suite requested |
+| AI failures | Integration evidence for technical-error refund and outcomeUnknown without automatic refund/retry | Real PostgreSQL processor suite 3/3 and full worker41/41 passed at d12d9b4; exact one refund for technicalError, no refund/retry for outcomeUnknown, sequential duplicate jobs have no second provider/ledger effect |
 | Abuse protection | Enumeration-safe reset responses, resend/reset limits, unverified AI rejected before reservation/outbox, owner isolation | Identity API/database checks passed; final public gateway journey still pending |
 | Backup | Owner reinstated S3 backup after the earlier deferral | Tooling implemented and isolated-tested; destination/credentials pending; no upload, restore or measured RPO/RTO |
 | Documents | Published claims match actual email, AI provider and backup behavior; consent versions consistent | Legal v2 published with matching configured versions; complete live consent journey pending |
@@ -320,3 +320,32 @@ Real password reset request submitted from browser for synthetic account;
 app-generated reset email delivered with correct HTTPS fragment link. No token
 was printed or consumed. Browser password-change step handed to owner as required;
 waiting for owner to set new password, then verify old session/password rejection.
+
+Release `7bde2a9` deployed API/web only after successful Node24 builds:
+API `sha256:8ad743ec043c58bf368c9043d7b1629ebfec7075fdd0784160dcb0c2761a9b04`,
+web `sha256:9c7020e9b1eb62e3ae3199c8947273016bdea1331bf5fa9c91efe127b98db859`.
+Backend receipt confirms both healthy, legal v2/ready/login HTTP200, no migration
+or worker/gateway/database recreation. Rollback tags retained for prior images.
+Coordinator fresh browser login succeeded with the original synthetic password:
+password reset therefore has not yet been demonstrated. Today summary, existing
+record label and history now render 80,20; input80.20, one daily row. Chart label
+still renders80,2; small follow-up requested. Processor PostgreSQL refund/replay
+integration work is active separately; no production fault injection.
+
+Postdeploy real AI check: second browser conversation message succeeded and
+correctly referred to the previous answer. While pending, badge stayed neutral
+(`AI может ошибаться`), not fake. Scoped DB: two succeeded genapi/grok-4-5
+operations, exactly two reservations totaling -2 and two confirmations totaling
+0, starter grant100. Paid budget now 3/15 (one direct smoke, two app requests),
+12 remaining. Graph fix b1d592c reviewed and integrated separately; UI reports
+66/66 tests with a RED-before/GREEN-after SVG precision regression.
+
+Backend receipt for tests-only `d12d9b44d4bed784991b57f491e5908ab2f3fc55`
+confirms isolated PostgreSQL17, migrations twice (13 metadata entries), focused
+processor3/3 and full worker9 suites/41 tests PASS. Root inspected test coverage:
+actual repository, transaction service and processor, synthetic provider only;
+assertions include balance99 on success, balance100 with one reservation-linked
+refund on technicalError, balance99/no refund on outcomeUnknown, and no repeated
+provider/effect after sequential job replay. Initial fixture failure (strictness
+50) corrected to schema value medium; no application change required. Test
+integrated into release. No paid call, production mutation or off-host claim.

@@ -1,5 +1,12 @@
 # Текущий статус
 
+- 2026-10-01: production API/web обновлены до 7bde2a9; root подтвердил
+  повторный вход, вес80,20, реальный GenAPI с контекстом и точные ledger-суммы.
+  Бюджет платных проверок3/15. Tests-only processor suite интегрирован6445dce:
+  PostgreSQL3/3, full worker41/41, success/refund/unknown + duplicate replay.
+  Graph-only release5e89786 сейчас собирается. Reset user handoff и S3
+  остаются незавершёнными, полный выпуск не принят.
+
 - 2026-10-01: release 7bde2a9 интегрирует формат веса 80,20 и backend
   HTTP/runtimeAdapter fixes. Web65/65 и общий lint прошли у координатора;
   backend package reports API102/102, worker38/38. Новый API/web build начат,
