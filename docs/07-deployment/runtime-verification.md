@@ -1,5 +1,25 @@
 # BOOT-001 — runtime verification
 
+## Rebody release backend contract fix — isolated verification
+
+- Date: 2026-10-01. Branch `back/rebody38-release-contract-fix`, implementation
+  commit `771fb4c046d5bf3c0a9e19f9b7eab5c2f0197b77`, based exactly on release
+  commit `5b28252d8896ee3a3b95a000a04c527d9d02d2a5`.
+- Isolated test-server runtime used disposable PostgreSQL 17 and Redis 8
+  containers and a clean checkout. Migrations were applied twice successfully.
+- Full PostgreSQL API regression passed 19 suites / 102 tests. It includes the
+  explicit HTTP 200 identity metadata contract and persistence of configured
+  `runtimeAdapter=genapi` for a queued AI operation.
+- Full worker regression passed 8 suites / 38 tests. No paid GenAPI request was
+  made; provider-adapter behavior remained covered by deterministic tests.
+- OpenAPI export and client generation completed without generated drift in the
+  Git-capable local verification environment. The minimal server test container
+  generated the same artifacts but could not run the final Git diff command
+  because Git is intentionally absent from that image.
+- Disposable containers, network and volume were removed. Production project
+  `atlas-rebody38-production` remained healthy and was not rebuilt, recreated
+  or reconfigured. Frontend, `main` and production data were not changed.
+
 ## UI-006 — isolated Daily Coach verification
 
 - Date: 2026-09-24. Runtime commit `5eb612941eea43778283a3f9d2050d7de23e001b`

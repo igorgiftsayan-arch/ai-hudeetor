@@ -1,5 +1,17 @@
 # Текущий статус
 
+- 2026-10-01: release backend contract defects исправлены в отдельной ветке
+  `back/rebody38-release-contract-fix` от release SHA `5b28252`. Identity POST
+  handlers для provider consent, email verification и password reset явно
+  соответствуют OpenAPI HTTP 200. API получает обязательный production
+  `AI_PROVIDER`, а новая queued AI operation сохраняет и возвращает реальный
+  configured runtime adapter вместо hardcoded `fake`.
+- Isolated verification ветки: migrations применены дважды, PostgreSQL API
+  regression 102/102 и worker regression 38/38 прошли; OpenAPI/client
+  regeneration не создаёт drift. Paid GenAPI calls, frontend, `main` и
+  production runtime не изменялись. Общий workspace lint/format по-прежнему
+  содержит существующий debt вне diff (`tests/backup/proxy-chain.cjs` и ранее
+  неформатированные AI/UI файлы); изменённые файлы проходят focused lint.
 - 2026-10-01: root подтвердил shared-IP дефект лимитов Rebody и подготовил
   исправление production trust proxy 1 -> 2. Node 24 / реальный Express:
   RED на текущем конфиге, GREEN на исправленном, включая spoofed-prefix.

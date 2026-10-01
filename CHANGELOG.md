@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+- Release contract fix: identity consent acceptance, email verification and
+  password reset POST handlers now explicitly return the documented HTTP 200;
+  queued AI operations persist and expose the API runtime provider selected by
+  `AI_PROVIDER` instead of always reporting `fake`.
+- Isolated verification for `back/rebody38-release-contract-fix` passed all
+  PostgreSQL API tests (102/102), worker tests (38/38), repeatable migrations
+  and generated contract drift checks without paid provider calls, frontend
+  changes or production deployment.
 - Rebody production: corrected trusted proxy count to two for host nginx and
   private Docker gateway. Regression reproduces shared proxy IP before the fix
   and verifies distinct visitor IPs and ignored spoofed prefixes afterward.
