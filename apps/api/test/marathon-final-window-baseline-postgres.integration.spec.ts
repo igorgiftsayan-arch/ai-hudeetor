@@ -299,6 +299,67 @@ describeWithDatabase(
       }
     });
 
+    it('preserves PostgreSQL microseconds when comparing the first post-start weight', async () => {
+      const created = await service.openEnrollment(captainId, randomUUID(), {
+        durationDays: 7,
+      });
+      await service.joinEnrollment(
+        participantId,
+        created.marathonId,
+        randomUUID(),
+      );
+      await service.closeEnrollment(
+        captainId,
+        created.marathonId,
+        randomUUID(),
+      );
+      await db.query(
+        `insert into weight_entries(
+           id,user_id,weight_kg,recorded_at,local_date,updated_at,is_current
+         ) values(
+           $1,$2,90.00,'2026-01-15 10:00:00.123500+00'::timestamptz,
+           '2026-01-15',now(),true
+         )`,
+        [randomUUID(), participantId],
+      );
+
+      const transaction = db.transaction.bind(db);
+      jest.spyOn(db, 'transaction').mockImplementationOnce((operation) =>
+        transaction((client) => {
+          const exactClockClient = new Proxy(client, {
+            get(target, property, receiver) {
+              if (property !== 'query')
+                return Reflect.get(target, property, receiver);
+              return (text: string, values?: readonly unknown[]) =>
+                target.query(
+                  text.replace(
+                    'clock_timestamp() instant',
+                    "'2026-01-15 10:00:00.123999+00'::timestamptz instant",
+                  ),
+                  values ? [...values] : undefined,
+                );
+            },
+          });
+          return operation(exactClockClient);
+        }),
+      );
+
+      await service.startMarathon(
+        captainId,
+        created.marathonId,
+        randomUUID(),
+      );
+
+      const storedStart = await db.query<{ started_at: string }>(
+        `select started_at::text from marathons where id=$1`,
+        [created.marathonId],
+      );
+      expect(storedStart.rows[0]!.started_at).toContain('.123999');
+      await expect(
+        baseline(db, created.marathonId, participantId),
+      ).resolves.toBeNull();
+    });
+
     it('serializes a post-start weight write against the marathon start row lock', async () => {
       const created = await service.openEnrollment(captainId, randomUUID(), {
         durationDays: 7,
