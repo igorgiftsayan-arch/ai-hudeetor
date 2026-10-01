@@ -77,7 +77,7 @@ export default function MarathonPage() {
         setLobbyData(undefined);
         if (nextLobby.lobby.finale) {
           const nextCompletion = await loadMarathonCompletionScreen(
-            nextLobby.csrfToken,
+            next.csrfToken,
             nextLobby.lobby.finale.marathonId,
           );
           setCompletionData(

@@ -67,6 +67,10 @@
   active. The prior finale is read and saved only through its explicit
   `marathonId`, so team, task and provider reads remain scoped to the new
   marathon rather than the completed one.
+- In the combined active-marathon and finale view, the closing report now uses
+  the latest CSRF token loaded by the active daily screen. A regression test
+  uses distinct lobby and daily tokens and verifies the scoped final-report PUT
+  sends the daily token. No backend, generated artifact or deployment changed.
 - Mobile navigation keeps the existing five destinations and accessible link
   names, while placing each icon above its label in its own responsive grid
   cell. Long labels may wrap inside their own cell on 320 px and 393 px

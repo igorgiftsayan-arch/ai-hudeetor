@@ -35,6 +35,10 @@ team/today, текущий вес, задания капитана или AI con
 включая team/task/provider reads для нового membership. Финальная форма прошлого
 марафона показывается рядом с ним и использует явный server-supplied
 `marathonId`; старые team/task operations не вызываются.
+В combined active/finale path сохранение финального отчёта использует актуальный
+CSRF token, выданный при загрузке нового daily screen, а не ранний lobby token.
+Регрессионный тест разделяет эти токены и проверяет header scoped PUT; backend,
+generated artifacts, deploy и `main` не менялись.
 UI не меняет backend или generated artifacts и ждёт их backend-owned
 интеграции до runtime проверки/deploy.
 ## Marathon final-report/baseline correction — verified branch, not deployed, 2026-10-01

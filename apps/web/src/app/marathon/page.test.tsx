@@ -302,9 +302,16 @@ describe('marathon page', () => {
   it('shows the final report beside the new active marathon with scoped finale reads', async () => {
     const user = userEvent.setup();
     let finalSaved = false;
+    let onboardingReads = 0;
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url === `${api}/users/me/onboarding`) return json(onboarding());
+      if (url === `${api}/users/me/onboarding`) {
+        onboardingReads += 1;
+        return json({
+          ...onboarding(),
+          csrfToken: onboardingReads === 1 ? 'csrf-from-lobby' : 'csrf-from-daily',
+        });
+      }
       if (url === `${api}/marathons/lobby`) {
         return json({
           ...lobby({
@@ -436,6 +443,14 @@ describe('marathon page', () => {
           (init as RequestInit | undefined)?.method === 'PUT',
       ),
     ).toBe(true);
+    const finalReportPut = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url) === `${api}/marathon-wellness-reports/2026-10-01?marathonId=completed-marathon` &&
+        (init as RequestInit | undefined)?.method === 'PUT',
+    );
+    expect(
+      (finalReportPut?.[1]?.headers as Record<string, string>)['X-CSRF-Token'],
+    ).toBe('csrf-from-daily');
     expect(
       fetchMock.mock.calls.some(([url]) => String(url) === `${api}/marathons/current`),
     ).toBe(true);
