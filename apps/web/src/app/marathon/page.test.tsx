@@ -1,0 +1,364 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import MarathonPage from './page';
+
+const api = '/api/v1';
+const { replaceMock } = vi.hoisted(() => ({ replaceMock: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: replaceMock }),
+}));
+
+describe('marathon page', () => {
+  beforeEach(() => replaceMock.mockReset());
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('renders server-provided daily podium groups without deriving ranks in the client', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => responseFor(input)));
+
+    render(<MarathonPage />);
+
+    expect(await screen.findByText('Команда Антонины')).toBeInTheDocument();
+    expect(screen.getByText('Пока нет отчёта за вчера.')).toBeInTheDocument();
+    const leaders = screen.getByLabelText('Лидеры дня: Отвес, %');
+    expect(leaders).toHaveTextContent('Игорь');
+    expect(leaders).toHaveTextContent('1 %');
+    expect(screen.getByRole('link', { name: 'Поговорить с AI' })).toHaveAttribute(
+      'href',
+      '/quick-reply',
+    );
+  });
+
+  it('saves the selected yesterday items through the confirmed report endpoint', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
+      responseFor(input, init),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    await screen.findByText('Команда Антонины');
+    await user.click(screen.getByRole('checkbox', { name: 'Норма воды' }));
+    await user.click(screen.getByRole('button', { name: 'Отправить отчёт' }));
+
+    const mutation = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url) === `${api}/marathon-wellness-reports/2026-09-28` &&
+        (init as RequestInit | undefined)?.method === 'PUT',
+    );
+    expect(mutation).toBeDefined();
+    expect(mutation?.[1]?.body).toBe(
+      JSON.stringify({
+        morningShake: false,
+        physicalActivity: false,
+        waterTarget: true,
+        secondShake: false,
+        healthyDinner: false,
+        goodSleep: false,
+        noJunkFood: false,
+        noSmoking: false,
+      }),
+    );
+  });
+
+  it('reuses the idempotency key when a failed report is sent again', async () => {
+    const user = userEvent.setup();
+    let attempts = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `${api}/marathon-wellness-reports/2026-09-28` && init?.method === 'PUT') {
+        attempts += 1;
+        if (attempts === 1) return json({ error: { code: 'TEMPORARY', message: 'Временная ошибка.' } }, 500);
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    await screen.findByText('Команда Антонины');
+    await user.click(screen.getByRole('button', { name: 'Отправить отчёт' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Временная ошибка.');
+    await user.click(screen.getByRole('button', { name: 'Отправить отчёт' }));
+
+    const calls = fetchMock.mock.calls.filter(
+      ([url, init]) => String(url) === `${api}/marathon-wellness-reports/2026-09-28` && (init as RequestInit | undefined)?.method === 'PUT',
+    );
+    expect(calls).toHaveLength(2);
+    expect((calls[0]?.[1]?.headers as Record<string, string>)['Idempotency-Key']).toBe(
+      (calls[1]?.[1]?.headers as Record<string, string>)['Idempotency-Key'],
+    );
+  });
+
+  it('lets a user without membership join the current marathon with a provided code', async () => {
+    const user = userEvent.setup();
+    let joined = false;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/marathons/current`) {
+        return joined
+          ? json(current())
+          : json({ error: { code: 'MARATHON_MEMBERSHIP_REQUIRED', message: 'Нет membership.' } }, 403);
+      }
+      if (url === `${api}/marathon-team-memberships` && init?.method === 'POST') {
+        joined = true;
+        return json({ role: 'participant' }, 201);
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    expect(await screen.findByText('Присоединитесь к команде')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Код приглашения'), 'team-code');
+    await user.click(screen.getByRole('button', { name: 'Присоединиться' }));
+
+    expect(await screen.findByText('Команда Антонины')).toBeInTheDocument();
+    const join = fetchMock.mock.calls.find(
+      ([url, init]) => String(url) === `${api}/marathon-team-memberships` && (init as RequestInit | undefined)?.method === 'POST',
+    );
+    expect(join?.[1]?.body).toBe(JSON.stringify({ joinCode: 'team-code' }));
+  });
+
+  it('shows a calm period state when the server marks the marathon inactive', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `${api}/marathons/current`) {
+        return json({ error: { code: 'MARATHON_NOT_ACTIVE', message: 'Не активен.' } }, 409);
+      }
+      return responseFor(input, init);
+    }));
+
+    render(<MarathonPage />);
+    expect(await screen.findByText('Марафон сейчас не активен')).toBeInTheDocument();
+    expect(screen.queryByText('Не удалось загрузить марафон')).not.toBeInTheDocument();
+  });
+
+  it('keeps the team screen when the first-day report is not applicable', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `${api}/marathon-wellness-reports/2026-09-28`) {
+        return json({ status: 'notApplicable', reportDate: '2026-09-28', report: null });
+      }
+      return responseFor(input, init);
+    }));
+
+    render(<MarathonPage />);
+    expect(await screen.findByText('Команда Антонины')).toBeInTheDocument();
+    expect(screen.getByLabelText('Отчёт за вчера недоступен')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Отправить отчёт' })).not.toBeInTheDocument();
+  });
+
+  it('refreshes a captain screen when a stale task date is rejected after midnight', async () => {
+    const user = userEvent.setup();
+    let currentReads = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/marathons/current`) {
+        currentReads += 1;
+        return json({
+          ...current(),
+          displayDate: currentReads === 1 ? '2026-09-29' : '2026-09-30',
+          reportDate: currentReads === 1 ? '2026-09-28' : '2026-09-29',
+          membership: { id: 'membership-1', role: 'captain', isCurrentUser: true },
+        });
+      }
+      if (url.startsWith(`${api}/marathon-wellness-reports/`)) {
+        return json({ status: 'unknown', reportDate: url.slice(-10), report: null });
+      }
+      if (url === `${api}/marathon-teams/current/today`) {
+        return json({
+          ...team(),
+          currentMembership: { id: 'membership-1', role: 'captain' },
+        });
+      }
+      if (
+        url === `${api}/marathon-captain-tasks/2026-09-29` &&
+        init?.method === 'PUT'
+      ) {
+        return json(
+          {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Task date must be the current marathon date',
+            },
+          },
+          422,
+        );
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    await screen.findByRole('heading', { name: 'Задание на сегодня' });
+    await user.type(screen.getByLabelText('Название задания'), 'Прогулка');
+    await user.type(screen.getByLabelText('Описание задания'), 'Синтетическая проверка');
+    await user.click(screen.getByRole('button', { name: 'Сохранить задание' }));
+
+    expect(
+      await screen.findByText('Дата задания изменилась. Экран обновлён — можно продолжить.'),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Сегодня · 2026-09-30')).toBeInTheDocument();
+    expect(currentReads).toBe(2);
+  });
+
+  it('refreshes a participant screen when yesterday task completion is rejected', async () => {
+    const user = userEvent.setup();
+    let currentReads = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/marathons/current`) {
+        currentReads += 1;
+        return json({
+          ...current(),
+          displayDate: currentReads === 1 ? '2026-09-29' : '2026-09-30',
+          reportDate: currentReads === 1 ? '2026-09-28' : '2026-09-29',
+        });
+      }
+      if (url.startsWith(`${api}/marathon-wellness-reports/`)) {
+        return json({ status: 'unknown', reportDate: url.slice(-10), report: null });
+      }
+      if (url === `${api}/marathon-teams/current/today`) {
+        return json({
+          ...team(),
+          captainTask: {
+            id: 'task-1',
+            taskDate: '2026-09-29',
+            title: 'Прогулка',
+            description: 'Синтетическая проверка',
+            currentUserCompletion: { status: 'unknown', updatedAt: null },
+          },
+        });
+      }
+      if (
+        url === `${api}/marathon-captain-tasks/task-1/completion` &&
+        init?.method === 'PUT'
+      ) {
+        return json(
+          {
+            error: {
+              code: 'MARATHON_TASK_DATE_INVALID',
+              message: 'Only the current marathon task can be completed',
+            },
+          },
+          409,
+        );
+      }
+      return responseFor(input, init);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+    await user.click(await screen.findByRole('button', { name: 'Отметить выполнение' }));
+
+    expect(
+      await screen.findByText('Дата задания изменилась. Экран обновлён — можно продолжить.'),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Сегодня · 2026-09-30')).toBeInTheDocument();
+    expect(currentReads).toBe(2);
+  });
+});
+
+function responseFor(input: RequestInfo | URL, init?: RequestInit): Response {
+  const url = String(input);
+  if (url === `${api}/users/me/onboarding`) return json(onboarding());
+  if (url === `${api}/marathons/current`) return json(current());
+  if (url === `${api}/marathon-wellness-reports/2026-09-28`) {
+    if (init?.method === 'PUT') return json(report(true));
+    return json({ status: 'unknown', reportDate: '2026-09-28', report: null });
+  }
+  if (url === `${api}/marathon-teams/current/today`) return json(team());
+  if (url === `${api}/users/me/ai-provider-consent`) return json(consent());
+  throw new Error(`Unexpected fetch: ${url}`);
+}
+
+function onboarding() {
+  return { status: 'completed', csrfToken: 'csrf-token', profile: {} };
+}
+
+function current() {
+  return {
+    marathon: {
+      id: 'marathon-1',
+      name: 'Герби-Марафон',
+      startsOn: '2026-09-28',
+      endsOn: '2026-10-11',
+      timezone: 'Asia/Irkutsk',
+    },
+    team: { id: 'team-1', name: 'Команда Антонины' },
+    membership: { id: 'membership-1', role: 'participant', isCurrentUser: true },
+    displayDate: '2026-09-29',
+    reportDate: '2026-09-28',
+  };
+}
+
+function report(waterTarget: boolean) {
+  return {
+    status: 'reported',
+    reportDate: '2026-09-28',
+    morningShake: false,
+    physicalActivity: false,
+    waterTarget,
+    secondShake: false,
+    healthyDinner: false,
+    goodSleep: false,
+    noJunkFood: false,
+    noSmoking: false,
+    markedCount: Number(waterTarget),
+    updatedAt: '2026-09-29T00:00:00.000Z',
+  };
+}
+
+function team() {
+  return {
+    displayDate: '2026-09-29',
+    reportDate: '2026-09-28',
+    team: { id: 'team-1', name: 'Команда Антонины' },
+    currentMembership: { id: 'membership-1', role: 'participant' },
+    captainTask: null,
+    members: [
+      {
+        membershipId: 'membership-1',
+        displayName: 'Игорь',
+        isCurrentUser: true,
+        role: 'participant',
+        weight: { status: 'reported', dailyPercent: 1 },
+        wellness: { status: 'reported', markedCount: 3 },
+        captainTask: { status: 'notAssigned' },
+      },
+    ],
+    podiums: {
+      weight: [
+        {
+          place: 1,
+          value: 1,
+          members: [
+            {
+              membershipId: 'membership-1',
+              displayName: 'Игорь',
+              role: 'participant',
+              isCurrentUser: true,
+            },
+          ],
+        },
+      ],
+      wellness: [],
+      captainTask: [],
+    },
+  };
+}
+
+function consent() {
+  return {
+    providerMode: 'fake',
+    externalProviderEnabled: false,
+    documentVersion: 'v1',
+    disclosure: 'Ответы создаёт тестовый режим.',
+    accepted: false,
+    acceptedAt: null,
+  };
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
