@@ -483,7 +483,6 @@ export default function FoodPage() {
               <ProviderConsentNotice
                 consent={providerConsent}
                 csrfToken={data.csrfToken}
-                disclosure="Фото блюда и необходимый контекст будут переданы внешнему сервису GenAPI для разбора."
                 onAccepted={() => load(true)}
                 onSessionExpired={() => replace('/login')}
               />

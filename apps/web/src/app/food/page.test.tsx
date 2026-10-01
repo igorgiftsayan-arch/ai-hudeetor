@@ -195,7 +195,8 @@ describe('food screen', () => {
           return json({
             currentVersion: 'food-v1',
             acceptedVersion: accepted ? 'food-v1' : null,
-            disclosure: 'External processing',
+            disclosure:
+              'Полное условие v1: фото и нужный контекст передаются внешнему AI-провайдеру.',
             accepted,
           });
         }
@@ -214,7 +215,7 @@ describe('food screen', () => {
     expect(screen.getByText('Начать анализ')).toBeDisabled();
     expect(
       screen.getByText(
-        'Фото блюда и необходимый контекст будут переданы внешнему сервису GenAPI для разбора.',
+        'Полное условие v1: фото и нужный контекст передаются внешнему AI-провайдеру.',
       ),
     ).toBeInTheDocument();
     expect(
