@@ -24,6 +24,7 @@ services:
       FOOD_VISION_PROVIDER: ${FOOD_VISION_PROVIDER:-fake}
       GENAPI_NATIVE_BASE_URL: ${GENAPI_NATIVE_BASE_URL:-https://api.gen-api.ru/api/v1}
       GENAPI_VISION_MODEL: ${GENAPI_VISION_MODEL:-gpt-4o}
+      GENAPI_VISION_MODEL_VERSION: ${GENAPI_VISION_MODEL_VERSION:-gpt-4o-2024-08-06}
       S3_ENDPOINT: http://minio:9000
       S3_REGION: us-east-1
       S3_BUCKET: atlas-private

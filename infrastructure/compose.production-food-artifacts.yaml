@@ -1,0 +1,22 @@
+# Optional offline overlay after compose.production-food.yaml. Reuses the
+# owner-approved upstream source builds, NOT the historical database or stack.
+# Verify both binary SHA256 values in rebody-gerbi-release.md before use.
+services:
+  minio:
+    image: sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d
+    pull_policy: never
+    entrypoint: ['/usr/local/bin/minio']
+    environment:
+      MINIO_BROWSER: 'off'
+      GOMAXPROCS: '1'
+      GOMEMLIMIT: 256MiB
+    volumes:
+      - ${FOOD_STORAGE_BIN_DIR:?verified FOOD_STORAGE_BIN_DIR is required}/minio:/usr/local/bin/minio:ro
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:9000/minio/health/live').then(r=>{if(!r.ok)process.exit(1)})"]
+
+  minio-init:
+    image: sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d
+    pull_policy: never
+    volumes:
+      - ${FOOD_STORAGE_BIN_DIR:?verified FOOD_STORAGE_BIN_DIR is required}/mc:/usr/local/bin/mc:ro

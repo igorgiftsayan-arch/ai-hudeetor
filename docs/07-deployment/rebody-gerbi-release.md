@@ -63,6 +63,27 @@ food GenAPI проверяется отдельно с действующим co
 
 ## Проверки в этом checkpoint
 
+Проверенные MinIO/MC artifacts сохранились в старом release tree (это не
+`/usr/local/bin` хоста; путь назначения внутри контейнера нельзя путать с source).
+Их можно переиспользовать без запуска исторического стека через optional
+`compose.production-food-artifacts.yaml`; private production photo volume новый.
+
+- Binary directory: `/opt/projects/ai-hudeetor-gerbi-expanded-runtime/releases/da9e837/bin`.
+- MinIO SHA256: `51e11e3dbb73f4805e4cc0a6edcc7bca9007478debd4ab87657510f7a3130af4`.
+- MC SHA256: `46048312078528931c501001530d252df146f4de1ea43ed2a8ce54c4593b4515`.
+- Live `sha256sum` совпал для обоих; carrier image `6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d`
+  существует, Linux/amd64. Источник upstream builds и прежнее разрешение владельца:
+  `gerbi-expanded-pilot/docs/07-deployment/gerbi-constrained-runtime.md`.
+- Это локальные сборки upstream, не официальные registry images. Обычный overlay
+  сохраняет registry вариант; final deployment обязан явно выбрать проверенный
+  вариант, а не полагаться на прежнюю недоступность публичного registry.
+- Offline overlay Compose validation: PASS с dummy credentials, без печати env.
+- Реальный MinIO smoke: PASS в одноразовом контейнере, `network none`, без ports,
+  synthetic credentials и tmpfs `/data`. Health + private bucket initialization
+  выполнены; anonymous GET и PUT возвращают `403,403`. Контейнер завершился `0`
+  и удалён автоматически вместе с tmpfs. Пользовательские volumes не подключались.
+  Это ещё не signed browser upload/GenAPI acceptance.
+
 - Live read-only: production containers healthy; исторические GERBI остановлены.
 - Сервер: 3915 MiB RAM, 2574 MiB available; 17 GiB свободного диска на момент проверки.
 - Compose schema: PASS (`config --quiet` с protected production env и dummy food
