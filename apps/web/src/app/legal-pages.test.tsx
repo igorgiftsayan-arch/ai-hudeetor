@@ -42,12 +42,43 @@ describe('legal pages', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Версия: draft-privacy-v1')).toBeInTheDocument();
     expect(screen.getByText(/GenAPI.*grok-4-5/i)).toBeInTheDocument();
-    expect(screen.getByText(/не более 12/i)).toBeInTheDocument();
+    expect(screen.getByText(/до пяти подтверждённых/i)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'оферте GenAPI' }),
     ).toHaveAttribute('href', 'https://gen-api.ru/ru/documents');
     expect(
       screen.getByRole('link', { name: 'levnaohote@yandex.ru' }),
     ).toHaveAttribute('href', 'mailto:levnaohote@yandex.ru');
+  });
+
+  it('discloses the limited marathon and food-processing boundaries', () => {
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_PRIVACY_VERSION', 'draft-privacy-v1');
+
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Герби-Марафон' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/разрешённое displayName и дневные производные/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Фото еды и внешний AI' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/оригинальные байты выбранного изображения/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/явно подтвердит.*съеденным/i),
+    ).toBeInTheDocument();
+  });
+
+  it('states the five-minute token-return boundary without calling it medical advice', () => {
+    vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'draft-terms-v1');
+
+    render(<TermsPage />);
+
+    expect(screen.getByText(/пяти минут.*вернёт полный резерв/i)).toBeInTheDocument();
+    expect(screen.getByText(/не является медицинской консультацией/i)).toBeInTheDocument();
   });
 });
