@@ -40,6 +40,7 @@ describe('login screen', () => {
             csrfToken: 'csrf-token',
           });
         }
+        if (url === `${api}/users/me`) return json({ emailVerified: true });
         if (url === `${api}/users/me/onboarding`) {
           return json({ status: 'completed', csrfToken: 'csrf-token' });
         }
@@ -141,6 +142,34 @@ describe('login screen', () => {
     );
   });
 
+  it('sends an unverified returning user to email confirmation before onboarding', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === `${api}/sessions`)
+          return json({
+            userId: 'user-1',
+            expiresAt: '2026-07-22T05:00:00.000Z',
+            onboardingStatus: 'completed',
+            csrfToken: 'csrf-token',
+          });
+        if (String(input) === `${api}/users/me`)
+          return json({ emailVerified: false });
+        throw new Error(`Unexpected fetch: ${String(input)}`);
+      }),
+    );
+
+    render(<LoginPage />);
+    await user.type(screen.getByLabelText('Email'), 'owner@example.test');
+    await user.type(screen.getByLabelText('Пароль'), 'test-password-42');
+    await user.click(screen.getByRole('button', { name: 'Войти' }));
+
+    await waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith('/verify-email?next=/today'),
+    );
+  });
+
   it('creates a self-registered adult session with explicit consents', async () => {
     const user = userEvent.setup();
     vi.stubEnv('NEXT_PUBLIC_IDENTITY_TERMS_VERSION', 'test-v1');
@@ -186,7 +215,7 @@ describe('login screen', () => {
       await user.click(checkbox);
     await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
     await waitFor(() =>
-      expect(replaceMock).toHaveBeenCalledWith('/onboarding'),
+      expect(replaceMock).toHaveBeenCalledWith('/verify-email?next=/onboarding'),
     );
   });
 
@@ -239,7 +268,7 @@ describe('login screen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
     await waitFor(() =>
-      expect(replaceMock).toHaveBeenCalledWith('/onboarding'),
+      expect(replaceMock).toHaveBeenCalledWith('/verify-email?next=/onboarding'),
     );
     expect(keys).toHaveLength(2);
     expect(keys[0]).toBeTruthy();
@@ -281,7 +310,7 @@ describe('login screen', () => {
     await user.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
 
     await waitFor(() =>
-      expect(replaceMock).toHaveBeenCalledWith('/onboarding'),
+      expect(replaceMock).toHaveBeenCalledWith('/verify-email?next=/onboarding'),
     );
     expect(keys).toHaveLength(2);
     expect(keys[1]).toBeTruthy();

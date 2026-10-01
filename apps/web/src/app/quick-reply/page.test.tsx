@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import QuickReplyPage from './page';
 
@@ -241,6 +241,120 @@ describe('AI chat screen', () => {
 
     expect(operationKeys).toHaveLength(2);
     expect(operationKeys[0]).toBe(operationKeys[1]);
+  });
+
+  it('directs an unverified user to email confirmation before retrying an AI request', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-action-prices/quick-reply`) return price();
+        if (url === `${api}/ai-conversations/current`) return conversation([]);
+        if (url === `${api}/ai/operations` && init?.method === 'POST')
+          return json(
+            {
+              error: {
+                code: 'EMAIL_VERIFICATION_REQUIRED',
+                message: 'Email verification is required',
+              },
+            },
+            403,
+          );
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<QuickReplyPage />);
+    await screen.findByRole('log', { name: 'Переписка с AI' });
+    await user.type(screen.getByLabelText('Сообщение'), 'Можно спросить?');
+    await user.click(screen.getByRole('button', { name: 'Отправить' }));
+
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent(
+      'Подтвердите email, чтобы начать разговор с AI.',
+    );
+    expect(
+      within(error).getByRole('link', { name: 'Подтвердить email' }),
+    ).toHaveAttribute('href', '/verify-email');
+  });
+
+  it('shows backend disclosure and requires an explicit provider-consent action before another AI request', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-action-prices/quick-reply`) return price();
+        if (url === `${api}/ai-conversations/current`) return conversation([]);
+        if (url === `${api}/ai/operations` && init?.method === 'POST')
+          return json(
+            {
+              error: {
+                code: 'AI_PROVIDER_CONSENT_REQUIRED',
+                message: 'Provider consent is required',
+              },
+            },
+            403,
+          );
+        if (url === `${api}/users/me/ai-provider-consent` && !init?.method)
+          return json({
+            accepted: false,
+            currentVersion: 'provider-v1',
+            acceptedVersion: null,
+            disclosure:
+              'Ваше сообщение будет обработано выбранным AI-провайдером.',
+          });
+        if (
+          url === `${api}/users/me/ai-provider-consent` &&
+          init?.method === 'POST'
+        ) {
+          expect(new Headers(init.headers).get('X-CSRF-Token')).toBe(
+            'csrf-token',
+          );
+          expect(init.body).toBe(
+            JSON.stringify({ documentVersion: 'provider-v1', accepted: true }),
+          );
+          return json({
+            accepted: true,
+            currentVersion: 'provider-v1',
+            acceptedVersion: 'provider-v1',
+          });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<QuickReplyPage />);
+    await screen.findByRole('log', { name: 'Переписка с AI' });
+    await user.type(screen.getByLabelText('Сообщение'), 'Можно спросить?');
+    await user.click(screen.getByRole('button', { name: 'Отправить' }));
+
+    expect(
+      await screen.findByText(
+        'Ваше сообщение будет обработано выбранным AI-провайдером.',
+      ),
+    ).toBeInTheDocument();
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'Я прочитал(а) информацию об обработке данных AI-провайдером',
+    });
+    expect(checkbox).not.toBeChecked();
+    expect(
+      screen.getByRole('button', { name: 'Продолжить с AI' }),
+    ).toBeDisabled();
+
+    await user.click(checkbox);
+    await user.click(screen.getByRole('button', { name: 'Продолжить с AI' }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText(
+          'Ваше сообщение будет обработано выбранным AI-провайдером.',
+        ),
+      ).not.toBeInTheDocument(),
+    );
   });
 
   it('keeps the same key after an ambiguous server response', async () => {

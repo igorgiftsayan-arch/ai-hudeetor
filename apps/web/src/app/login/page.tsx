@@ -70,7 +70,9 @@ export default function LoginPage() {
           idempotencyKey: newIdempotencyKey(),
         };
       }
-      await apiRequest<RegistrationResourceDto | SessionResourceDto>(
+      const session = await apiRequest<
+        RegistrationResourceDto | SessionResourceDto
+      >(
         registered ? '/registrations' : '/sessions',
         {
           method: 'POST',
@@ -85,8 +87,19 @@ export default function LoginPage() {
         { unauthorizedKind: 'request' },
       );
       if (registered) {
-        replace('/onboarding');
+        replace('/verify-email?next=/onboarding');
       } else {
+        const current = await apiRequest<{ emailVerified?: boolean }>(
+          '/users/me',
+        );
+        if (current.emailVerified === false) {
+          replace(
+            session.onboardingStatus === 'completed'
+              ? '/verify-email?next=/today'
+              : '/verify-email?next=/onboarding',
+          );
+          return;
+        }
         const onboarding = await apiRequest<{ status: string }>(
           '/users/me/onboarding',
         );
@@ -218,6 +231,12 @@ export default function LoginPage() {
                 : 'Создать аккаунт'}
           </button>
         </form>
+
+        {mode === 'login' && (
+          <a className="text-action login-link" href="/forgot-password">
+            Забыли пароль?
+          </a>
+        )}
 
         <button type="button" className="text-action" onClick={switchMode}>
           {mode === 'login' ? 'Создать аккаунт' : 'У меня уже есть аккаунт'}
