@@ -17,7 +17,14 @@ describe('FoodAnalysisProcessor reconciliation', () => {
       if (sql.includes('select id,wallet_id')) return { rows: [{ id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -5 }], rowCount: 1 };
       return { rows: [], rowCount: 1 };
     });
-    const database = { query: jest.fn().mockResolvedValue({ rows: [{ payload: { analysisId: 'analysis-1' } }] }), transaction: async (callback: (client: { query: typeof query }) => Promise<unknown>) => callback({ query }) };
+    const database = {
+      query: jest.fn(async (sql: string) =>
+        sql.includes("event_type='food.analysis_requested.v1'")
+          ? { rows: [{ payload: { analysisId: 'analysis-1' } }], rowCount: 1 }
+          : { rows: [{}], rowCount: 1 },
+      ),
+      transaction: async (callback: (client: { query: typeof query }) => Promise<unknown>) => callback({ query }),
+    };
     jest.spyOn(S3Client.prototype, 'send').mockImplementation((async () => ({ ContentType: 'image/jpeg', Body: { transformToByteArray: async () => new Uint8Array([255,216,255]) } })) as never);
     const fetcher = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('synthetic transport interruption'));
     const processor = new FoodAnalysisProcessor(database as never, { provider: 'genapi', fakeMode: 'success', apiKey: 'test', nativeBaseUrl: 'https://provider.example/api/v1', networkId: 'gpt-4o', modelVersion: 'test', timeoutMs: 1000, s3: { endpoint: 'http://127.0.0.1:1', region: 'test', bucket: 'test', accessKeyId: 'test', secretAccessKey: 'test', forcePathStyle: true } });
@@ -31,13 +38,7 @@ describe('FoodAnalysisProcessor reconciliation', () => {
   });
 
   it('confirms a known provider request exactly once when reconciliation succeeds', async () => {
-    const client = {
-      query: jest
-        .fn()
-        .mockResolvedValueOnce({ rows: [{ id: 'analysis-1', user_id: 'user-1' }] })
-        .mockResolvedValueOnce({ rows: [{ id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -5 }] })
-        .mockResolvedValue({ rows: [] }),
-    };
+    const client = recoveryAwareClient();
     const database = {
       query: jest
         .fn()
@@ -80,10 +81,7 @@ describe('FoodAnalysisProcessor reconciliation', () => {
     // Sanitized real synthetic-image response: no request parameters, image, profile or identifiers.
     const fixture = JSON.parse(readFileSync(resolve(__dirname, 'fixtures/genapi-food-native-choices.json'), 'utf8'));
     const expected = JSON.parse(fixture.result[0].message.content);
-    const client = { query: jest.fn()
-      .mockResolvedValueOnce({rows:[{id:'analysis-1',user_id:'user-1'}]})
-      .mockResolvedValueOnce({rows:[{id:'reservation-1',wallet_id:'wallet-1',amount_tokens:-5}]})
-      .mockResolvedValue({rows:[]}) };
+    const client = recoveryAwareClient();
     const database = { query: jest.fn()
       .mockResolvedValueOnce({rows:[{payload:{analysisId:'analysis-1'}}]})
       .mockResolvedValueOnce({rows:[{provider_request_id:'known-request'}]}),
@@ -105,7 +103,9 @@ describe('FoodAnalysisProcessor reconciliation', () => {
         .mockResolvedValueOnce({ rows: [{ payload: { analysisId: 'analysis-1' } }] })
         .mockResolvedValueOnce({ rows: [{ provider_request_id: 'provider-1' }] })
         .mockResolvedValueOnce({ rows: [] }),
-      transaction: jest.fn(),
+      transaction: jest.fn(async (callback: (value: ReturnType<typeof recoveryAwareClient>) => unknown) =>
+        callback(recoveryAwareClient()),
+      ),
     };
     jest.spyOn(global, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ status: 'processing' }), { status: 200 }),
@@ -122,6 +122,32 @@ describe('FoodAnalysisProcessor reconciliation', () => {
       expect.stringContaining("food.analysis_reconciliation_requested.v1"),
       ['analysis-1'],
     );
-    expect(database.transaction).not.toHaveBeenCalled();
+    expect(database.transaction).toHaveBeenCalledTimes(1);
   });
 });
+
+function recoveryAwareClient() {
+  return {
+    query: jest.fn(async (sql: string) => {
+      if (sql.includes('select user_id,created_at,status'))
+        return {
+          rows: [{
+            user_id: 'user-1',
+            created_at: new Date(),
+            status: 'outcomeUnknown',
+          }],
+          rowCount: 1,
+        };
+      if (sql.includes("interval '300 seconds'"))
+        return { rows: [{ due: false }], rowCount: 1 };
+      if (sql.includes('select id,user_id'))
+        return { rows: [{ id: 'analysis-1', user_id: 'user-1' }], rowCount: 1 };
+      if (sql.includes('select id,wallet_id'))
+        return {
+          rows: [{ id: 'reservation-1', wallet_id: 'wallet-1', amount_tokens: -5 }],
+          rowCount: 1,
+        };
+      return { rows: [], rowCount: 1 };
+    }),
+  };
+}
