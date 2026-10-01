@@ -130,6 +130,12 @@ join code. Для реального марафона требуются под�
 
 ## Выпуск и откат
 
+Последним Compose overlay применяется `infrastructure/compose.release-images.yaml`:
+API/worker/web/migrate используют один `REBODY_RELEASE_IMAGE` (проверенный immutable
+image ID), с отдельными entrypoints. База, Redis и их volumes не переопределяются.
+На cutover использовать `--no-build --pull never`; код в checkout и built source
+фиксируются отдельно. Повторная сборка внутри production up не допускается.
+
 До переключения: точные интегрированные commits/images, clean+upgrade tests,
 проверка конфигурации и текущих данных без PII, отсутствие незавершённых операций
 на границе обновления worker. Не запускать исторический стек. Сохранить предыдущие

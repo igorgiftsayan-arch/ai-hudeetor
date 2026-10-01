@@ -1,0 +1,22 @@
+# All application entrypoints are produced by the same Dockerfile build stage.
+# Use an immutable, verified image ID/digest, then deploy with --no-build.
+# Database/Redis volumes and their images are deliberately not overridden.
+services:
+  api:
+    image: ${REBODY_RELEASE_IMAGE:?REBODY_RELEASE_IMAGE is required}
+    pull_policy: never
+    command: ['node', '/workspace/apps/api/dist/main.js']
+    restart: unless-stopped
+  worker:
+    image: ${REBODY_RELEASE_IMAGE:?REBODY_RELEASE_IMAGE is required}
+    pull_policy: never
+    command: ['node', '/workspace/apps/worker/dist/main.js']
+    restart: unless-stopped
+  web:
+    image: ${REBODY_RELEASE_IMAGE:?REBODY_RELEASE_IMAGE is required}
+    pull_policy: never
+    command: ['node', '/workspace/apps/web/node_modules/next/dist/bin/next', 'start', '/workspace/apps/web', '-H', '0.0.0.0', '-p', '3000']
+    restart: unless-stopped
+  migrate:
+    image: ${REBODY_RELEASE_IMAGE:?REBODY_RELEASE_IMAGE is required}
+    pull_policy: never
