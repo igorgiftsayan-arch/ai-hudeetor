@@ -45,7 +45,7 @@ export function MarathonLobby({
 }) {
   const marathon = lobby.marathon;
 
-  if (marathon?.status === 'inProgress') return null;
+  if (marathon?.status === 'inProgress' && lobby.currentMembership) return null;
 
   if (!marathon) {
     return (
@@ -115,12 +115,24 @@ export function MarathonLobby({
     );
   }
 
+  if (marathon.status === 'inProgress') {
+    return (
+      <LobbyShell error={error}>
+        <MarathonSummary marathon={marathon} memberCount={lobby.enrollment?.memberCount} />
+        <h1>Марафон уже начался</h1>
+        <p className="marathon-lobby-copy">
+          Набор завершён, вступить уже нельзя.
+        </p>
+      </LobbyShell>
+    );
+  }
+
   return (
     <LobbyShell error={error}>
       <MarathonSummary marathon={marathon} memberCount={lobby.enrollment?.memberCount} />
       <h1>Марафон завершён</h1>
       <p className="marathon-lobby-copy">
-        Дневные результаты сохранены в истории этого марафона.
+        Этот марафон завершён. Капитан может открыть следующий набор.
       </p>
       {lobby.canOpenEnrollment && (
         <EnrollmentSetup

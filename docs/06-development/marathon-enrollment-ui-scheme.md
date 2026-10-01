@@ -14,13 +14,15 @@ machine или API-контракта.
 | `enrollmentOpen` + `canManage: true` | captain | Те же сведения | «Завершить набор» |
 | `enrollmentClosed` + `canManage: true` | captain | Ожидание первого дня | «Начать первый день» |
 | `enrollmentClosed` без `canManage` | participant | Ожидание первого дня | нет |
+| `inProgress` без `currentMembership` | пользователь, не успевший вступить | Набор завершён | нет |
 | `completed` + `canOpenEnrollment: true` | allowlisted captain | Завершение прошлого марафона | «Открыть новый набор» |
 
 В статусах до `inProgress` web **не загружает** старый active-day набор
 `/marathons/current`, отчёт за вчера, задание капитана или пьедесталы и не
 выдаёт их за действующий день. После успешного start web сначала повторно
-загружает lobby; только при `inProgress` он загружает сохранённый существующий
-daily screen. Номер и даты дней определяет backend от фактического `startedAt`.
+загружает lobby; только при `inProgress` **и** `currentMembership !== null` он
+загружает сохранённый существующий daily screen. Номер и даты дней определяет
+backend от фактического `startedAt`.
 
 ## Точки подключения
 

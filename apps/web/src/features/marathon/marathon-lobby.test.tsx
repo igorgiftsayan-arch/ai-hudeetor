@@ -126,6 +126,33 @@ describe('MarathonLobby', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Марафон завершён' })).toBeVisible();
+    expect(
+      screen.getByText('Этот марафон завершён. Капитан может открыть следующий набор.'),
+    ).toBeVisible();
+    expect(screen.queryByText(/результаты сохранены в истории/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть новый набор' })).toBeEnabled();
+  });
+
+  it('keeps a late non-member outside the active-day screen after the marathon starts', () => {
+    render(
+      <MarathonLobby
+        lobby={{
+          ...openEnrollment,
+          marathon: {
+            ...openEnrollment.marathon,
+            status: 'inProgress',
+            startsOn: '2026-10-01',
+            endsOn: '2026-10-21',
+            startedAt: '2026-10-01T09:00:00.000Z',
+          },
+          enrollment: { isOpen: false, memberCount: 12 },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Марафон уже начался' })).toBeVisible();
+    expect(screen.getByText('Набор завершён, вступить уже нельзя.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Вступить в марафон' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Лидеры дня')).not.toBeInTheDocument();
   });
 });
