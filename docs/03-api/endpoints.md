@@ -19,6 +19,23 @@ ARCH-001 зафиксировал REST API `/api/v1`, но feature URL и payloa
 
 VERT-001.2 реализует `POST /api/v1/registrations`, `POST /api/v1/sessions`, `POST /api/v1/sessions/refreshes`, `DELETE /api/v1/sessions/current` и `GET /api/v1/users/me`. Registration idempotency повторно использует account business result, но заменяет только session family соответствующей registration attempt вместо хранения обратимых session secrets. Registration и login принимаются только с разрешённым `Origin`/`Referer`: до выдачи cookie это служит базовой защитой от cross-site login/registration CSRF. Login ограничен пятью ошибками на SHA-256 scope IP + normalized email за 15 минут через Redis. Registration имеет отдельный fail-closed лимит по хешированному IP scope; значения лимита и окна задаются runtime-конфигурацией. За reverse proxy production обязан явно настроить число доверенных hops, иначе source-IP ограничения не считаются корректными. Session truth остаётся в PostgreSQL.
 
+Identity email release добавляет `POST /api/v1/email-verification-requests`
+(authenticated, CSRF, trusted Origin), `POST /api/v1/email-verifications`,
+`POST /api/v1/password-reset-requests` и `POST /api/v1/password-resets`.
+Request endpoints отвечают одинаковым `202 { accepted: true }` независимо от
+существования или состояния аккаунта. Verification/reset tokens одноразовые;
+invalid/expired/consumed состояния используют единые коды
+`EMAIL_VERIFICATION_TOKEN_INVALID` и `PASSWORD_RESET_TOKEN_INVALID`.
+Успешный reset возвращает `{ passwordReset: true }` и отзывает все сессии.
+Registration/session/current-user resources включают `emailVerified`.
+
+Versioned consent API: `GET /api/v1/users/me/ai-provider-consent` возвращает
+server-owned current version/disclosure/status; authenticated CSRF-protected
+`POST` принимает только точную current version и `accepted: true`. До
+verification и current consent `POST /api/v1/ai/operations` возвращает
+соответственно `EMAIL_VERIFICATION_REQUIRED` или
+`AI_PROVIDER_CONSENT_REQUIRED` до любых финансовых/AI effects.
+
 VERT-001.3 реализует `GET /api/v1/users/me/onboarding`, `PATCH /api/v1/users/me/profile` и `PUT /api/v1/users/me/ai-preference`. Onboarding read model выдаёт короткоживущий CSRF token для следующих mutation requests; все mutation routes требуют существующую cookie session, CSRF и Origin/Referer validation. AI-002 расширяет profile необязательными nullable `displayName` и `targetWeightKg`. Preference принимает только пять утверждённых persona. Повтор `PUT` с тем же persona не добавляет второй outbox event.
 
 AI-002 добавляет owner-scoped `GET /api/v1/ai-memory` и `DELETE /api/v1/ai-memory/{id}`. List возвращает только активные структурированные факты. Delete требует cookie session, CSRF и permitted Origin, выполняет soft delete и возвращает `404 RESOURCE_NOT_FOUND` для чужого, неизвестного или уже удалённого ID. Полный контракт — в [AI-002 design](../01-architecture/vertical-slices/AI-002-design.md).

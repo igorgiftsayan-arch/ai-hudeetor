@@ -230,3 +230,23 @@ VERT-001 должен начинаться только отдельной ут�
 5. До работы с реальными пользователями применить обязательные auth, ownership, privacy и logging ограничения.
 
 Реализация VERT-001 в рамках этой задачи не запускалась.
+
+## Rebody identity email — isolated verification
+
+- Дата: 2026-10-01; branch `back/rebody38-email-identity`; image source
+  `5e8753bad32e7c36424a9a599088fd6cef734ea4`.
+- Отдельная PostgreSQL 17 topology: migrations `0000–0012` применены дважды;
+  Drizzle metadata содержит 13 записей, таблицы `identity_tokens` и
+  `identity_email_deliveries` присутствуют.
+- PostgreSQL identity suite: 6/6 — atomic registration delivery, concurrent
+  resend/reset, one-time verification/reset, session revocation и stale
+  credential guard.
+- Worker delivery suite: 4/4 — overlapping polls, expired-token cancellation,
+  stale lease/restart recovery и DB-outage containment. Stable Message-ID и
+  fenced claim предотвращают повторный DB effect; ambiguous SMTP delivery не
+  объявляется exactly-once.
+- API regression: 55 passed; worker regression: 34 passed; backend/API/worker
+  typecheck и lint прошли. SMTP не вызывался: использован fake transport,
+  реальные credentials не требовались и не выводились.
+- Временные PostgreSQL container/network/volume удалены. Production/stable
+  Compose projects, frontend и `main` не изменялись.
