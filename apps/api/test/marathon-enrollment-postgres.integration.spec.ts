@@ -1,8 +1,9 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   DatabaseService,
   MarathonService,
   calendarDateInTimezone,
+  previousCalendarDate,
 } from '@atlas/backend';
 
 const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
@@ -122,6 +123,41 @@ describeWithDatabase(
       const created = await service.openEnrollment(captainId, randomUUID(), {
         durationDays: 10,
       });
+
+      it('never permits a public-enrollment marathon through the legacy join-code endpoint', async () => {
+        const created = await service.openEnrollment(captainId, randomUUID(), {
+          durationDays: 10,
+        });
+        const guessedCode = `enrollment:${created.marathonId}`;
+        await db.query(
+          `update marathon_teams set join_code_hash=$2 where marathon_id=$1`,
+          [
+            created.marathonId,
+            createHash('sha256').update(guessedCode).digest('hex'),
+          ],
+        );
+        await service.closeEnrollment(
+          captainId,
+          created.marathonId,
+          randomUUID(),
+        );
+        await expect(
+          service.join(participantId, randomUUID(), guessedCode),
+        ).rejects.toMatchObject({ code: 'MARATHON_JOIN_CODE_UNAVAILABLE' });
+        await service.startMarathon(
+          captainId,
+          created.marathonId,
+          randomUUID(),
+        );
+        await expect(
+          service.join(unauthorizedId, randomUUID(), guessedCode),
+        ).rejects.toMatchObject({ code: 'MARATHON_JOIN_CODE_UNAVAILABLE' });
+        const memberCount = await db.query<{ count: number }>(
+          'select count(*)::int count from marathon_memberships where marathon_id=$1',
+          [created.marathonId],
+        );
+        expect(memberCount.rows[0]?.count).toBe(1);
+      });
       await expect(
         service.startMarathon(captainId, created.marathonId, randomUUID()),
       ).rejects.toMatchObject({
@@ -219,6 +255,9 @@ describeWithDatabase(
       );
       const today = calendarDateInTimezone(new Date(), 'Europe/Moscow');
       await weight(db, participantId, today, '90.00');
+      await expect(service.today(participantId)).rejects.toMatchObject({
+        code: 'MARATHON_NOT_ACTIVE',
+      });
       expect(
         (
           await db.query(
@@ -243,6 +282,60 @@ describeWithDatabase(
         [created.marathonId, participantId],
       );
       expect(baseline.rows[0]?.baseline_weight_kg).toBe('90.00');
+    });
+
+    it('uses the captain calendar for cross-timezone weight comparison without changing user local dates', async () => {
+      const created = await service.openEnrollment(captainId, randomUUID(), {
+        durationDays: 7,
+      });
+      await service.joinEnrollment(
+        participantId,
+        created.marathonId,
+        randomUUID(),
+      );
+      await service.closeEnrollment(
+        captainId,
+        created.marathonId,
+        randomUUID(),
+      );
+      await service.startMarathon(captainId, created.marathonId, randomUUID());
+      const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
+      const yesterday = previousCalendarDate(today);
+      const participantYesterday = previousCalendarDate(yesterday);
+      const participantToday = yesterday;
+      await db.query(
+        'update marathons set starts_on=$2::date,ends_on=$2::date+6 where id=$1',
+        [created.marathonId, yesterday],
+      );
+      await db.query(
+        `insert into weight_entries(id,user_id,weight_kg,recorded_at,local_date,updated_at,is_current)
+       values($1,$2,90.00,$3::date + time '00:30' - interval '8 hours',$4,now(),true),
+             ($5,$2,89.00,$6::date + time '00:30' - interval '8 hours',$7,now(),true)`,
+        [
+          randomUUID(),
+          participantId,
+          yesterday,
+          participantYesterday,
+          randomUUID(),
+          today,
+          participantToday,
+        ],
+      );
+      const view = await service.today(participantId);
+      expect(
+        view.members.find((member) => member.isCurrentUser)?.weight,
+      ).toEqual({
+        status: 'reported',
+        dailyPercent: 1.11,
+      });
+      const localDates = await db.query<{ local_date: string }>(
+        'select local_date::text from weight_entries where user_id=$1 order by local_date',
+        [participantId],
+      );
+      expect(localDates.rows.map((row) => row.local_date)).toEqual([
+        participantYesterday,
+        participantToday,
+      ]);
     });
 
     it('lazily completes after the captain-local end date', async () => {
