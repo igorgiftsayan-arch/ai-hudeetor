@@ -20,6 +20,7 @@ import type { OnboardingResourceDto } from '@atlas/api-contracts';
 
 type ViewState = 'loading' | 'ready' | 'error' | 'onboarding' | 'notFound' | 'noMembership' | 'notActive';
 type Pending = { payload: string; key: string };
+type PendingCompletion = Pending & { taskId: string; completed: boolean };
 
 const habits: Array<{ id: keyof WellnessValues; label: string }> = [
   { id: 'morningShake', label: 'Утренний коктейль' },
@@ -42,7 +43,7 @@ export default function MarathonPage() {
   const [saving, setSaving] = useState(false);
   const pendingReport = useRef<Pending | undefined>(undefined);
   const pendingTask = useRef<Pending | undefined>(undefined);
-  const pendingCompletion = useRef<Pending | undefined>(undefined);
+  const pendingCompletion = useRef<PendingCompletion | undefined>(undefined);
 
   const load = useCallback(async () => {
     setViewState('loading');
@@ -116,17 +117,26 @@ export default function MarathonPage() {
     }
   }
 
-  async function markCaptainTask() {
+  async function markCaptainTask(completed: boolean) {
     if (!data?.team.captainTask) return;
-    const payload = JSON.stringify({ taskId: data.team.captainTask.id, completed: true });
+    const payload = JSON.stringify({
+      taskId: data.team.captainTask.id,
+      completed,
+    });
     if (pendingCompletion.current?.payload !== payload) {
-      pendingCompletion.current = { payload, key: newIdempotencyKey() };
+      pendingCompletion.current = {
+        payload,
+        key: newIdempotencyKey(),
+        taskId: data.team.captainTask.id,
+        completed,
+      };
     }
     setSaving(true);
     setTaskError(undefined);
     try {
       await completeCaptainTask({
         taskId: data.team.captainTask.id,
+        completed,
         csrfToken: data.csrfToken,
         idempotencyKey: pendingCompletion.current.key,
       });
@@ -137,7 +147,8 @@ export default function MarathonPage() {
       if (cause instanceof ApiError && cause.kind === 'session') replace('/login');
       else if (
         cause instanceof ApiError &&
-        cause.code === 'MARATHON_TASK_DATE_INVALID'
+        (cause.code === 'MARATHON_TASK_DATE_INVALID' ||
+          cause.code === 'MARATHON_NOT_FOUND')
       ) {
         pendingCompletion.current = undefined;
         await load();
@@ -147,6 +158,18 @@ export default function MarathonPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function retryCaptainTask() {
+    if (!data?.team.captainTask || !pendingCompletion.current) return;
+    const pending = pendingCompletion.current;
+    if (pending.taskId !== data.team.captainTask.id) {
+      pendingCompletion.current = undefined;
+      setTaskError('Задание обновилось. Проверьте отметку ещё раз.');
+      void load();
+      return;
+    }
+    void markCaptainTask(pending.completed);
   }
 
   async function saveTask(task: { title: string; description: string }) {
@@ -264,11 +287,11 @@ export default function MarathonPage() {
           captainTask={captainTask ? {
             title: captainTask.title,
             description: captainTask.description,
-            completionLabel: currentTaskStatus === 'completed' ? 'Выполнено' : 'Отметить выполнение',
-            onComplete: currentTaskStatus === 'completed' ? undefined : () => void markCaptainTask(),
+            completionLabel: currentTaskStatus === 'completed' ? 'Отменить выполнение' : 'Отметить выполнение',
+            onComplete: () => void markCaptainTask(currentTaskStatus !== 'completed'),
             isCompleting: saving,
             error: taskError,
-            onRetry: () => void markCaptainTask(),
+            onRetry: retryCaptainTask,
           } : undefined}
         />
 
