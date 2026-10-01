@@ -49,6 +49,7 @@ export default function QuickReplyPage() {
   const [consentSaving, setConsentSaving] = useState(false);
   const pendingSubmission = useRef<PendingSubmission | undefined>(undefined);
   const pollInFlight = useRef(false);
+  const consentInFlight = useRef(false);
   const conversationRefreshVersion = useRef(0);
   const feedEnd = useRef<HTMLDivElement>(null);
 
@@ -170,7 +171,14 @@ export default function QuickReplyPage() {
   }
 
   async function acceptProviderConsent() {
-    if (!providerConsent || !consentChecked || !csrfToken) return;
+    if (
+      !providerConsent ||
+      !consentChecked ||
+      !csrfToken ||
+      consentInFlight.current
+    )
+      return;
+    consentInFlight.current = true;
     setConsentSaving(true);
     setError(undefined);
     try {
@@ -207,6 +215,7 @@ export default function QuickReplyPage() {
       }
     } finally {
       setConsentSaving(false);
+      consentInFlight.current = false;
     }
   }
 

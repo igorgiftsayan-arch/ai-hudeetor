@@ -87,7 +87,16 @@ export default function VerifyEmailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const current = await apiRequest<CurrentUserResourceDto>('/users/me');
+      let current: CurrentUserResourceDto;
+      try {
+        current = await apiRequest<CurrentUserResourceDto>('/users/me');
+      } catch (cause) {
+        if (cause instanceof ApiError && cause.kind === 'session') {
+          replace('/login');
+          return;
+        }
+        throw cause;
+      }
       if (!current.emailVerified) {
         setError('Не удалось обновить статус email. Попробуйте войти ещё раз.');
         return;

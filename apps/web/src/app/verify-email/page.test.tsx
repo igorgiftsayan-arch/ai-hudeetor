@@ -30,13 +30,13 @@ describe('email verification screen', () => {
       async (input: RequestInfo | URL, init?: RequestInit) => {
         if (String(input) === `${api}/users/me/onboarding`)
           return json({ status: 'registered', csrfToken: 'csrf-token' });
-      if (String(input) === `${api}/email-verifications`) {
+        if (String(input) === `${api}/email-verifications`) {
           expect(init?.method).toBe('POST');
           expect(init?.body).toBe(JSON.stringify({ token: 'mail-token' }));
-        return json({ emailVerified: true }, 200);
-      }
-      if (String(input) === `${api}/users/me`)
-        return json({ emailVerified: true, onboardingStatus: 'registered' });
+          return json({ emailVerified: true }, 200);
+        }
+        if (String(input) === `${api}/users/me`)
+          return json({ emailVerified: true, onboardingStatus: 'registered' });
         throw new Error(`Unexpected fetch: ${String(input)}`);
       },
     );
@@ -98,6 +98,34 @@ describe('email verification screen', () => {
     await user.click(screen.getByRole('button', { name: 'Продолжить без AI' }));
 
     expect(replaceMock).toHaveBeenCalledWith('/today');
+  });
+
+  it('returns to login after a successful email confirmation opened without a session', async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, '', '/verify-email#token=mail-token');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === `${api}/users/me/onboarding`)
+          return json(
+            { error: { code: 'AUTHENTICATION_FAILED', message: 'no session' } },
+            401,
+          );
+        if (String(input) === `${api}/email-verifications`)
+          return json({ emailVerified: true }, 200);
+        if (String(input) === `${api}/users/me`)
+          return json(
+            { error: { code: 'AUTHENTICATION_FAILED', message: 'no session' } },
+            401,
+          );
+        throw new Error(`Unexpected fetch: ${String(input)}`);
+      }),
+    );
+
+    render(<VerifyEmailPage />);
+    await user.click(screen.getByRole('button', { name: 'Подтвердить email' }));
+
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/login'));
   });
 });
 
