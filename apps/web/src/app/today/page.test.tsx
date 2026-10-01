@@ -44,7 +44,7 @@ describe('today weight screen', () => {
 
     expect(await screen.findByText('Сегодня, 22 июля')).toBeInTheDocument();
     const summary = screen.getByTestId('weight-summary');
-    expect(within(summary).getByText('98,4 кг')).toBeInTheDocument();
+    expect(within(summary).getByText('98,40 кг')).toBeInTheDocument();
     expect(
       within(summary).getByText('−0,6 кг с прошлой записи'),
     ).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('today weight screen', () => {
       screen.getByRole('img', { name: 'График изменения веса' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Сегодня уже записано: 98,4 кг'),
+      screen.getByText('Сегодня уже записано: 98,40 кг'),
     ).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Вес сегодня' })).toHaveValue(
       '98.40',
@@ -70,6 +70,38 @@ describe('today weight screen', () => {
     expect(
       screen.getByRole('button', { name: 'Начать день' }),
     ).toBeInTheDocument();
+  });
+
+  it('keeps two decimal places in every displayed weight surface', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/weight-entries`)
+          return json({
+            items: [entry('weight-1', '80.20', '2026-07-22T01:00:00.000Z')],
+            nextCursor: null,
+          });
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<TodayPage />);
+
+    const summary = await screen.findByTestId('weight-summary');
+    expect(
+      within(summary).getByText('80,20 кг'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Сегодня уже записано: 80,20 кг'),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Недавняя история веса')).toHaveTextContent(
+      '80,20 кг',
+    );
+    expect(screen.getByRole('textbox', { name: 'Вес сегодня' })).toHaveValue(
+      '80.20',
+    );
   });
 
   it('keeps the weight screen available when the daily state cannot load', async () => {
@@ -186,9 +218,9 @@ describe('today weight screen', () => {
     expect(
       await screen.findByText('Вес за сегодня записан'),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('weight-summary')).toHaveTextContent('98,4 кг');
+    expect(screen.getByTestId('weight-summary')).toHaveTextContent('98,40 кг');
     expect(
-      screen.getByText('Сегодня уже записано: 98,4 кг'),
+      screen.getByText('Сегодня уже записано: 98,40 кг'),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Обновить вес' }),

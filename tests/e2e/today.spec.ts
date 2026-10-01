@@ -97,7 +97,7 @@ test('completed user logs in, safely retries weight and opens quick reply', asyn
   await page.getByLabel('Пароль').fill(password);
   await page.getByRole('button', { name: 'Войти' }).click();
   await expect(page).toHaveURL(/\/today$/);
-  await expect(page.getByTestId('weight-summary')).toContainText('98,8 кг');
+  await expect(page.getByTestId('weight-summary')).toContainText('98,80 кг');
   await expect(
     page.getByLabel('Недавняя история веса').getByRole('listitem'),
   ).toHaveCount(1);
@@ -118,13 +118,13 @@ test('completed user logs in, safely retries weight and opens quick reply', asyn
   await page.getByRole('button', { name: 'Обновить вес' }).click();
   await page.getByRole('button', { name: 'Повторить сохранение' }).click();
   await expect(page.getByText('Вес за сегодня обновлён')).toBeVisible();
-  await expect(page.getByTestId('weight-summary')).toContainText('98,4 кг');
+  await expect(page.getByTestId('weight-summary')).toContainText('98,40 кг');
   await expect(
     page.getByLabel('Недавняя история веса').getByRole('listitem'),
   ).toHaveCount(1);
 
   await page.reload();
-  await expect(page.getByTestId('weight-summary')).toContainText('98,4 кг');
+  await expect(page.getByTestId('weight-summary')).toContainText('98,40 кг');
   await expect(
     page.getByLabel('Недавняя история веса').getByRole('listitem'),
   ).toHaveCount(1);
