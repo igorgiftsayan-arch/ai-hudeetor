@@ -84,6 +84,13 @@ export class MarathonLobbyMembershipDto {
   @ApiProperty({ enum: ['captain', 'participant'] }) role!:
     'captain' | 'participant';
 }
+export class MarathonLobbyFinaleDto {
+  @ApiProperty() marathonId!: string;
+  @ApiProperty() endsOn!: string;
+  @ApiProperty() membershipId!: string;
+  @ApiProperty({ enum: ['captain', 'participant'] }) role!:
+    'captain' | 'participant';
+}
 export class MarathonLobbyDto {
   @ApiPropertyOptional({ type: MarathonLobbyMarathonDto, nullable: true })
   marathon!: MarathonLobbyMarathonDto | null;
@@ -91,6 +98,8 @@ export class MarathonLobbyDto {
   enrollment!: MarathonEnrollmentSummaryDto | null;
   @ApiPropertyOptional({ type: MarathonLobbyMembershipDto, nullable: true })
   currentMembership!: MarathonLobbyMembershipDto | null;
+  @ApiPropertyOptional({ type: MarathonLobbyFinaleDto, nullable: true })
+  finale!: MarathonLobbyFinaleDto | null;
   @ApiProperty() canManage!: boolean;
   @ApiProperty() canOpenEnrollment!: boolean;
 }

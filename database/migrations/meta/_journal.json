@@ -148,6 +148,13 @@
       "when": 1790812800000,
       "tag": "0020_marathon_enrollment_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790816400000,
+      "tag": "0021_marathon_finale_baseline_fix",
+      "breakpoints": true
     }
   ]
 }

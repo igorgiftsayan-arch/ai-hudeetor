@@ -7,7 +7,7 @@ const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 const migrationPath = resolve(__dirname, '../../../database/migrations');
 
-describeWithDatabase('Migration 0020 release-shaped upgrade', () => {
+describeWithDatabase('Migrations 0020-0021 release-shaped upgrade', () => {
   let admin: DatabaseService;
   const schemas: string[] = [];
 
@@ -51,6 +51,13 @@ describeWithDatabase('Migration 0020 release-shaped upgrade', () => {
       starts_on: fixture.startsOn,
       ends_on: fixture.endsOn,
     });
+    await db.query(
+      await readFile(
+        resolve(migrationPath, '0021_marathon_finale_baseline_fix.sql'),
+        'utf8',
+      ),
+    );
+    expect(await snapshot(db, fixture.userId)).toEqual(before);
     await db.onApplicationShutdown();
     expect(schema).toBeTruthy();
   });
