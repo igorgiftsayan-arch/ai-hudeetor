@@ -1,5 +1,10 @@
 # Текущий статус
 
+- Owner scope override: S3, backup, restore and RPO/RTO explicitly removed
+  from the release goal and blockers. Existing tooling retained inactive.
+  Latest synthetic password-reset link was not used and has expired; remaining
+  recovery acceptance needs a fresh link and owner password-change handoff.
+
 - 2026-10-01: graph-only5e89786 выложен; root browser подтвердил80,20
   в SVG и отсутствие горизонтального overflow на393px. ProductionAPI8ad743ec,
   web667cf451; остальные сервисы не менялись. Незавершённые зависимости:

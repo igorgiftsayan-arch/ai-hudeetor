@@ -2,7 +2,17 @@
 
 Status: IN PROGRESS. Publication alone is not acceptance.
 
-Current production: `bef0680`, deployed successfully on 2026-10-01. See the
+## Current owner scope override
+
+The owner explicitly removed S3 and all backup/restore/RPO/RTO work from the
+release goal. They are no longer acceptance requirements or blockers. Historical
+backup sections below are retained as history only; tooling is not activated,
+no data is deleted and no off-host protection is claimed. Remaining goal covers
+email/recovery, GenAPI/consent/ledger, anti-abuse, truthful documents and the
+public desktop/mobile journey. Latest scoped password-reset token check:
+not consumed and expired; the owner has not completed that test reset.
+
+Current production: `5e89786`, deployed successfully on 2026-10-01. See the
 dated production acceptance section below for deployed image digests and current
 browser evidence. Build and integration checkpoints are historical evidence,
 not statements that deployment is still pending.
@@ -94,7 +104,6 @@ were removed after verification. This supersedes the local skipped-test gap.
 | Real AI | Verified synthetic user explicitly consents, receives GenAPI response in browser; ledger confirms one charge on idempotent retry | Model listing and one direct synthetic generation returned 200; application journey remains unverified |
 | AI failures | Integration evidence for technical-error refund and outcomeUnknown without automatic refund/retry | Real PostgreSQL processor suite 3/3 and full worker41/41 passed at d12d9b4; exact one refund for technicalError, no refund/retry for outcomeUnknown, sequential duplicate jobs have no second provider/ledger effect |
 | Abuse protection | Enumeration-safe reset responses, resend/reset limits, unverified AI rejected before reservation/outbox, owner isolation | Identity API/database checks passed; final public gateway journey still pending |
-| Backup | Owner reinstated S3 backup after the earlier deferral | Tooling implemented and isolated-tested; destination/credentials pending; no upload, restore or measured RPO/RTO |
 | Documents | Published claims match actual email, AI provider and backup behavior; consent versions consistent | Legal v2 published with matching configured versions; complete live consent journey pending |
 | Public journey | Signup → real email → verification → onboarding → weight/update → real AI → logout/login → recovery, desktop/mobile | Earlier tests cover pre-verification/fake release only |
 

@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+- Owner removed S3/backup acceptance from release scope; no backup tooling or
+  stored data removed. Password-reset handoff remains separately pending.
+
 - Graph weight labels preserve two decimals. Added actual PostgreSQL processor
   integration coverage for successful completion, full technical-error refund,
   outcomeUnknown reservation retention and duplicate job delivery.
