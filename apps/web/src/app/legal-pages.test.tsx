@@ -17,6 +17,7 @@ describe('legal draft pages', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Версия: draft-terms-v1')).toBeInTheDocument();
     expect(screen.getByText(/пока не предоставляет/i)).toBeInTheDocument();
+    expect(screen.getByText(/показывает тестовые ответы/i)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'levnaohote@yandex.ru' }),
     ).toHaveAttribute('href', 'mailto:levnaohote@yandex.ru');
