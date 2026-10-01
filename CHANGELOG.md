@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-01 — GERBI public integration preparation
+
+- Prepared private food-object storage overlay and dedicated 10 MiB HTTPS upload
+  route, preserving ordinary request limits and hiding signed URLs from access logs.
+- Recorded migration collision, product acceptance scope and pending real-marathon
+  inputs. Compose config and isolated nginx syntax validated; not deployed yet.
+
 Все заметные изменения проекта документируются здесь. Формат основан на Keep a Changelog; версии появятся с релизами.
 
 ## [Unreleased]

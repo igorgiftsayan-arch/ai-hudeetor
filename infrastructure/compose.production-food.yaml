@@ -1,0 +1,70 @@
+# Apply after compose.yaml and compose.production.yaml. This is private food
+# storage on the application host, NOT an off-host backup service.
+services:
+  api:
+    environment:
+      FOOD_STORAGE_ENABLED: 'true'
+      FOOD_VISION_PROVIDER: ${FOOD_VISION_PROVIDER:-fake}
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: https://${APP_DOMAIN:?APP_DOMAIN is required}
+      S3_REGION: us-east-1
+      S3_BUCKET: atlas-private
+      S3_ACCESS_KEY_ID: ${FOOD_STORAGE_ACCESS_KEY:?FOOD_STORAGE_ACCESS_KEY is required}
+      S3_SECRET_ACCESS_KEY: ${FOOD_STORAGE_SECRET_KEY:?FOOD_STORAGE_SECRET_KEY is required}
+      S3_FORCE_PATH_STYLE: 'true'
+      MARATHON_BOOTSTRAP_ENABLED: ${MARATHON_BOOTSTRAP_ENABLED:-false}
+      MARATHON_BOOTSTRAP_USER_IDS: ${MARATHON_BOOTSTRAP_USER_IDS:-}
+      PUSH_ENABLED: ${PUSH_ENABLED:-false}
+      PUSH_VAPID_PUBLIC_KEY: ${PUSH_VAPID_PUBLIC_KEY:-}
+    depends_on:
+      minio-init: { condition: service_completed_successfully }
+
+  worker:
+    environment:
+      FOOD_VISION_PROVIDER: ${FOOD_VISION_PROVIDER:-fake}
+      GENAPI_NATIVE_BASE_URL: ${GENAPI_NATIVE_BASE_URL:-https://api.gen-api.ru/api/v1}
+      GENAPI_VISION_MODEL: ${GENAPI_VISION_MODEL:-gpt-4o}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: atlas-private
+      S3_ACCESS_KEY_ID: ${FOOD_STORAGE_ACCESS_KEY:?FOOD_STORAGE_ACCESS_KEY is required}
+      S3_SECRET_ACCESS_KEY: ${FOOD_STORAGE_SECRET_KEY:?FOOD_STORAGE_SECRET_KEY is required}
+      S3_FORCE_PATH_STYLE: 'true'
+      PUSH_ENABLED: ${PUSH_ENABLED:-false}
+      PUSH_VAPID_SUBJECT: ${PUSH_VAPID_SUBJECT:-}
+      PUSH_VAPID_PUBLIC_KEY: ${PUSH_VAPID_PUBLIC_KEY:-}
+      PUSH_VAPID_PRIVATE_KEY: ${PUSH_VAPID_PRIVATE_KEY:-}
+    depends_on:
+      minio-init: { condition: service_completed_successfully }
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:3f97c5651cb6662b880c787a232b6b34fec8d8922e08d6617b25d241a21164bb
+    platform: linux/amd64
+    command: ['server', '/data', '--console-address', ':9001']
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      MINIO_ROOT_USER: ${FOOD_STORAGE_ACCESS_KEY:?FOOD_STORAGE_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${FOOD_STORAGE_SECRET_KEY:?FOOD_STORAGE_SECRET_KEY is required}
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - food-images:/data
+
+  minio-init:
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:2582c2f48b1e31545143ba5285c67d7b38c8b8f6912142d0630686dc7aaac28b
+    platform: linux/amd64
+    mem_limit: 128m
+    depends_on:
+      minio: { condition: service_healthy }
+    environment:
+      MINIO_ROOT_USER: ${FOOD_STORAGE_ACCESS_KEY:?FOOD_STORAGE_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${FOOD_STORAGE_SECRET_KEY:?FOOD_STORAGE_SECRET_KEY is required}
+    entrypoint: ['/bin/sh', '-c']
+    command: ['mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" >/dev/null && mc mb --ignore-existing local/atlas-private >/dev/null && mc anonymous set none local/atlas-private >/dev/null']
+
+volumes:
+  food-images:
