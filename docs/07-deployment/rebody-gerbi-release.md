@@ -48,6 +48,18 @@
 
 ## Инфраструктура
 
+### Версии раскрытия при cutover
+
+Live до переключения: terms/privacy `2026-10-01-v2`, provider consent
+`genapi-grok-2026-10-01-v1`. Подготовленные версии нового релиза:
+`terms-2026-10-01-v3`, `privacy-2026-10-01-v3`,
+`genapi-chat-food-2026-10-01-v2`. API и worker должны получить один и тот же
+provider version; web build — те же terms/privacy, что registration metadata.
+Существующие согласия не переписывать: новый external request требует явного
+принятия актуального раскрытия, включающего оригинальное фото/пищевой контекст.
+Protected production env пока не изменён. Это техническая синхронизация раскрытий
+с поведением, не заявление о юридической экспертизе.
+
 Новый overlay `infrastructure/compose.production-food.yaml` применяется после
 `compose.yaml` и `infrastructure/compose.production.yaml` в **том же** production
 project. Он добавляет private MinIO, idempotent private-bucket initialization и
