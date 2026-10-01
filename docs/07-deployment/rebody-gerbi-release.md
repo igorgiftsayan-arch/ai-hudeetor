@@ -143,3 +143,28 @@ image references и config, не удалять volumes. Миграции additi
 проверяется отдельно, destructive down migration запрещена. После обновления —
 readiness, текущий вход/вес/чат, реальные marathon/food/browser сценарии и публичные
 assets. Ни переключение, ни успешная пользовательская приёмка пока не выполнены.
+
+## Публичное переключение 2026-10-01, следующий checkpoint
+
+Предыдущие NOT RUN выше относятся к подготовке. Выполнено:
+- Runtime image built from `d021923`, Node 24.18.0, full web/API/worker build PASS;
+  immutable image `sha256:fe5d35e103ccaa1606d899afa544e363266aa2ddc6f599c8de71acf6d35eb8a5`.
+- Final backend test-only commits integrated as `b1f60b4`, `c8587dc`; production
+  runtime content unchanged from the built source. Migration files 0013–0019
+  physically inspected inside the image.
+- Backend acceptance: API PostgreSQL 62/62; worker PostgreSQL 75/75. Separate
+  0012→0019 upgrade + repeat preserved a verified synthetic user and ledger +100.
+- Production migrate succeeded; metadata count 20. Before/after counts unchanged:
+  users 13, weight entries 9, token transactions 15; pre-cutover AI all terminal.
+- Production checkout switched to `c8587dc`; same Compose project and existing
+  PostgreSQL/Redis volumes. Private food volume added. No backup performed.
+- Protected candidate settings `/root/rebody38-production-runtime/gerbi-release.env`
+  used for this deployment (0600); old runtime.env retained unchanged for rollback.
+- Scoped host upload location and recreated Docker gateway; nginx syntax PASS.
+- Public HTTPS readiness, marathon and food return 200; anonymous private object
+  access returns 403. Browser login succeeds; existing 80.20 weight is retained;
+  navigation exposes food and marathon.
+
+Still NOT ACCEPTED: real marathon configuration (owner dates/teams/captains),
+signed food upload and real GenAPI correction/confirmation/history journey,
+captain/participant production acceptance. Goal remains active.
