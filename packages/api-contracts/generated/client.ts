@@ -1417,6 +1417,18 @@ export interface PushSubscriptionLookupResourceDto {
   subscriptionId?: string | null;
 }
 
+export type MarathonControllerCurrentApiV1Params = {
+marathonId: string;
+};
+
+export type MarathonControllerReportApiV1Params = {
+marathonId: string;
+};
+
+export type MarathonControllerSaveReportApiV1Params = {
+marathonId: string;
+};
+
 export type FoodControllerAnalysesApiV1Params = {
 /**
  * @minimum 1
@@ -2939,17 +2951,24 @@ export type marathonControllerCurrentApiV1ResponseSuccess = (marathonControllerC
 
 export type marathonControllerCurrentApiV1Response = (marathonControllerCurrentApiV1ResponseSuccess)
 
-export const getMarathonControllerCurrentApiV1Url = () => {
+export const getMarathonControllerCurrentApiV1Url = (params: MarathonControllerCurrentApiV1Params,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/marathons/current`
+  return stringifiedParams.length > 0 ? `/api/v1/marathons/current?${stringifiedParams}` : `/api/v1/marathons/current`
 }
 
-export const marathonControllerCurrentApiV1 = async ( options?: RequestInit): Promise<marathonControllerCurrentApiV1Response> => {
+export const marathonControllerCurrentApiV1 = async (params: MarathonControllerCurrentApiV1Params, options?: RequestInit): Promise<marathonControllerCurrentApiV1Response> => {
 
-  const res = await fetch(getMarathonControllerCurrentApiV1Url(),
+  const res = await fetch(getMarathonControllerCurrentApiV1Url(params),
   {
     ...options,
     method: 'GET'
@@ -2979,17 +2998,26 @@ export type marathonControllerReportApiV1ResponseSuccess = (marathonControllerRe
 
 export type marathonControllerReportApiV1Response = (marathonControllerReportApiV1ResponseSuccess)
 
-export const getMarathonControllerReportApiV1Url = (reportDate: string,) => {
+export const getMarathonControllerReportApiV1Url = (reportDate: string,
+    params: MarathonControllerReportApiV1Params,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/marathon-wellness-reports/${reportDate}`
+  return stringifiedParams.length > 0 ? `/api/v1/marathon-wellness-reports/${reportDate}?${stringifiedParams}` : `/api/v1/marathon-wellness-reports/${reportDate}`
 }
 
-export const marathonControllerReportApiV1 = async (reportDate: string, options?: RequestInit): Promise<marathonControllerReportApiV1Response> => {
+export const marathonControllerReportApiV1 = async (reportDate: string,
+    params: MarathonControllerReportApiV1Params, options?: RequestInit): Promise<marathonControllerReportApiV1Response> => {
 
-  const res = await fetch(getMarathonControllerReportApiV1Url(reportDate),
+  const res = await fetch(getMarathonControllerReportApiV1Url(reportDate,params),
   {
     ...options,
     method: 'GET'
@@ -3019,18 +3047,27 @@ export type marathonControllerSaveReportApiV1ResponseSuccess = (marathonControll
 
 export type marathonControllerSaveReportApiV1Response = (marathonControllerSaveReportApiV1ResponseSuccess)
 
-export const getMarathonControllerSaveReportApiV1Url = (reportDate: string,) => {
+export const getMarathonControllerSaveReportApiV1Url = (reportDate: string,
+    params: MarathonControllerSaveReportApiV1Params,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/marathon-wellness-reports/${reportDate}`
+  return stringifiedParams.length > 0 ? `/api/v1/marathon-wellness-reports/${reportDate}?${stringifiedParams}` : `/api/v1/marathon-wellness-reports/${reportDate}`
 }
 
 export const marathonControllerSaveReportApiV1 = async (reportDate: string,
-    wellnessReportDto: WellnessReportDto, options?: RequestInit): Promise<marathonControllerSaveReportApiV1Response> => {
+    wellnessReportDto: WellnessReportDto,
+    params: MarathonControllerSaveReportApiV1Params, options?: RequestInit): Promise<marathonControllerSaveReportApiV1Response> => {
 
-  const res = await fetch(getMarathonControllerSaveReportApiV1Url(reportDate),
+  const res = await fetch(getMarathonControllerSaveReportApiV1Url(reportDate,params),
   {
     ...options,
     method: 'PUT',

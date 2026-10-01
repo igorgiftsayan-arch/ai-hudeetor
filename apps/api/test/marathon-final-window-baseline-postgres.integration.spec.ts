@@ -57,25 +57,6 @@ describeWithDatabase(
       );
       await service.lobby(captainId);
 
-      const next = await service.openEnrollment(captainId, randomUUID(), {
-        durationDays: 7,
-      });
-      await service.joinEnrollment(
-        participantId,
-        next.marathonId,
-        randomUUID(),
-      );
-
-      await expect(service.lobby(participantId)).resolves.toMatchObject({
-        marathon: { id: next.marathonId, status: 'enrollmentOpen' },
-        currentMembership: { role: 'participant' },
-        finale: {
-          marathonId: ended.marathonId,
-          endsOn: yesterday,
-          membershipId: endedMembership.membershipId,
-          role: 'participant',
-        },
-      });
       await expect(service.current(participantId)).resolves.toMatchObject({
         marathon: { id: ended.marathonId, endsOn: yesterday },
         displayDate: today,
@@ -87,23 +68,78 @@ describeWithDatabase(
         team: { id: ended.teamId },
         captainTask: null,
       });
+
+      const next = await service.openEnrollment(captainId, randomUUID(), {
+        durationDays: 7,
+      });
+      await service.joinEnrollment(
+        participantId,
+        next.marathonId,
+        randomUUID(),
+      );
+      await service.closeEnrollment(captainId, next.marathonId, randomUUID());
+      await service.startMarathon(captainId, next.marathonId, randomUUID());
+
+      await expect(service.lobby(participantId)).resolves.toMatchObject({
+        marathon: { id: next.marathonId, status: 'inProgress' },
+        currentMembership: { role: 'participant' },
+        finale: {
+          marathonId: ended.marathonId,
+          endsOn: yesterday,
+          membershipId: endedMembership.membershipId,
+          role: 'participant',
+        },
+      });
+      await expect(service.current(participantId)).resolves.toMatchObject({
+        marathon: { id: next.marathonId },
+        displayDate: today,
+        reportDate: yesterday,
+      });
+      await expect(service.today(participantId)).resolves.toMatchObject({
+        displayDate: today,
+        team: { name: 'Общая команда' },
+      });
+      await expect(
+        service.current(participantId, ended.marathonId),
+      ).resolves.toMatchObject({
+        marathon: { id: ended.marathonId, endsOn: yesterday },
+        displayDate: today,
+        reportDate: yesterday,
+      });
+      const reportKey = randomUUID();
       await expect(
         service.saveReport(
           participantId,
-          randomUUID(),
+          reportKey,
           yesterday,
           fullReport(),
+          ended.marathonId,
         ),
       ).resolves.toMatchObject({ status: 'reported', reportDate: yesterday });
       await expect(
-        service.getReport(participantId, yesterday),
+        service.saveReport(
+          participantId,
+          reportKey,
+          yesterday,
+          fullReport(),
+          ended.marathonId,
+        ),
       ).resolves.toMatchObject({ status: 'reported', reportDate: yesterday });
       await expect(
+        service.getReport(participantId, yesterday, ended.marathonId),
+      ).resolves.toMatchObject({ status: 'reported', reportDate: yesterday });
+      await expect(
+        service.current(participantId, randomUUID()),
+      ).rejects.toMatchObject({ code: 'MARATHON_NOT_FOUND', status: 404 });
+      await expect(
+        service.getReport(participantId, yesterday, randomUUID()),
+      ).rejects.toMatchObject({ code: 'MARATHON_NOT_FOUND', status: 404 });
+      await expect(
         service.saveTask(captainId, randomUUID(), today, {
-          title: 'Нельзя',
-          description: 'Финальное окно только для чтения и отчёта',
+          title: 'Задание нового марафона',
+          description: 'Финальное окно не скрывает новый марафон',
         }),
-      ).rejects.toMatchObject({ code: 'MARATHON_NOT_ACTIVE' });
+      ).resolves.toMatchObject({ taskDate: today });
     });
 
     it('rejects current, today and report writes after the one-day final window', async () => {
@@ -123,9 +159,9 @@ describeWithDatabase(
       await service.join(participantId, randomUUID(), ended.joinCode);
       await service.lobby(captainId);
 
-      await expect(service.current(participantId)).rejects.toMatchObject({
-        code: 'MARATHON_NOT_ACTIVE',
-      });
+      await expect(
+        service.current(participantId, ended.marathonId),
+      ).rejects.toMatchObject({ code: 'MARATHON_NOT_ACTIVE' });
       await expect(service.today(participantId)).rejects.toMatchObject({
         code: 'MARATHON_NOT_ACTIVE',
       });
@@ -135,6 +171,7 @@ describeWithDatabase(
           randomUUID(),
           endedTwoDaysAgo,
           fullReport(),
+          ended.marathonId,
         ),
       ).rejects.toMatchObject({ code: 'MARATHON_REPORT_DATE_INVALID' });
     });

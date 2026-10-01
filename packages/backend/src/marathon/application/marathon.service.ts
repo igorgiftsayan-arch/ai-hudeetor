@@ -191,6 +191,7 @@ export class MarathonService {
   private async membership(
     userId: string,
     missingCode = 'MARATHON_MEMBERSHIP_REQUIRED',
+    marathonId?: string,
   ): Promise<Membership> {
     const result = await this.db.query<Membership>(
       `select mm.id,mm.marathon_id,mm.team_id,mm.role,m.timezone,m.name marathon_name,m.starts_on::text,m.ends_on::text,m.status,mt.name team_name
@@ -198,17 +199,11 @@ export class MarathonService {
          join marathons m on m.id=mm.marathon_id
          join marathon_teams mt on mt.id=mm.team_id
         where mm.user_id=$1
-        order by case
-                   when m.status in ('inProgress','completed')
-                    and m.ends_on is not null
-                    and (now() at time zone m.timezone)::date=m.ends_on+1
-                   then 0
-                   else 1
-                 end,
-                 (m.status in ('enrollmentOpen','enrollmentClosed','inProgress')) desc,
+          and ($2::uuid is null or m.id=$2)
+        order by (m.status in ('enrollmentOpen','enrollmentClosed','inProgress')) desc,
                  m.created_at desc
         limit 1`,
-      [userId],
+      [userId, marathonId ?? null],
     );
     if (!result.rows[0])
       throw new IdentityError(
@@ -785,9 +780,9 @@ export class MarathonService {
       },
     );
   }
-  async current(token: string) {
+  async current(token: string, marathonId?: string) {
     const user = await this.user(token),
-      m = await this.membership(user.userId, 'MARATHON_NOT_FOUND'),
+      m = await this.membership(user.userId, 'MARATHON_NOT_FOUND', marathonId),
       displayDate = calendarDateInTimezone(new Date(), m.timezone);
     this.assertDailyReadable(m);
     return {
@@ -804,9 +799,14 @@ export class MarathonService {
       reportDate: previousCalendarDate(displayDate),
     };
   }
-  async getReport(token: string, date: string) {
+  async getReport(token: string, date: string, marathonId?: string) {
     const user = await this.user(token),
-      m = await this.membership(user.userId);
+      m = await this.membership(
+        user.userId,
+        marathonId ? 'MARATHON_NOT_FOUND' : 'MARATHON_MEMBERSHIP_REQUIRED',
+        marathonId,
+      );
+    if (marathonId) this.assertDailyReadable(m);
     if (!m.starts_on || !m.ends_on || date < m.starts_on || date > m.ends_on)
       return { status: 'notApplicable', reportDate: date, report: null };
     const r = await this.db.query(
@@ -868,9 +868,19 @@ export class MarathonService {
         'The marathon is not active',
       );
   }
-  async saveReport(token: string, key: string, date: string, r: Report) {
+  async saveReport(
+    token: string,
+    key: string,
+    date: string,
+    r: Report,
+    marathonId?: string,
+  ) {
     const user = await this.user(token),
-      m = await this.membership(user.userId);
+      m = await this.membership(
+        user.userId,
+        marathonId ? 'MARATHON_NOT_FOUND' : 'MARATHON_MEMBERSHIP_REQUIRED',
+        marathonId,
+      );
     this.assertReportDate(m, date);
     const values = [
       r.morningShake,
@@ -886,7 +896,7 @@ export class MarathonService {
       user.userId,
       'marathonWellnessReport',
       key,
-      { date, ...r },
+      marathonId ? { marathonId, date, ...r } : { date, ...r },
       async (c) => {
         const saved = await c.query<{ updatedAt: Date }>(
           `insert into marathon_wellness_reports(id,membership_id,report_date,morning_shake,physical_activity,water_target,second_shake,healthy_dinner,good_sleep,no_junk_food,no_smoking) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) on conflict(membership_id,report_date) do update set morning_shake=excluded.morning_shake,physical_activity=excluded.physical_activity,water_target=excluded.water_target,second_shake=excluded.second_shake,healthy_dinner=excluded.healthy_dinner,good_sleep=excluded.good_sleep,no_junk_food=excluded.no_junk_food,no_smoking=excluded.no_smoking,updated_at=now() returning updated_at "updatedAt"`,
