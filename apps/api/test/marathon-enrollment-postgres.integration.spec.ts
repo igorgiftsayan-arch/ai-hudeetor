@@ -111,7 +111,7 @@ describeWithDatabase(
           created.marathonId,
           randomUUID(),
         ),
-      ).rejects.toMatchObject({ code: 'MARATHON_CAPTAIN_REQUIRED' });
+      ).rejects.toMatchObject({ code: 'MARATHON_BOOTSTRAP_FORBIDDEN' });
       const revoked = marathonService(db, []);
       expect((await revoked.lobby(captainId)).canManage).toBe(false);
       await expect(
@@ -124,40 +124,6 @@ describeWithDatabase(
         durationDays: 10,
       });
 
-      it('never permits a public-enrollment marathon through the legacy join-code endpoint', async () => {
-        const created = await service.openEnrollment(captainId, randomUUID(), {
-          durationDays: 10,
-        });
-        const guessedCode = `enrollment:${created.marathonId}`;
-        await db.query(
-          `update marathon_teams set join_code_hash=$2 where marathon_id=$1`,
-          [
-            created.marathonId,
-            createHash('sha256').update(guessedCode).digest('hex'),
-          ],
-        );
-        await service.closeEnrollment(
-          captainId,
-          created.marathonId,
-          randomUUID(),
-        );
-        await expect(
-          service.join(participantId, randomUUID(), guessedCode),
-        ).rejects.toMatchObject({ code: 'MARATHON_JOIN_CODE_UNAVAILABLE' });
-        await service.startMarathon(
-          captainId,
-          created.marathonId,
-          randomUUID(),
-        );
-        await expect(
-          service.join(unauthorizedId, randomUUID(), guessedCode),
-        ).rejects.toMatchObject({ code: 'MARATHON_JOIN_CODE_UNAVAILABLE' });
-        const memberCount = await db.query<{ count: number }>(
-          'select count(*)::int count from marathon_memberships where marathon_id=$1',
-          [created.marathonId],
-        );
-        expect(memberCount.rows[0]?.count).toBe(1);
-      });
       await expect(
         service.startMarathon(captainId, created.marathonId, randomUUID()),
       ).rejects.toMatchObject({
@@ -193,6 +159,37 @@ describeWithDatabase(
       await expect(
         service.startMarathon(captainId, created.marathonId, randomUUID()),
       ).resolves.toEqual(started);
+    });
+
+    it('never permits a public-enrollment marathon through the legacy join-code endpoint', async () => {
+      const created = await service.openEnrollment(captainId, randomUUID(), {
+        durationDays: 10,
+      });
+      const guessedCode = `enrollment:${created.marathonId}`;
+      await db.query(
+        `update marathon_teams set join_code_hash=$2 where marathon_id=$1`,
+        [
+          created.marathonId,
+          createHash('sha256').update(guessedCode).digest('hex'),
+        ],
+      );
+      await service.closeEnrollment(
+        captainId,
+        created.marathonId,
+        randomUUID(),
+      );
+      await expect(
+        service.join(participantId, randomUUID(), guessedCode),
+      ).rejects.toMatchObject({ code: 'MARATHON_JOIN_CODE_UNAVAILABLE' });
+      await service.startMarathon(captainId, created.marathonId, randomUUID());
+      await expect(
+        service.join(unauthorizedId, randomUUID(), guessedCode),
+      ).rejects.toMatchObject({ code: 'MARATHON_JOIN_CODE_UNAVAILABLE' });
+      const memberCount = await db.query<{ count: number }>(
+        'select count(*)::int count from marathon_memberships where marathon_id=$1',
+        [created.marathonId],
+      );
+      expect(memberCount.rows[0]?.count).toBe(1);
     });
 
     it('serializes concurrent enrollment creation', async () => {
