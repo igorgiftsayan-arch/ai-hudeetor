@@ -654,13 +654,21 @@ export class MarathonService {
             409,
             'Enrollment must be closed before the marathon starts',
           );
-        const startsOn = calendarDateInTimezone(new Date(), marathon.timezone);
+        const startClock = (
+          await client.query<{ started_at: Date; starts_on: string }>(
+            `select instant started_at,
+                    (instant at time zone $1)::date::text starts_on
+               from (select clock_timestamp() instant) clock`,
+            [marathon.timezone],
+          )
+        ).rows[0]!;
+        const startsOn = startClock.starts_on;
         const endsOn = addCalendarDays(startsOn, marathon.duration_days - 1);
         const updated = await client.query<{ started_at: Date }>(
           `update marathons
-              set status='inProgress',starts_on=$2,ends_on=$3,started_at=now()
+              set status='inProgress',starts_on=$2,ends_on=$3,started_at=$4
             where id=$1 returning started_at`,
-          [marathonId, startsOn, endsOn],
+          [marathonId, startsOn, endsOn, startClock.started_at],
         );
         await client.query(
           `with first_weights as (
