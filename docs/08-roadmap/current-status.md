@@ -2,22 +2,21 @@
 
 ## Актуальный публичный runtime и приёмка, 2026-10-01
 
-Integration checkpoint: finale/query-scope sources and both UI fixes integrated;
-frontend now imports the generated backend-owned finale contract. Combined
-web184/184, typecheck/lint PASS. Independent review additionally identified
-transaction-start `now()` backdating when start waits on a weight write;
-actual transition timestamp and reverse-concurrency regression are being fixed
-before final build/publication.
-
-Production опубликован до `38ef5dc`: набор без кода, длительность и отдельный
-первый день доступны в runtime; миграции21/до0020, все семь сервисов healthy,
-существующие данные сохранены по before/after fingerprints. Main не менялся.
-Node24 API146/146 и web180/180 PASS. Mobile fix576c3ed прошёл Node24 web181/181
-и QA browser320/393px, но пока не опубликован. Независимый review нашёл две
-Important границы: final-day report на следующий день и baseline из веса до
-фактического старта. Их исправляют отдельные backend/frontend ветки до полной
-приёмки. Настоящий капитан ждёт email; публичный non-AI browser путь ждёт
-разрешения владельца на «Продолжить без AI». GenAPI4/15; backups исключены.
+Production опубликован до `f8eade4`: вступление без кода, выбор длительности,
+закрытие набора и отдельный первый день; mobile navigation, финальное окно
+отчёта и корректный post-start baseline включены. Миграции22/до0021,
+все семь сервисов healthy, пользовательские данные совпадают по fingerprints.
+Immutable image `sha256:c2a8a74dc2e9f1104d139d5fd2e050ec2636a141690f4c472aaf69c52a0a1d9c`.
+Node24 API152/152 на8630503 (backend после этого не менялся); финальные UI
+source files прошли184/184, typecheck/lint в Node24 runtime; полный buildf8eade4
+PASS. Независимый review проверил post-lock clock, microsecond precision и CSRF.
+QA browser подтвердил сохранение финального отчёта при новом активном марафоне,
+reload сохраняет три отметки и выполнение нового задания. Mobile320/393px PASS.
+Main и stable runtimes не менялись. Настоящий капитан ещё не назначен: нужен
+email его зарегистрированного аккаунта. Публичный марафон не создан; его набор
+и первый день запускает капитан. Публичный protected browser путь не принят:
+продолжение synthetic non-AI проверки ждёт разрешения владельца.
+GenAPI4/15; новых платных вызовов нет, backups исключены.
 Подробная [приёмка и журнал](../07-deployment/marathon-enrollment-release.md).
 
 Нижние блоки — исторические checkpoints; не заменяют актуальный статус выше.

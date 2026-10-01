@@ -59,8 +59,9 @@ Email настоящего капитана владелец предостав�
 Ветка координатора: `release/marathon-enrollment-20261001`, база `e88532d`.
 Backend и frontend работают в отдельных ветках и возвращают коммиты координатору.
 Исправление food labels `462da6d` включено как `7e950a2`. Публичный runtime
-обновлён до `38ef5dc`; `main` не менялся. Последующая проверка выявила два
-пограничных дефекта, поэтому полная приёмка выпуска пока не завершена.
+обновлён до `f8eade4`; `main` не менялся. Найденные пограничные дефекты исправлены;
+назначение настоящего капитана и полный публичный protected browser путь
+остаются открытыми, как описано в актуальном checkpoint ниже.
 
 Food E2E предыдущего выпуска уже прошёл на synthetic photo, one paid call.
 Общий журнал проверок: 4/15 разрешённых запросов; новые вызовы для изменения
@@ -91,6 +92,42 @@ Food E2E предыдущего выпуска уже прошёл на syntheti
   typecheck/lint and generated contract drift check PASS. Final build pending.
 
 ## Публикация и независимая проверка, 2026-10-01
+
+### Актуальный checkpoint: f8eade4
+
+- Source `f8eade4c330d9d560eb8f6a52c40d457d39b2938`, полный Node24.18/pnpm11.14
+  build PASS. Production API/worker/web используют image
+  `sha256:c2a8a74dc2e9f1104d139d5fd2e050ec2636a141690f4c472aaf69c52a0a1d9c`.
+  Protected env `marathon-csrf-final.env` сохраняет SMTP/GenAPI/private-photo
+  настройки; legal versionsv4, bootstrapfalse, captain allowlist пуст.
+- Migration0021 применена в checkpoint8630503, migration runner выполнен дважды;
+  journal22. Все семь сервисов healthy, restartunless-stopped сохранён.
+  PostgreSQL/Redis/MinIO не пересоздавались при финальном cutover. Postgres volume
+  `atlas-rebody38-production_postgres-data` и private-photo volume
+  `atlas-rebody38-production_food-images` сохранены. Host reboot не выполнялся.
+- До/после обоих обновлений совпали fingerprints: users14, weights9, ledger18,
+  food analyses1, consumptions1. Active chat/food operations0, public marathons0.
+- Full API regression на8630503:152/152,30suites в отдельной PostgreSQL DB.
+  После этого backend не менялся. Финальные UI source files (page и regression)
+  проверены в Node24 image8630503 через read-only overlays:184/184,34files,
+  typecheck/lint PASS. Полная финальная сборкаf8eade4 PASS.
+- Read-only review проверил finale scope, reverse lock ordering, точность
+  started_at до PostgreSQL microseconds и latest-CSRF sequence; нерешённых
+  Critical/Important по этим изменениям не найдено.
+- QA browser на финальном image: новый marathon day1/7 и выполненное задание
+  соседствуют со старым финальным отчётом. Добавление «Хороший сон» сохранено;
+  сообщение «Отчёт за вчера обновлён», reload сохраняет3/8 и новое completion.
+  Доказательство: `/tmp/rebody-marathon-finale-csrf-verified.png`.
+  Это synthetic isolated QA, не настоящий публичный марафон.
+- После final cutover public trusted HTTPS readiness200; DNS A5.42.126.71;
+  www301→apex, anonymous lobby401, unsigned private-object GET403.
+  Terms/privacyv4 доступны по HTTPS;
+  protected browser путь не считается принятым без продолжения verify-email.
+  Настоящий капитан ещё не назначен: нужен email зарегистрированного аккаунта.
+  Набор/первый день запускает он; fixture не переносится в production.
+- Main/stable не изменены; GenAPI4/15, новых платных вызовов0; S3/backups вне scope.
+
+### Исторический checkpoint: 38ef5dc
 
 - `38ef5dc` опубликован в существующий production Compose project; API/worker/web
   используют immutable image

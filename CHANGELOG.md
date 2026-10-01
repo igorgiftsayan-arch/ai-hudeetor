@@ -1,6 +1,19 @@
 # Changelog
 
-## 2026-10-01 — enrollment published; boundary review fixes in progress
+## 2026-10-01 — enrollment and boundary fixes published; captain assignment pending
+
+- Published `f8eade4` with additive migration0021 (22 journal entries), mobile
+  navigation, scoped final-day reports and post-start immutable baseline.
+- Marathon start uses an exact PostgreSQL clock instant after row locking;
+  reverse-concurrency and sub-millisecond boundary regressions pass.
+- Fixed stale CSRF for the previous finale beside a new active marathon.
+  Browser save/reload preserves three final-report marks and the new task completion.
+- Node24 API152/152 on unchanged backend; final UI184/184, typecheck/lint PASS;
+  final full build PASS. All seven production services healthy, fingerprints match.
+- Real captain email and public protected-browser acceptance remain outstanding.
+  No public synthetic marathon, no main merge, no paid calls; backups excluded.
+
+## 2026-10-01 — enrollment published; boundary review fixes in progress (historical)
 
 - Published38ef5dc with migrations through0020, documented HTTP200 and day
   counter. Existing user/weight/ledger/food fingerprints match before/after.
