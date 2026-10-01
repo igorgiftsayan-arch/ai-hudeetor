@@ -6,6 +6,10 @@
 
 ### Added
 
+- Rebody production release: `https://rebody38.ru` опубликован через
+  отдельный Compose project, Let’s Encrypt TLS для apex/www, rate-limited host
+  gateway и отдельные data volumes. В production сохранён fake AI режим; real
+  provider и paid GenAPI calls не включались.
 - Legal pages: `/terms` и `/privacy` связаны с consent checkbox registration и
   отображают текущую configured document version без нового frontend source of
   truth. Тексты не обещают account/chat deletion, export, retention jobs,

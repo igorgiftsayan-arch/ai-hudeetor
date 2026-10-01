@@ -1,6 +1,11 @@
 # Текущий статус
 
 - Дата: 2026-09-30
+- Rebody опубликован в отдельном production Compose project
+  `atlas-rebody38-production`: public HTTPS `https://rebody38.ru`,
+  registration/onboarding/weight/Daily Coach/login и legal pages доступны,
+  а API/worker/data stores остаются private. Current runtime и ограничения
+  зафиксированы в [production verification](../07-deployment/rebody38-production-verification.md).
 - Условия и privacy подготовлены в отдельной ветке `docs/privacy-terms-draft`
   от production candidate: `/terms` и `/privacy` показывают
   синхронизированную с registration версию документа, а login связывает
