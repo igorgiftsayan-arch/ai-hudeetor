@@ -7,6 +7,7 @@ import { GetAiConversationUseCase } from '../application/get-ai-conversation.use
 import { GetAiOperationUseCase } from '../application/get-ai-operation.use-case';
 import { AiCompanionRepository } from '../application/ai-companion-repository';
 import { StartQuickReplyUseCase } from '../application/start-quick-reply.use-case';
+import { AiProviderConsentService } from '../../identity/application/ai-provider-consent.service';
 import { AiMemoryRepository } from '../application/ai-memory-repository';
 import { ListAiMemoryUseCase } from '../application/list-ai-memory.use-case';
 import { DeleteAiMemoryUseCase } from '../application/delete-ai-memory.use-case';
@@ -145,11 +146,19 @@ export class AiCompanionModule {
             database: DatabaseService,
             currentUser: GetCurrentUserUseCase,
             repository: AiCompanionRepository,
-          ) => new StartQuickReplyUseCase(database, currentUser, repository),
+            providerConsent: AiProviderConsentService,
+          ) =>
+            new StartQuickReplyUseCase(
+              database,
+              currentUser,
+              repository,
+              providerConsent,
+            ),
           inject: [
             DatabaseService,
             GetCurrentUserUseCase,
             AiCompanionRepository,
+            AiProviderConsentService,
           ],
         },
       ],

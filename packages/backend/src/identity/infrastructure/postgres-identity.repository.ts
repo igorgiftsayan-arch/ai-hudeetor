@@ -5,6 +5,7 @@ import type {
   CreateIdentitySessionInput,
   RotateIdentitySessionInput,
   RotateIdentitySessionResult,
+  CreateIdentityEmailTokenInput,
 } from '../application/identity-repository';
 import { identityErrors } from '../domain/identity-error';
 import type {
@@ -20,6 +21,7 @@ interface CredentialRow {
   registration_idempotency_key: string;
   registration_request_hash: string;
   password_hash: string;
+  email_verified: boolean;
 }
 
 interface SessionRow {
@@ -34,6 +36,7 @@ interface SessionRow {
   rotated_at: Date | null;
   revoked_at: Date | null;
   onboarding_status?: OnboardingStatus;
+  email_verified?: boolean;
 }
 
 export class PostgresIdentityRepository extends IdentityRepository {
@@ -45,6 +48,7 @@ export class PostgresIdentityRepository extends IdentityRepository {
     identity: RegisteredIdentity,
     passwordHash: string,
     session: CreateIdentitySessionInput,
+    verification?: CreateIdentityEmailTokenInput,
   ) {
     try {
       return await this.database.transaction(async (client) => {
@@ -75,6 +79,8 @@ export class PostgresIdentityRepository extends IdentityRepository {
           );
         }
         const storedSession = await this.insertSession(client, session);
+        if (verification)
+          await this.insertEmailToken(client, identity.id, verification);
         return { user: identity, session: storedSession };
       });
     } catch (error) {
@@ -104,6 +110,7 @@ export class PostgresIdentityRepository extends IdentityRepository {
   private async findCredentials(predicate: string, value: string) {
     const result = await this.database.query<CredentialRow>(
       `select u.id, u.email_normalized, u.onboarding_status,
+              (u.email_verified_at is not null) email_verified,
               u.registration_idempotency_key, u.registration_request_hash,
               pc.password_hash
          from users u
@@ -121,6 +128,7 @@ export class PostgresIdentityRepository extends IdentityRepository {
         registrationIdempotencyKey: row.registration_idempotency_key,
         registrationRequestHash: row.registration_request_hash,
         consents: [],
+        emailVerified: row.email_verified,
       },
       passwordHash: row.password_hash,
     };
@@ -130,6 +138,24 @@ export class PostgresIdentityRepository extends IdentityRepository {
     return this.database.transaction((client) =>
       this.insertSession(client, input),
     );
+  }
+
+  override async createSessionIfCredentialCurrent(
+    input: CreateIdentitySessionInput,
+    expectedPasswordHash: string,
+  ): Promise<IdentitySessionRecord | null> {
+    return this.database.transaction(async (client) => {
+      await client.query('select id from users where id=$1 for update', [
+        input.userId,
+      ]);
+      const credential = await client.query<{ password_hash: string }>(
+        'select password_hash from password_credentials where user_id=$1',
+        [input.userId],
+      );
+      if (credential.rows[0]?.password_hash !== expectedPasswordHash)
+        return null;
+      return this.insertSession(client, input);
+    });
   }
 
   async replaceRegistrationSession(
@@ -157,7 +183,8 @@ export class PostgresIdentityRepository extends IdentityRepository {
 
   async findByAccessHash(accessTokenHash: string) {
     const result = await this.database.query<SessionRow>(
-      `select s.*, u.onboarding_status
+      `select s.*, u.onboarding_status,
+              (u.email_verified_at is not null) email_verified
          from user_sessions s
          join users u on u.id = s.user_id
         where s.access_token_hash = $1
@@ -174,7 +201,8 @@ export class PostgresIdentityRepository extends IdentityRepository {
   ): Promise<RotateIdentitySessionResult> {
     return this.database.transaction(async (client) => {
       const result = await client.query<SessionRow>(
-        `select s.*, u.onboarding_status
+        `select s.*, u.onboarding_status,
+                (u.email_verified_at is not null) email_verified
            from user_sessions s
            join users u on u.id = s.user_id
           where s.refresh_token_hash = $1
@@ -218,6 +246,7 @@ export class PostgresIdentityRepository extends IdentityRepository {
         kind: 'rotated',
         session: next,
         onboardingStatus: current.onboarding_status!,
+        emailVerified: current.email_verified ?? false,
       };
     });
   }
@@ -245,6 +274,119 @@ export class PostgresIdentityRepository extends IdentityRepository {
         where family_id = $1`,
       [familyId],
     );
+  }
+
+  override async createEmailVerification(
+    userId: string,
+    input: CreateIdentityEmailTokenInput,
+  ): Promise<void> {
+    await this.database.transaction(async (client) => {
+      const locked = await client.query(
+        `select id from users where id=$1 and status='active' and email_verified_at is null for update`,
+        [userId],
+      );
+      if (!locked.rowCount) return;
+      await this.insertEmailToken(client, userId, input);
+    });
+  }
+
+  override async createPasswordReset(
+    emailNormalized: string,
+    input: CreateIdentityEmailTokenInput,
+  ): Promise<void> {
+    await this.database.transaction(async (client) => {
+      const user = await client.query<{ id: string }>(
+        `select id from users where email_normalized=$1 and status='active' for update`,
+        [emailNormalized],
+      );
+      if (!user.rows[0]) return;
+      await this.insertEmailToken(client, user.rows[0].id, input);
+    });
+  }
+
+  override async verifyEmail(tokenHash: string): Promise<boolean> {
+    return this.database.transaction(async (client) => {
+      const resolved = await client.query<{ user_id: string }>(
+        `select user_id from identity_tokens
+          where token_hash=$1 and purpose='emailVerification'`,
+        [tokenHash],
+      );
+      if (!resolved.rows[0]) return false;
+      await client.query('select id from users where id=$1 for update', [
+        resolved.rows[0].user_id,
+      ]);
+      const token = await client.query<{ id: string; user_id: string }>(
+        `select id,user_id from identity_tokens
+          where token_hash=$1 and purpose='emailVerification'
+            and consumed_at is null and expires_at > now()
+          for update`,
+        [tokenHash],
+      );
+      if (!token.rows[0]) return false;
+      await client.query(
+        `update identity_tokens set consumed_at=now() where id=$1`,
+        [token.rows[0].id],
+      );
+      await client.query(
+        `update users set email_verified_at=coalesce(email_verified_at,now()), updated_at=now() where id=$1`,
+        [token.rows[0].user_id],
+      );
+      return true;
+    });
+  }
+
+  override async resetPassword(
+    tokenHash: string,
+    passwordHash: string,
+  ): Promise<boolean> {
+    return this.database.transaction(async (client) => {
+      const resolved = await client.query<{ user_id: string }>(
+        `select user_id from identity_tokens
+          where token_hash=$1 and purpose='passwordReset'`,
+        [tokenHash],
+      );
+      if (!resolved.rows[0]) return false;
+      await client.query('select id from users where id=$1 for update', [
+        resolved.rows[0].user_id,
+      ]);
+      const token = await client.query<{ id: string; user_id: string }>(
+        `select id,user_id from identity_tokens
+          where token_hash=$1 and purpose='passwordReset'
+            and consumed_at is null and expires_at > now()
+          for update`,
+        [tokenHash],
+      );
+      if (!token.rows[0]) return false;
+      await client.query(
+        `update password_credentials set password_hash=$2, updated_at=now() where user_id=$1`,
+        [token.rows[0].user_id, passwordHash],
+      );
+      await client.query(`update identity_tokens set consumed_at=now() where id=$1`, [
+        token.rows[0].id,
+      ]);
+      await client.query(
+        `update identity_tokens set consumed_at=coalesce(consumed_at,now())
+          where user_id=$1 and purpose='passwordReset' and consumed_at is null`,
+        [token.rows[0].user_id],
+      );
+      await client.query(
+        `update user_sessions set revoked_at=coalesce(revoked_at,now()), revoke_reason='password_reset' where user_id=$1 and revoked_at is null`,
+        [token.rows[0].user_id],
+      );
+      return true;
+    });
+  }
+
+  override async hasValidPasswordResetToken(
+    tokenHash: string,
+  ): Promise<boolean> {
+    const result = await this.database.query(
+      `select 1 from identity_tokens
+        where token_hash=$1 and purpose='passwordReset'
+          and consumed_at is null and expires_at > now()`,
+      [tokenHash],
+    );
+    return Boolean(result.rows[0]);
   }
 
   async acceptWellnessNoticeAndAdvanceProfile(
@@ -332,10 +474,44 @@ export class PostgresIdentityRepository extends IdentityRepository {
     );
     return mapSession(result.rows[0]!);
   }
+
+  private async insertEmailToken(
+    client: PoolClient,
+    userId: string,
+    input: CreateIdentityEmailTokenInput,
+  ): Promise<void> {
+    const purpose =
+      input.template === 'verifyEmail' ? 'emailVerification' : 'passwordReset';
+    await client.query(
+      `update identity_tokens set consumed_at=coalesce(consumed_at,now())
+        where user_id=$1 and purpose=$2 and consumed_at is null`,
+      [userId, purpose],
+    );
+    await client.query(
+      `insert into identity_tokens (id,user_id,purpose,token_hash,expires_at)
+       values ($1,$2,$3,$4,$5)`,
+      [input.id, userId, purpose, input.tokenHash, input.expiresAt],
+    );
+    await client.query(
+      `insert into identity_email_deliveries
+        (id,user_id,token_id,template,token_ciphertext,token_iv,token_auth_tag)
+       values ($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        input.deliveryId,
+        userId,
+        input.id,
+        input.template,
+        input.tokenCiphertext,
+        input.tokenIv,
+        input.tokenAuthTag,
+      ],
+    );
+  }
 }
 
 function mapSession(row: SessionRow): IdentitySessionRecord & {
   onboardingStatus?: OnboardingStatus;
+  emailVerified?: boolean;
 } {
   return {
     id: row.id,
@@ -349,6 +525,7 @@ function mapSession(row: SessionRow): IdentitySessionRecord & {
     rotatedAt: row.rotated_at,
     revokedAt: row.revoked_at,
     onboardingStatus: row.onboarding_status,
+    emailVerified: row.email_verified,
   };
 }
 

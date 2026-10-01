@@ -53,6 +53,8 @@ export const apiConfigSchema = baseSchema
     IDENTITY_TERMS_VERSION: z.string().min(1),
     IDENTITY_PRIVACY_VERSION: z.string().min(1),
     IDENTITY_AI_WELLNESS_NOTICE_VERSION: z.string().min(1),
+    IDENTITY_AI_PROVIDER_PROCESSING_VERSION: z.string().min(1),
+    IDENTITY_AI_PROVIDER_PROCESSING_DISCLOSURE: z.string().min(40),
     IDENTITY_LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     IDENTITY_LOGIN_WINDOW_SECONDS: z.coerce
       .number()
@@ -69,6 +71,17 @@ export const apiConfigSchema = baseSchema
       .int()
       .positive()
       .default(3600),
+    IDENTITY_EMAIL_PAYLOAD_SECRET: z.string().min(32),
+    IDENTITY_EMAIL_VERIFICATION_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(86_400),
+    IDENTITY_PASSWORD_RESET_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(1_800),
   })
   .superRefine((config, context) => {
     if (config.APP_ENV === 'production' && !config.IDENTITY_SECURE_COOKIES) {
@@ -109,20 +122,49 @@ export const workerConfigSchema = baseSchema
     GENAPI_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
     WORKER_HEALTH_PORT: z.coerce.number().int().positive().default(3002),
     WORKER_QUEUE_NAME: z.string().min(1).default('atlas-system'),
+    IDENTITY_EMAIL_PAYLOAD_SECRET: z.string().min(32),
+    PUBLIC_WEB_URL: corsOriginSchema.default('http://localhost:3000'),
+    EMAIL_TRANSPORT: z.enum(['fake', 'smtp']).default('fake'),
+    SMTP_HOST: optionalEnvironmentValue(z.string().min(1)),
+    SMTP_PORT: z.coerce.number().int().positive().default(465),
+    SMTP_SECURE: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
+    SMTP_USER: optionalEnvironmentValue(z.string().min(1)),
+    SMTP_PASSWORD: optionalEnvironmentValue(z.string().min(1)),
+    SMTP_FROM: optionalEnvironmentValue(z.string().min(3)),
+    IDENTITY_AI_PROVIDER_PROCESSING_VERSION: z.string().min(1),
   })
   .superRefine((config, context) => {
-    if (config.AI_PROVIDER !== 'genapi') return;
-    for (const key of [
-      'GENAPI_API_KEY',
-      'GENAPI_BASE_URL',
-      'GENAPI_MODEL',
-    ] as const) {
-      if (!config[key])
-        context.addIssue({
-          code: 'custom',
-          path: [key],
-          message: `${key} is required when AI_PROVIDER=genapi`,
-        });
+    if (config.AI_PROVIDER === 'genapi') {
+      for (const key of [
+        'GENAPI_API_KEY',
+        'GENAPI_BASE_URL',
+        'GENAPI_MODEL',
+      ] as const) {
+        if (!config[key])
+          context.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `${key} is required when AI_PROVIDER=genapi`,
+          });
+      }
+    }
+    if (config.EMAIL_TRANSPORT === 'smtp') {
+      for (const key of [
+        'SMTP_HOST',
+        'SMTP_USER',
+        'SMTP_PASSWORD',
+        'SMTP_FROM',
+      ] as const) {
+        if (!config[key])
+          context.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `${key} is required when EMAIL_TRANSPORT=smtp`,
+          });
+      }
     }
   });
 

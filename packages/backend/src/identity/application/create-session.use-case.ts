@@ -37,7 +37,14 @@ export class CreateSessionUseCase {
     }
     await this.attempts.clear(command.attemptScope);
     const issued = this.tokens.issue({ userId: credentials.user.id });
-    const stored = await this.repository.createSession(issued.session);
+    const stored = await this.repository.createSessionIfCredentialCurrent(
+      issued.session,
+      credentials.passwordHash,
+    );
+    if (!stored) {
+      await this.attempts.recordFailure(command.attemptScope);
+      throw identityErrors.authenticationFailed();
+    }
     return {
       id: stored.id,
       userId: stored.userId,
@@ -47,6 +54,7 @@ export class CreateSessionUseCase {
       accessExpiresAt: stored.accessExpiresAt,
       refreshExpiresAt: stored.refreshExpiresAt,
       onboardingStatus: credentials.user.onboardingStatus,
+      emailVerified: credentials.user.emailVerified ?? false,
     };
   }
 }

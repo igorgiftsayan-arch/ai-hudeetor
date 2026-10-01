@@ -23,6 +23,7 @@ export const users = pgTable(
     onboardingStatus: text('onboarding_status').notNull(),
     registrationIdempotencyKey: text('registration_idempotency_key').notNull(),
     registrationRequestHash: text('registration_request_hash').notNull(),
+    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),

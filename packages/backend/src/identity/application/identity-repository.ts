@@ -23,6 +23,17 @@ export interface RotateIdentitySessionInput {
   nextSession: CreateIdentitySessionInput;
 }
 
+export interface CreateIdentityEmailTokenInput {
+  id: string;
+  deliveryId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  template: 'verifyEmail' | 'passwordReset';
+  tokenCiphertext: string;
+  tokenIv: string;
+  tokenAuthTag: string;
+}
+
 export type RotateIdentitySessionResult =
   | { kind: 'invalid' }
   | { kind: 'reused' }
@@ -30,6 +41,7 @@ export type RotateIdentitySessionResult =
       kind: 'rotated';
       session: IdentitySessionRecord;
       onboardingStatus: OnboardingStatus;
+      emailVerified?: boolean;
     };
 
 export abstract class IdentityRepository {
@@ -37,6 +49,7 @@ export abstract class IdentityRepository {
     identity: RegisteredIdentity,
     passwordHash: string,
     session: CreateIdentitySessionInput,
+    verification?: CreateIdentityEmailTokenInput,
   ): Promise<{ user: RegisteredIdentity; session: IdentitySessionRecord }>;
 
   abstract findCredentialsByEmail(emailNormalized: string): Promise<{
@@ -55,6 +68,14 @@ export abstract class IdentityRepository {
     input: CreateIdentitySessionInput,
   ): Promise<IdentitySessionRecord>;
 
+  createSessionIfCredentialCurrent(
+    input: CreateIdentitySessionInput,
+    expectedPasswordHash: string,
+  ): Promise<IdentitySessionRecord | null> {
+    void expectedPasswordHash;
+    return this.createSession(input);
+  }
+
   abstract replaceRegistrationSession(
     userId: string,
     registrationIdempotencyKey: string,
@@ -64,7 +85,10 @@ export abstract class IdentityRepository {
   abstract findByAccessHash(
     accessTokenHash: string,
   ): Promise<
-    (IdentitySessionRecord & { onboardingStatus?: OnboardingStatus }) | null
+    (IdentitySessionRecord & {
+      onboardingStatus?: OnboardingStatus;
+      emailVerified?: boolean;
+    }) | null
   >;
 
   abstract rotateSession(
@@ -77,6 +101,43 @@ export abstract class IdentityRepository {
   ): Promise<void>;
 
   abstract revokeFamily(familyId: string): Promise<void>;
+
+  createEmailVerification(
+    userId: string,
+    input: CreateIdentityEmailTokenInput,
+  ): Promise<void> {
+    void userId;
+    void input;
+    throw new Error('Identity email verification persistence is unavailable');
+  }
+
+  createPasswordReset(
+    emailNormalized: string,
+    input: CreateIdentityEmailTokenInput,
+  ): Promise<void> {
+    void emailNormalized;
+    void input;
+    throw new Error('Identity password reset persistence is unavailable');
+  }
+
+  verifyEmail(tokenHash: string): Promise<boolean> {
+    void tokenHash;
+    throw new Error('Identity email verification persistence is unavailable');
+  }
+
+  resetPassword(
+    tokenHash: string,
+    passwordHash: string,
+  ): Promise<boolean> {
+    void tokenHash;
+    void passwordHash;
+    throw new Error('Identity password reset persistence is unavailable');
+  }
+
+  hasValidPasswordResetToken(tokenHash: string): Promise<boolean> {
+    void tokenHash;
+    throw new Error('Identity password reset persistence is unavailable');
+  }
 
   abstract acceptWellnessNoticeAndAdvanceProfile(
     client: PoolClient,

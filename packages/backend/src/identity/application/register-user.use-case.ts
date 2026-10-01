@@ -8,6 +8,7 @@ import type {
 } from '../domain/identity-types';
 import type { IdentityRepository } from './identity-repository';
 import type { PasswordHasher, SessionTokenService } from './identity-ports';
+import type { IdentityEmailTokenService } from './identity-email-token.service';
 
 export interface RegisterUserCommand {
   email: string;
@@ -22,6 +23,8 @@ export class RegisterUserUseCase {
     private readonly repository: IdentityRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly tokens: SessionTokenService,
+    private readonly emailTokens?: IdentityEmailTokenService,
+    private readonly verificationTtlMs = 24 * 60 * 60 * 1000,
   ) {}
 
   async execute(command: RegisterUserCommand): Promise<{
@@ -78,6 +81,7 @@ export class RegisterUserUseCase {
       registrationIdempotencyKey: command.idempotencyKey,
       registrationRequestHash: requestHash,
       consents: command.consents,
+      emailVerified: false,
     };
     const issued = this.tokens.issue({ userId: user.id });
     let result: { user: RegisteredIdentity; session: IdentitySessionRecord };
@@ -85,7 +89,7 @@ export class RegisterUserUseCase {
       result = await this.repository.register(user, passwordHash, {
         ...issued.session,
         registrationIdempotencyKey: command.idempotencyKey,
-      });
+      }, this.emailTokens?.issue('verifyEmail', this.verificationTtlMs));
     } catch (error) {
       if (
         error instanceof IdentityError &&

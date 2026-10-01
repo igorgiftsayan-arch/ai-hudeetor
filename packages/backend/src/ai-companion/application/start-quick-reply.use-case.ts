@@ -1,6 +1,10 @@
 import type { DatabaseService } from '../../infrastructure/database/database.service';
 import type { GetCurrentUserUseCase } from '../../identity/application/get-current-user.use-case';
-import { IdentityError } from '../../identity/domain/identity-error';
+import type { AiProviderConsentService } from '../../identity/application/ai-provider-consent.service';
+import {
+  IdentityError,
+  identityErrors,
+} from '../../identity/domain/identity-error';
 import type {
   AiCompanionRepository,
   QueuedAiOperation,
@@ -12,6 +16,7 @@ export class StartQuickReplyUseCase {
     private readonly database: Pick<DatabaseService, 'transaction'>,
     private readonly currentUser: GetCurrentUserUseCase,
     private readonly repository: AiCompanionRepository,
+    private readonly providerConsent?: AiProviderConsentService,
   ) {}
 
   async execute(
@@ -25,6 +30,8 @@ export class StartQuickReplyUseCase {
         'The quick reply content is invalid',
       );
     const user = await this.currentUser.execute(input.accessToken);
+    if (!user.emailVerified) throw identityErrors.emailVerificationRequired();
+    await this.providerConsent?.assertAccepted(user.userId);
     return this.database.transaction((client) =>
       this.repository.startQuickReply(client, {
         ...input,

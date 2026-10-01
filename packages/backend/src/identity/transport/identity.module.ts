@@ -11,6 +11,12 @@ import {
 } from '../application/identity-ports';
 import { RefreshSessionUseCase } from '../application/refresh-session.use-case';
 import { RegisterUserUseCase } from '../application/register-user.use-case';
+import { IdentityEmailTokenService } from '../application/identity-email-token.service';
+import { RequestEmailVerificationUseCase } from '../application/request-email-verification.use-case';
+import { VerifyEmailUseCase } from '../application/verify-email.use-case';
+import { RequestPasswordResetUseCase } from '../application/request-password-reset.use-case';
+import { ResetPasswordUseCase } from '../application/reset-password.use-case';
+import { AiProviderConsentService } from '../application/ai-provider-consent.service';
 import { RegistrationAttemptLimiter } from '../application/registration-attempt-limiter';
 import { OnboardingStatePort } from '../application/onboarding-state.port';
 import { OnboardingStateService } from '../application/onboarding-state.service';
@@ -32,6 +38,16 @@ export class IdentityModule {
       controllers: [IdentityController],
       providers: [
         { provide: IDENTITY_SECURITY_OPTIONS, useValue: options },
+        {
+          provide: AiProviderConsentService,
+          useFactory: (database: DatabaseService) =>
+            new AiProviderConsentService(
+              database,
+              options.aiProviderConsentVersion,
+              options.aiProviderConsentDisclosure,
+            ),
+          inject: [DatabaseService],
+        },
         {
           provide: IdentityRepository,
           useFactory: (database: DatabaseService) =>
@@ -66,13 +82,31 @@ export class IdentityModule {
             }),
         },
         {
+          provide: IdentityEmailTokenService,
+          useFactory: () =>
+            new IdentityEmailTokenService(options.emailPayloadSecret),
+        },
+        {
           provide: RegisterUserUseCase,
           useFactory: (
             repository: IdentityRepository,
             passwordHasher: PasswordHasher,
             tokens: SessionTokenService,
-          ) => new RegisterUserUseCase(repository, passwordHasher, tokens),
-          inject: [IdentityRepository, PasswordHasher, SessionTokenService],
+            emailTokens: IdentityEmailTokenService,
+          ) =>
+            new RegisterUserUseCase(
+              repository,
+              passwordHasher,
+              tokens,
+              emailTokens,
+              options.emailVerificationTtlMs,
+            ),
+          inject: [
+            IdentityRepository,
+            PasswordHasher,
+            SessionTokenService,
+            IdentityEmailTokenService,
+          ],
         },
         {
           provide: CreateSessionUseCase,
@@ -120,6 +154,59 @@ export class IdentityModule {
           inject: [IdentityRepository, SessionTokenService],
         },
         {
+          provide: RequestEmailVerificationUseCase,
+          useFactory: (
+            currentUser: GetCurrentUserUseCase,
+            repository: IdentityRepository,
+            tokens: IdentityEmailTokenService,
+          ) =>
+            new RequestEmailVerificationUseCase(
+              currentUser,
+              repository,
+              tokens,
+              options.emailVerificationTtlMs,
+            ),
+          inject: [
+            GetCurrentUserUseCase,
+            IdentityRepository,
+            IdentityEmailTokenService,
+          ],
+        },
+        {
+          provide: VerifyEmailUseCase,
+          useFactory: (
+            repository: IdentityRepository,
+            tokens: IdentityEmailTokenService,
+          ) => new VerifyEmailUseCase(repository, tokens),
+          inject: [IdentityRepository, IdentityEmailTokenService],
+        },
+        {
+          provide: RequestPasswordResetUseCase,
+          useFactory: (
+            repository: IdentityRepository,
+            tokens: IdentityEmailTokenService,
+          ) =>
+            new RequestPasswordResetUseCase(
+              repository,
+              tokens,
+              options.passwordResetTtlMs,
+            ),
+          inject: [IdentityRepository, IdentityEmailTokenService],
+        },
+        {
+          provide: ResetPasswordUseCase,
+          useFactory: (
+            repository: IdentityRepository,
+            hasher: PasswordHasher,
+            tokens: IdentityEmailTokenService,
+          ) => new ResetPasswordUseCase(repository, hasher, tokens),
+          inject: [
+            IdentityRepository,
+            PasswordHasher,
+            IdentityEmailTokenService,
+          ],
+        },
+        {
           provide: OnboardingStatePort,
           useFactory: (repository: IdentityRepository) =>
             new OnboardingStateService(
@@ -138,6 +225,7 @@ export class IdentityModule {
         CsrfService,
         GetCurrentUserUseCase,
         OnboardingStatePort,
+        AiProviderConsentService,
       ],
     };
   }

@@ -15,11 +15,18 @@ import {
   DatabaseService,
   TechnicalInfrastructureModule,
   workerConfigSchema,
+  IdentityEmailTokenService,
 } from '@atlas/backend';
 import { loadWorkerConfig } from './config/load-config';
 import { AiOperationProcessor } from './ai-operation.processor';
 import { OutboxPublisherService } from './outbox-publisher.service';
 import { MemoryExtractionProcessor } from './memory-extraction.processor';
+import {
+  EmailTransport,
+  FakeEmailTransport,
+  SmtpEmailTransport,
+} from './email-transport';
+import { IdentityEmailDeliveryService } from './identity-email-delivery.service';
 
 const configModule = ConfigModule.forRoot({
   envFilePath: ['../../.env.local', '../../.env', '.env.local', '.env'],
@@ -48,6 +55,26 @@ const redisUrl = new URL(config.REDIS_URL);
     BullModule.registerQueue({ name: config.WORKER_QUEUE_NAME }),
   ],
   providers: [
+    {
+      provide: IdentityEmailTokenService,
+      useFactory: () =>
+        new IdentityEmailTokenService(config.IDENTITY_EMAIL_PAYLOAD_SECRET),
+    },
+    { provide: 'PUBLIC_WEB_URL', useValue: config.PUBLIC_WEB_URL },
+    {
+      provide: EmailTransport,
+      useFactory: () =>
+        config.EMAIL_TRANSPORT === 'smtp'
+          ? new SmtpEmailTransport({
+              host: config.SMTP_HOST!,
+              port: config.SMTP_PORT,
+              secure: config.SMTP_SECURE,
+              user: config.SMTP_USER!,
+              password: config.SMTP_PASSWORD!,
+              from: config.SMTP_FROM!,
+            })
+          : new FakeEmailTransport(),
+    },
     {
       provide: AiMemoryRepository,
       useFactory: (database: DatabaseService) =>
@@ -113,6 +140,7 @@ const redisUrl = new URL(config.REDIS_URL);
     AiOperationProcessor,
     MemoryExtractionProcessor,
     OutboxPublisherService,
+    IdentityEmailDeliveryService,
   ],
 })
 export class WorkerModule {}

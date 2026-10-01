@@ -31,6 +31,7 @@ export class RefreshSessionUseCase {
       accessExpiresAt: result.session.accessExpiresAt,
       refreshExpiresAt: result.session.refreshExpiresAt,
       onboardingStatus: result.onboardingStatus,
+      emailVerified: result.emailVerified ?? false,
     };
   }
 }
