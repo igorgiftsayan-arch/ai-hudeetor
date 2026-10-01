@@ -225,6 +225,80 @@ describeWithDatabase(
       ).resolves.toBe('89.50');
     });
 
+    it('uses the post-lock start instant when a pre-start weight commits after the start transaction began', async () => {
+      const created = await service.openEnrollment(captainId, randomUUID(), {
+        durationDays: 7,
+      });
+      await service.joinEnrollment(
+        participantId,
+        created.marathonId,
+        randomUUID(),
+      );
+      await service.closeEnrollment(
+        captainId,
+        created.marathonId,
+        randomUUID(),
+      );
+      const blocker = new DatabaseService(databaseUrl!);
+      const lockId = 2_103_101;
+      await blocker.query('select pg_advisory_lock($1)', [lockId]);
+      await db.query(`
+        create or replace function test_block_marathon_start()
+        returns trigger language plpgsql as $$
+        begin
+          if new.operation_scope='marathonStart' then
+            perform pg_advisory_xact_lock(${lockId});
+          end if;
+          return new;
+        end;
+        $$;
+        create trigger trg_test_block_marathon_start
+        before insert on idempotency_records
+        for each row execute function test_block_marathon_start();
+      `);
+      try {
+        const start = service.startMarathon(
+          captainId,
+          created.marathonId,
+          randomUUID(),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const entryId = randomUUID();
+        await db.query(
+          `insert into weight_entries(
+             id,user_id,weight_kg,recorded_at,local_date,updated_at,is_current
+           ) values(
+             $1,$2,90.00,clock_timestamp(),
+             (clock_timestamp() at time zone 'Europe/Moscow')::date,now(),true
+           )`,
+          [entryId, participantId],
+        );
+        await blocker.query('select pg_advisory_unlock($1)', [lockId]);
+        await start;
+        await expect(
+          baseline(db, created.marathonId, participantId),
+        ).resolves.toBeNull();
+
+        await db.query(
+          `update weight_entries
+              set weight_kg=89.50,recorded_at=clock_timestamp()+interval '1 second',
+                  updated_at=now()
+            where id=$1`,
+          [entryId],
+        );
+        await expect(
+          baseline(db, created.marathonId, participantId),
+        ).resolves.toBe('89.50');
+      } finally {
+        await blocker.query('select pg_advisory_unlock($1)', [lockId]);
+        await db.query(
+          `drop trigger if exists trg_test_block_marathon_start on idempotency_records;
+           drop function if exists test_block_marathon_start();`,
+        );
+        await blocker.onApplicationShutdown();
+      }
+    });
+
     it('serializes a post-start weight write against the marathon start row lock', async () => {
       const created = await service.openEnrollment(captainId, randomUUID(), {
         durationDays: 7,
