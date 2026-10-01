@@ -1,5 +1,11 @@
 # Текущий статус
 
+- 2026-10-01: root подтвердил shared-IP дефект лимитов Rebody и подготовил
+  исправление production trust proxy 1 -> 2. Node 24 / реальный Express:
+  RED на текущем конфиге, GREEN на исправленном, включая spoofed-prefix.
+  API без public ports, gateway только 127.0.0.1:3340 проверены. Применение
+  production и повторная live-проверка пока pending; main не изменён.
+
 - 2026-10-01: в отдельной ветке подготовлены fail-closed scripts для
   encrypted PostgreSQL backup в private S3 через digest-pinned restic,
   freshness status, scoped 7-daily retention и disposable restore drill.

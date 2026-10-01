@@ -2,9 +2,14 @@
 
 Status: IN PROGRESS. Publication alone is not acceptance.
 
+Current production: `bef0680`, deployed successfully on 2026-10-01. See the
+dated production acceptance section below for deployed image digests and current
+browser evidence. Build and integration checkpoints are historical evidence,
+not statements that deployment is still pending.
+
 Server image build on 2026-10-01 completed for release `2b274b6` in the
 separate `/opt/projects/rebody38-release-build` checkout, with legal v2 build
-versions. Existing production containers/tags were not replaced:
+versions. At that build-only checkpoint production containers/tags were not replaced:
 
 - API `sha256:5941a7bac91c7205a9c472daae842fee1ba31558d3f8e726bd901140112069a2`
 - Worker `sha256:bc4b8ddbc0cb3e6bdab138904bedbbfd031ac63b5fcf7ad78b0bd894fda5f676`
@@ -27,21 +32,21 @@ SMTP update: with the newly provided password, TLS465 authentication passed.
 One synthetic service message sent from help@rebody38.ru to the same mailbox
 was accepted by SMTP and found through read-only IMAP. SMTP fields and a
 distinct persistent email-payload secret were saved atomically in the existing
-root-only production runtime env (mode600), outside Git. Running services were
-not changed. Real application verification/reset flows remain unverified.
+root-only production runtime env (mode600), outside Git. The later production
+deployment loaded these settings. Real application verification/reset flows remain unverified.
 
-The owner explicitly deferred backups for this release and confirmed the
-GenAPI processing information. Off-host backup, restore drill and RPO/RTO are
-therefore deferred, not passed, and no longer block this release. Loss of the
+The owner initially deferred backups, subsequently requested S3, and clarified
+that missing S3 access must not stop all other release work. Off-host backup,
+restore drill and RPO/RTO remain incomplete, not passed, but do not block
+deployment or verification of the other work. Loss of the
 production host may cause unrecoverable data loss; no durability promise is
 introduced. Existing backups are not deleted. Provider confirmation is an
 owner decision, not independent proof of specific countries, retention or
 training exclusions that were not supplied; public text must not invent them.
 
-The owner reports SMTP enabled. A fresh TLS SMTP authentication check against
-smtp.jino.ru:465 using the previously supplied mailbox password still returned
-535 authentication failed. No message was submitted. Current password or
-provider-side activation must be resolved before real verify/reset acceptance.
+Historical SMTP failure: the earlier mailbox password returned 535; no message
+was submitted in that attempt. This was resolved by the subsequent successful
+authentication and same-mailbox delivery check recorded above.
 
 Coordinator verification on 2026-10-01, integrated revision
 `46bf4a89d35d6075df3716adc88de2b86bdcb7cc`: full monorepo build passed with
@@ -77,20 +82,20 @@ were removed after verification. This supersedes the local skipped-test gap.
 - Reviewed new configuration diff: production SMTP enforced, public email-link
   origin HTTPS enforced, STARTTLS required when not using implicit TLS, and
   new secret/consent/SMTP values forwarded into Compose. Configuration tests
-  passed in backend; actual production provisioning remains pending.
+  passed in backend; production provisioning was completed in the later deployment.
 
 ## Required evidence
 
 | Requirement | Acceptance evidence | Current boundary |
 | --- | --- | --- |
-| Email ownership | Public signup delivers real email; fragment token explicitly confirmed; session reports verified | Implemented and isolated-tested; Jino SMTP restriction blocks real delivery |
+| Email ownership | Public signup delivers real email; fragment token explicitly confirmed; session reports verified | Implemented, deployed and isolated-tested; SMTP delivery confirmed independently; public signup flow pending |
 | Recovery | Real reset email; one-use token expires after 30 minutes; new password works; old password and sessions rejected | Implemented; database one-use/session-revocation tests passed; public real-email flow pending |
-| Existing accounts | Login, onboarding and weight remain available; no automatic verified backfill; resend available | Additive migration and regression tests passed; production migration not applied |
+| Existing accounts | Login, onboarding and weight remain available; no automatic verified backfill; resend available | Additive migration and regression tests passed; production migration applied twice, 13 metadata entries; existing-user public journey pending |
 | Real AI | Verified synthetic user explicitly consents, receives GenAPI response in browser; ledger confirms one charge on idempotent retry | Model listing and one direct synthetic generation returned 200; application journey remains unverified |
 | AI failures | Integration evidence for technical-error refund and outcomeUnknown without automatic refund/retry | Revalidate against integrated release |
 | Abuse protection | Enumeration-safe reset responses, resend/reset limits, unverified AI rejected before reservation/outbox, owner isolation | Identity API/database checks passed; final public gateway journey still pending |
-| Backup | Owner reinstated S3 backup after the earlier deferral | Destination/credentials pending; not implemented or accepted |
-| Documents | Published claims match actual email, AI provider and backup behavior; consent versions consistent | Existing pages published; final text must follow actual release configuration |
+| Backup | Owner reinstated S3 backup after the earlier deferral | Tooling implemented and isolated-tested; destination/credentials pending; no upload, restore or measured RPO/RTO |
+| Documents | Published claims match actual email, AI provider and backup behavior; consent versions consistent | Legal v2 published with matching configured versions; complete live consent journey pending |
 | Public journey | Signup → real email → verification → onboarding → weight/update → real AI → logout/login → recovery, desktop/mobile | Earlier tests cover pre-verification/fake release only |
 
 ## Operational boundaries
@@ -180,3 +185,70 @@ Draft disclosure content for final legal reconciliation (not yet published):
 The owner subsequently confirmed the GenAPI processing information for release.
 This does not supply unmentioned factual details; do not invent those in the
 published disclosure or claim independent legal certification.
+
+## Production deployment and public acceptance — 2026-10-01
+
+This dated section supersedes earlier pending-deployment status. S3 is an
+independent unfinished requirement, not a blocker for deploying or checking the
+other release work. No off-host backup or measured RPO/RTO is claimed.
+
+Backend deployment receipt confirms production checkout `bef068079fb23b2b91966b789e6b35b2f45bfc4a`,
+13 migration metadata rows, migration 0012 applied twice, and six healthy
+services with zero restarts. Main, stable, other projects and data volumes were
+not changed. Running immutable images:
+
+- API: `sha256:5941a7bac91c7205a9c472daae842fee1ba31558d3f8e726bd901140112069a2`
+- Worker: `sha256:bc4b8ddbc0cb3e6bdab138904bedbbfd031ac63b5fcf7ad78b0bd894fda5f676`
+- Web: `sha256:ed564a9ffd2bdd0a72e168845dc46f901be6c3c88a832994d6d4a60e47c1851e`
+
+Rollback env and local custom-format dump are in the protected runtime directory;
+the dump passed `pg_restore --list`. This is same-host rollback protection only.
+Backend receipt confirms published legal v2 pages and worker GenAPI configuration;
+no paid provider call was made during deployment.
+
+Coordinator independently observed public login HTTP 200 and readiness response
+with PostgreSQL/Redis OK. Live in-app browser checks:
+
+- Fresh tab: registration toggle and reverse toggle work; age, terms and privacy
+  checkboxes initially unchecked, submit disabled with empty fields.
+- At 393 x 852 viewport, registration DOM content width equals viewport width
+  (393 px), with no horizontal document overflow.
+- Visible forgotten-password link opens the correct form. A request using an
+  intentionally nonexistent `example.invalid` address shows the generic response:
+  `Если такой адрес зарегистрирован, мы отправили ссылку для смены пароля.`
+  This is only the unknown-account path, not proof of real reset mail delivery.
+- A tab open before rollout did not switch registration after reload; fresh tab
+  does. Frontend read-only investigation confirms the public bundle contains the
+  mode-switch handler and service worker does not cache login/API/static chunks.
+  Stale browser state remains a hypothesis, not a proved root cause. No
+  speculative fix applied; asset-to-running-image comparison requested.
+
+Real signup is awaiting action-time confirmation to accept the published terms
+for the synthetic help mailbox account. App-generated verification/reset mail,
+authenticated diary, real AI ledger/consent path and full mobile journey remain
+unverified. Paid GenAPI budget remains 1/15 used.
+
+Additional public negative check at 2026-10-01 05:16 UTC: POST to
+`/api/v1/password-reset-requests` for the same nonexistent synthetic address,
+with an untrusted `Origin`, returned HTTP 403 `ORIGIN_VALIDATION_FAILED`.
+This verifies the public origin guard for this route, not all rate-limit,
+authenticated CSRF or proxy-IP boundaries. No real email or paid AI call was
+triggered by this check.
+
+Public reset request limiter check (same date): running API safe allowlist
+inspection confirms registration limiter 10 attempts / 3600 seconds and
+`API_TRUST_PROXY_HOPS=1`. Source scopes reset requests by IP plus normalized
+email. Eleven sequential requests for a distinct nonexistent `example.invalid`
+address returned ten HTTP 202 responses followed by HTTP 429. No real account
+was targeted. This verifies enforcement for one IP/email key, not resistance
+to distributed or many-address abuse; proxy-chain correctness remains to audit.
+
+Confirmed blocker from proxy-chain audit: host nginx appends visitor IP, then
+Docker gateway appends host-side address `172.26.0.1`, while API trusts only one
+hop. Read-only lookup of the exact SHA256 reset limiter key for our synthetic
+address and `172.26.0.1` returned 11 (matching all eleven public requests);
+the alternative loopback key was absent. Thus the application currently groups
+visitors by proxy address. Host-level registration/session limits still use
+visitor addresses, but application limits can be shared across users.
+Fix must include trusted-chain/spoofed-header tests and verification of actual
+deployment topology; simply trusting arbitrary forwarded headers is unsafe.

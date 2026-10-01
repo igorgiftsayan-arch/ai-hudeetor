@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+- Rebody production: corrected trusted proxy count to two for host nginx and
+  private Docker gateway. Regression reproduces shared proxy IP before the fix
+  and verifies distinct visitor IPs and ignored spoofed prefixes afterward.
+
 ### Added
 
 - Release scope records the owner's backup deferral and GenAPI processing

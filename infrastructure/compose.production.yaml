@@ -5,7 +5,8 @@ services:
     environment:
       APP_ENV: production
       API_CORS_ORIGIN: https://${APP_DOMAIN:?APP_DOMAIN is required}
-      API_TRUST_PROXY_HOPS: 1
+      # Fixed public path: host nginx -> private Docker gateway -> API.
+      API_TRUST_PROXY_HOPS: 2
       IDENTITY_SECURE_COOKIES: 'true'
     ports: !override []
 
