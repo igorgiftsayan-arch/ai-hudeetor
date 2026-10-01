@@ -1927,6 +1927,101 @@ button:disabled {
   font-size: 0.82rem;
 }
 
+.marathon-lobby {
+  display: grid;
+  width: min(100%, 32rem);
+  gap: 0.9rem;
+  padding: 1.25rem;
+  border: 1px solid #d8dccb;
+  border-radius: 1rem;
+  background: rgb(255 253 247 / 0.84);
+  color: #133f36;
+}
+
+.marathon-lobby h1 {
+  margin: 0;
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+  font-size: clamp(1.9rem, 8vw, 2.7rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.marathon-lobby-copy {
+  margin: 0;
+  color: #68766a;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.marathon-lobby-summary {
+  display: grid;
+  gap: 1rem;
+}
+
+.marathon-lobby-summary dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.marathon-lobby-summary dl div {
+  min-width: 8.6rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.7rem;
+  background: #edf0e3;
+}
+
+.marathon-lobby-summary dt {
+  color: #68766a;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.marathon-lobby-summary dd {
+  margin: 0.23rem 0 0;
+  color: #21483b;
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.marathon-lobby-setup {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.marathon-lobby-setup label {
+  display: grid;
+  gap: 0.36rem;
+  color: #526052;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.marathon-lobby-setup input {
+  width: min(100%, 10rem);
+  min-height: 3rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #c8d1c1;
+  border-radius: 0.55rem;
+  background: #fffef8;
+  color: var(--ink);
+  font: inherit;
+}
+
+.marathon-lobby-secondary-action {
+  min-height: 2.9rem;
+  border: 1px solid #aebca9;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: #164737;
+  font: inherit;
+  font-weight: 800;
+}
+
 .marathon-report {
   padding: 1.25rem;
   border: 1px solid #d8dccb;

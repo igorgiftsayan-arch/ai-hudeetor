@@ -21,6 +21,11 @@ GenAPI food E2E ждёт подтверждения тестового согл�
   технические ключи получают нейтральную замену. Лимит ровно 10 MiB
   (`10_485_760` bytes) отображается как «до 10 МБ». API, provider payload,
   consent и food lifecycle не менялись; deploy и merge не выполнялись.
+- 2026-10-01: в изолированной UI-ветке подготовлен mobile-first
+  presentation для набора и ожидания старта Герби-Марафона: вступление без
+  кода во время открытого набора, captain-only open/close/start actions и
+  отсутствие дневных результатов до `inProgress`. Сетевые bindings намеренно
+  отложены до backend OpenAPI regeneration; deploy и merge не выполнялись.
 
 - Owner scope override: S3, backup, restore and RPO/RTO explicitly removed
   from the release goal and blockers. Existing tooling retained inactive.

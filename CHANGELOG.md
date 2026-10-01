@@ -23,6 +23,11 @@
   replaces unknown technical identifiers with a neutral readable fallback;
   provider payloads and the food lifecycle are unchanged. The existing
   10 MiB image limit is shown as `до 10 МБ` without changing accepted bytes.
+- Prepared the mobile-first Gerbi enrollment and pre-start UI states against
+  the confirmed lobby contract. The presentation component has no API binding
+  until generated DTOs are available; no deployment was performed.
+- Terms and privacy source now describe enrollment without an invitation code
+  while preserving the existing team-data disclosure boundary.
 
 - Owner removed S3/backup acceptance from release scope; no backup tooling or
   stored data removed. Password-reset handoff remains separately pending.
