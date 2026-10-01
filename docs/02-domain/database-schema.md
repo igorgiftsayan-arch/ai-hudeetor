@@ -22,5 +22,12 @@ PostgreSQL — источник истины для структурирован
 - Активная AI-память уникальна по владельцу, категории и каноническому ключу; удаление мягкое, а обработанное source message имеет отдельный durable unique receipt.
 - Дневное AI-состояние уникально по `(user_id, local_date)`, где дата вычисляется по IANA timezone профиля; PostgreSQL constraints ограничивают статусы и согласованность transition timestamps.
 - Все изменения схемы — только миграциями вперёд с проверенным откатом/восстановлением.
+- Email ownership хранится nullable timestamp в `users`; существующие аккаунты
+  не получают подтверждение автоматически. `identity_tokens` хранит только
+  SHA-256 hashes, purpose, TTL и consumed timestamp. Одновременно активные
+  resend/reset создаются под user row lock.
+- `identity_email_deliveries` — durable PostgreSQL truth для SMTP-доставки:
+  зашифрованный token payload, bounded attempts, retry schedule, lease/fencing
+  и безопасная error category. После sent/expired payload очищается.
 
 Сроки хранения и удаление описаны в [privacy-and-data.md](../05-security/privacy-and-data.md).

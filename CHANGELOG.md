@@ -6,6 +6,17 @@
 
 ### Added
 
+- Rebody identity release candidate: email ownership verification and password
+  recovery use one-time hashed tokens, encrypted durable delivery payloads,
+  bounded SMTP retries, enumeration-safe APIs and session revocation after a
+  password reset. Existing accounts remain login-capable but unverified.
+- External AI processing now requires both verified email and explicit current
+  `aiProviderProcessing` consent before reservation/message/outbox effects;
+  the worker repeats the guard before a real provider call.
+- Migration `0012_identity_email_verification_reset.sql`, generated OpenAPI
+  contracts, production SMTP configuration gates and isolated PostgreSQL
+  verification were added without enabling SMTP or changing production.
+
 - Rebody production release: `https://rebody38.ru` опубликован через
   отдельный Compose project, Let’s Encrypt TLS для apex/www, rate-limited host
   gateway и отдельные data volumes. В production сохранён fake AI режим; real

@@ -1,6 +1,11 @@
 # Текущий статус
 
-- Дата: 2026-09-30
+- Дата: 2026-10-01
+- Backend identity release candidate находится в отдельной ветке
+  `back/rebody38-email-identity`: email verification, password reset, durable
+  retry-safe email delivery и versioned external-provider consent реализованы и
+  проверены на isolated PostgreSQL. Existing accounts не помечаются verified
+  автоматически; production SMTP и integration release пока не развёрнуты.
 - Rebody опубликован в отдельном production Compose project
   `atlas-rebody38-production`: public HTTPS `https://rebody38.ru`,
   registration/onboarding/weight/Daily Coach/login и legal pages доступны,
