@@ -63,6 +63,21 @@ food GenAPI проверяется отдельно с действующим co
 
 ## Проверки в этом checkpoint
 
+### Общая интеграция кода
+
+- Backend checkpoint `2c9d110` интегрирован как `5d91728`;
+  web checkpoint `edffd69` интегрирован как `67cc0c5`.
+- Frozen install PASS; backend/API/worker build PASS локально
+  (Node26.0.0/pnpm11.19.0, не authoritative Node24 build).
+- Общие web tests: **167/167 PASS**, 32 files.
+- Web typecheck: **FAIL**, отсутствующий `ProviderConsentMetadataDto`.
+  Дополнительный source review установил не только имя DTO, но устаревшие
+  route/method/fields в imported provider consent component. Фикстуры старого
+  UI это расхождение не обнаружили; frontend получил исправление реального
+  release-контракта и тестовых fixtures. Этот результат не считается готовностью UI.
+- `0012_identity_email_verification_reset.sql` не изменён относительно release.
+  Новые migrations `0013..0019` присутствуют; actual upgrade/PG suite ещё в работе.
+
 Проверенные MinIO/MC artifacts сохранились в старом release tree (это не
 `/usr/local/bin` хоста; путь назначения внутри контейнера нельзя путать с source).
 Их можно переиспользовать без запуска исторического стека через optional
