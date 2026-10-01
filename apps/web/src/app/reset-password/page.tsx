@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import type {
+  PasswordResetResourceDto,
+  ResetPasswordRequestDto,
+} from '@atlas/api-contracts';
 import { ApiError, apiRequest } from '../../shared/api';
 
 export default function ResetPasswordPage() {
@@ -30,10 +34,11 @@ export default function ResetPasswordPage() {
     setLoading(true);
     setError(undefined);
     try {
-      await apiRequest<{ passwordReset: true }>('/password-resets', {
+      const payload: ResetPasswordRequestDto = { token, newPassword: password };
+      await apiRequest<PasswordResetResourceDto>('/password-resets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword: password }),
+        body: JSON.stringify(payload),
       });
       replace('/login');
     } catch (cause) {

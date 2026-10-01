@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import type {
+  AcceptAiProviderConsentRequestDto,
+  AiProviderConsentResourceDto,
+} from '@atlas/api-contracts';
 import { MobileNavigation } from '../mobile-navigation';
 import { LogoutButton } from '../../features/identity/logout-button';
 import {
@@ -26,13 +30,6 @@ type PendingSubmission = {
   idempotencyKey: string;
 };
 
-type ProviderConsent = {
-  accepted: boolean;
-  currentVersion: string;
-  acceptedVersion: string | null;
-  disclosure: string;
-};
-
 export default function QuickReplyPage() {
   const { replace } = useRouter();
   const [csrfToken, setCsrfToken] = useState('');
@@ -46,7 +43,8 @@ export default function QuickReplyPage() {
   const [error, setError] = useState<string>();
   const [emailVerificationRequired, setEmailVerificationRequired] =
     useState(false);
-  const [providerConsent, setProviderConsent] = useState<ProviderConsent>();
+  const [providerConsent, setProviderConsent] =
+    useState<AiProviderConsentResourceDto>();
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentSaving, setConsentSaving] = useState(false);
   const pendingSubmission = useRef<PendingSubmission | undefined>(undefined);
@@ -161,7 +159,7 @@ export default function QuickReplyPage() {
 
   async function loadProviderConsent() {
     try {
-      const next = await apiRequest<ProviderConsent>(
+      const next = await apiRequest<AiProviderConsentResourceDto>(
         '/users/me/ai-provider-consent',
       );
       setProviderConsent(next.accepted ? undefined : next);
@@ -176,21 +174,21 @@ export default function QuickReplyPage() {
     setConsentSaving(true);
     setError(undefined);
     try {
-      await apiRequest<{
-        accepted: true;
-        currentVersion: string;
-        acceptedVersion: string;
-      }>('/users/me/ai-provider-consent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
+      const payload: AcceptAiProviderConsentRequestDto = {
+        documentVersion: providerConsent.currentVersion,
+        accepted: true,
+      };
+      await apiRequest<AiProviderConsentResourceDto>(
+        '/users/me/ai-provider-consent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify({
-          documentVersion: providerConsent.currentVersion,
-          accepted: true,
-        }),
-      });
+      );
       setProviderConsent(undefined);
       setConsentChecked(false);
     } catch (cause) {

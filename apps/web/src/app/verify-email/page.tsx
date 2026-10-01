@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type {
+  CurrentUserResourceDto,
+  EmailVerificationResourceDto,
+  IdentityAcceptedResourceDto,
+  VerifyEmailRequestDto,
+} from '@atlas/api-contracts';
 import { ApiError, apiRequest } from '../../shared/api';
 
 type OnboardingContext = { status: string; csrfToken: string };
@@ -51,13 +57,16 @@ export default function VerifyEmailPage() {
     setError(undefined);
     setNotice(undefined);
     try {
-      await apiRequest<{ accepted: true }>('/email-verification-requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': onboarding.csrfToken,
+      await apiRequest<IdentityAcceptedResourceDto>(
+        '/email-verification-requests',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': onboarding.csrfToken,
+          },
         },
-      });
+      );
       setNotice('Если адрес доступен, письмо уже отправлено.');
     } catch (cause) {
       setError(readResendError(cause));
@@ -72,15 +81,13 @@ export default function VerifyEmailPage() {
     setError(undefined);
     setNotice(undefined);
     try {
-      await apiRequest<{ emailVerified: true }>('/email-verifications', {
+      const payload: VerifyEmailRequestDto = { token };
+      await apiRequest<EmailVerificationResourceDto>('/email-verifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify(payload),
       });
-      const current = await apiRequest<{
-        emailVerified: boolean;
-        onboardingStatus: string;
-      }>('/users/me');
+      const current = await apiRequest<CurrentUserResourceDto>('/users/me');
       if (!current.emailVerified) {
         setError('Не удалось обновить статус email. Попробуйте войти ещё раз.');
         return;

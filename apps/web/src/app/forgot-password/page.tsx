@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import type {
+  IdentityAcceptedResourceDto,
+  PasswordResetRequestDto,
+} from '@atlas/api-contracts';
 import { ApiError, apiRequest } from '../../shared/api';
 
 export default function ForgotPasswordPage() {
@@ -16,11 +20,15 @@ export default function ForgotPasswordPage() {
     setError(undefined);
     setNotice(undefined);
     try {
-      await apiRequest<{ accepted: true }>('/password-reset-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
+      const payload: PasswordResetRequestDto = { email: email.trim() };
+      await apiRequest<IdentityAcceptedResourceDto>(
+        '/password-reset-requests',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        },
+      );
       setNotice(
         'Если такой адрес зарегистрирован, мы отправили ссылку для смены пароля.',
       );

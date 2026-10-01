@@ -5,6 +5,7 @@ import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type {
   CreateSessionRequestDto,
+  CurrentUserResourceDto,
   RegistrationRequestDto,
   RegistrationResourceDto,
   SessionResourceDto,
@@ -89,9 +90,7 @@ export default function LoginPage() {
       if (registered) {
         replace('/verify-email?next=/onboarding');
       } else {
-        const current = await apiRequest<{ emailVerified?: boolean }>(
-          '/users/me',
-        );
+        const current = await apiRequest<CurrentUserResourceDto>('/users/me');
         if (current.emailVerified === false) {
           replace(
             session.onboardingStatus === 'completed'
