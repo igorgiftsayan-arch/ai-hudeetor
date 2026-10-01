@@ -168,29 +168,33 @@ describeWithDatabase('Gerbi marathon PostgreSQL integration', () => {
     await service.join(participantId, randomUUID(), first.joinCode);
 
     const otherCaptainId = await user(db, 'other-captain', 'Asia/Irkutsk');
-    const otherService = new MarathonService(
-      db,
-      {
-        execute: jest.fn(async (token: string) => ({
-          userId: token,
-          onboardingStatus: 'completed',
-        })),
-      } as never,
-      {
-        bootstrapEnabled: true,
-        bootstrapUserIds: new Set([otherCaptainId]),
-        providerMode: 'fake',
-        consentVersion: 'pilot-v1',
-        consentDisclosure: 'test disclosure',
-      },
-    );
-    await otherService.createMarathon(otherCaptainId, randomUUID(), request());
     const today = calendarDateInTimezone(new Date(), 'Asia/Irkutsk');
-    const foreignTask = await otherService.saveTask(
-      otherCaptainId,
-      randomUUID(),
-      today,
-      { title: 'Foreign task', description: 'Must remain private' },
+    const otherMarathonId = randomUUID();
+    const otherTeamId = randomUUID();
+    const otherMembershipId = randomUUID();
+    const foreignTask = { id: randomUUID() };
+    await db.query(
+      `insert into marathons(
+         id,name,starts_on,ends_on,timezone,created_by_user_id,status,duration_days,
+         enrollment_opened_at,enrollment_closed_at,started_at,completed_at
+       ) values($1,'Historical foreign',$2,$2,'Asia/Irkutsk',$3,'completed',1,now(),now(),now(),now())`,
+      [otherMarathonId, today, otherCaptainId],
+    );
+    await db.query(
+      `insert into marathon_teams(id,marathon_id,name,join_code_hash)
+       values($1,$2,'Foreign team',$3)`,
+      [otherTeamId, otherMarathonId, randomUUID()],
+    );
+    await db.query(
+      `insert into marathon_memberships(id,marathon_id,team_id,user_id,role)
+       values($1,$2,$3,$4,'captain')`,
+      [otherMembershipId, otherMarathonId, otherTeamId, otherCaptainId],
+    );
+    await db.query(
+      `insert into marathon_captain_tasks(
+         id,team_id,task_date,title,description,created_by_membership_id
+       ) values($1,$2,$3,'Foreign task','Must remain private',$4)`,
+      [foreignTask.id, otherTeamId, today, otherMembershipId],
     );
 
     const firstTeamView = await service.today(participantId);
