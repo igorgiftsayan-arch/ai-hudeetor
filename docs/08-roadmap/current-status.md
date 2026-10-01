@@ -15,6 +15,17 @@ Important границы: final-day report на следующий день и b
 
 Нижние блоки — исторические checkpoints; не заменяют актуальный статус выше.
 
+## Marathon final report UI — prepared, awaiting backend integration, 2026-10-01
+
+В отдельной UI-ветке от `576c3ed` подготовлен закрывающий экран ровно для
+server-owned `lobby.finale` read-window: рядом со следующим набором участник
+видит «Марафон завершён» и может создать или обновить отчёт за последний день.
+Дата берётся только из server response (`reportDate`/`endsOn`), без device
+timezone. В этой ветке не загружаются team/today, текущий вес, задания
+капитана или AI consent; после закрытия окна без server `finale` формы нет.
+UI не меняет backend или generated artifacts и ждёт их backend-owned
+интеграции до runtime проверки/deploy.
+
 ## Mobile navigation visual fix — prepared, not deployed, 2026-10-01
 
 В отдельной UI-ветке от release commit `38ef5dc` устранено перекрытие

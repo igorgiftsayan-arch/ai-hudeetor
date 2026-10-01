@@ -29,9 +29,20 @@ export type MarathonCurrent = CurrentMarathonDto;
 
 export type MarathonTeamToday = TeamTodayDto;
 
+export type MarathonFinale = {
+  marathonId: string;
+  endsOn: string;
+  membershipId: string;
+  role: 'captain' | 'participant';
+};
+
+export type MarathonLobbyData = MarathonLobbyDto & {
+  finale?: MarathonFinale | null;
+};
+
 export type MarathonLobbyScreenData = {
   csrfToken: string;
-  lobby: MarathonLobbyDto;
+  lobby: MarathonLobbyData;
 };
 
 export type MarathonScreenData = {
@@ -41,6 +52,11 @@ export type MarathonScreenData = {
   team: MarathonTeamToday;
   consent: ProviderConsent;
 };
+
+export type MarathonCompletionScreenData = Pick<
+  MarathonScreenData,
+  'csrfToken' | 'current' | 'report'
+>;
 
 export async function loadMarathonScreen(): Promise<MarathonScreenData> {
   const onboarding = await apiRequest<OnboardingResourceDto>('/users/me/onboarding');
@@ -56,12 +72,22 @@ export async function loadMarathonScreen(): Promise<MarathonScreenData> {
   return { csrfToken: onboarding.csrfToken, current, report, team, consent };
 }
 
+export async function loadMarathonCompletionScreen(
+  csrfToken: string,
+): Promise<MarathonCompletionScreenData> {
+  const current = await apiRequest<MarathonCurrent>('/marathons/current');
+  const report = await apiRequest<WellnessReport>(
+    `/marathon-wellness-reports/${current.reportDate}`,
+  );
+  return { csrfToken, current, report };
+}
+
 export async function loadMarathonLobbyScreen(): Promise<MarathonLobbyScreenData> {
   const onboarding = await apiRequest<OnboardingResourceDto>('/users/me/onboarding');
   if (onboarding.status !== 'completed') {
     throw new ApiError('onboarding', 'Завершите настройку, чтобы открыть марафон.');
   }
-  const lobby = await apiRequest<MarathonLobbyDto>('/marathons/lobby');
+  const lobby = await apiRequest<MarathonLobbyData>('/marathons/lobby');
   return { csrfToken: onboarding.csrfToken, lobby };
 }
 

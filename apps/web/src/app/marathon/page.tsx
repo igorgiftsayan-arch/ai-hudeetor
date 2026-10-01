@@ -15,6 +15,7 @@ import {
   closeMarathonEnrollment,
   completeCaptainTask,
   joinMarathonEnrollment,
+  loadMarathonCompletionScreen,
   loadMarathonLobbyScreen,
   loadMarathonScreen,
   openMarathonEnrollment,
@@ -24,6 +25,7 @@ import {
 } from '../../features/marathon/marathon-api';
 import type {
   MarathonLobbyScreenData,
+  MarathonCompletionScreenData,
   MarathonScreenData,
   WellnessValues,
 } from '../../features/marathon/marathon-api';
@@ -50,6 +52,7 @@ export default function MarathonPage() {
   const [viewState, setViewState] = useState<ViewState>('loading');
   const [data, setData] = useState<MarathonScreenData>();
   const [lobbyData, setLobbyData] = useState<MarathonLobbyScreenData>();
+  const [completionData, setCompletionData] = useState<MarathonCompletionScreenData>();
   const [lobbyError, setLobbyError] = useState<string>();
   const [pendingLobbyAction, setPendingLobbyAction] = useState<MarathonLobbyAction>();
   const [reportError, setReportError] = useState<string>();
@@ -72,9 +75,20 @@ export default function MarathonPage() {
         const next = await loadMarathonScreen();
         setData(next);
         setLobbyData(undefined);
+        setCompletionData(undefined);
+      } else if (nextLobby.lobby.finale) {
+        const nextCompletion = await loadMarathonCompletionScreen(nextLobby.csrfToken);
+        setData(undefined);
+        setLobbyData(nextLobby);
+        setCompletionData(
+          isCompletionForFinale(nextCompletion, nextLobby.lobby.finale)
+            ? nextCompletion
+            : undefined,
+        );
       } else {
         setData(undefined);
         setLobbyData(nextLobby);
+        setCompletionData(undefined);
       }
       setViewState('ready');
     } catch (cause) {
@@ -97,8 +111,10 @@ export default function MarathonPage() {
     return () => window.removeEventListener('focus', recoverDate);
   }, [load]);
 
-  async function saveReport(selectedIds: string[]) {
-    if (!data) return;
+  async function saveReport(
+    screen: Pick<MarathonScreenData, 'csrfToken' | 'current'>,
+    selectedIds: string[],
+  ) {
     const values = habits.reduce<WellnessValues>((result, habit) => {
       result[habit.id] = selectedIds.includes(habit.id);
       return result;
@@ -112,7 +128,7 @@ export default function MarathonPage() {
       noJunkFood: false,
       noSmoking: false,
     });
-    const payload = JSON.stringify({ reportDate: data.current.reportDate, values });
+    const payload = JSON.stringify({ reportDate: screen.current.reportDate, values });
     if (pendingReport.current?.payload !== payload) {
       pendingReport.current = { payload, key: newIdempotencyKey() };
     }
@@ -121,9 +137,9 @@ export default function MarathonPage() {
     setSaved(undefined);
     try {
       await saveWellnessReport({
-        reportDate: data.current.reportDate,
+        reportDate: screen.current.reportDate,
         values,
-        csrfToken: data.csrfToken,
+        csrfToken: screen.csrfToken,
         idempotencyKey: pendingReport.current.key,
       });
       pendingReport.current = undefined;
@@ -331,6 +347,15 @@ export default function MarathonPage() {
             onCloseEnrollment={closeLobbyEnrollment}
             onStart={startLobbyMarathon}
           />
+          {completionData && (
+            <MarathonCompletion
+              data={completionData}
+              isSaving={saving}
+              error={reportError}
+              onSave={(selectedIds) => void saveReport(completionData, selectedIds)}
+            />
+          )}
+          {saved && <p className="save-confirmation" aria-live="polite">{saved}</p>}
         </div>
         <MobileNavigation active="marathon" />
       </main>
@@ -436,7 +461,7 @@ export default function MarathonPage() {
             mode={data.report.status === 'reported' ? 'update' : 'create'}
             isSaving={saving}
             error={reportError}
-            onSave={saveReport}
+            onSave={(selectedIds) => void saveReport(data, selectedIds)}
             items={habits.map((habit) => ({
               id: habit.id,
               label: habit.label,
@@ -451,6 +476,45 @@ export default function MarathonPage() {
       </div>
       <MobileNavigation active="marathon" />
     </main>
+  );
+}
+
+function MarathonCompletion({
+  data,
+  isSaving,
+  error,
+  onSave,
+}: {
+  data: MarathonCompletionScreenData;
+  isSaving: boolean;
+  error?: string;
+  onSave: (selectedIds: string[]) => void;
+}) {
+  const reportValues =
+    data.report.status === 'reported' ? data.report.report ?? undefined : undefined;
+  return (
+    <section className="marathon-completion" aria-labelledby="marathon-completion-title">
+      <div className="marathon-completion-heading">
+        <p className="marathon-kicker">Герби-Марафон</p>
+        <h1 id="marathon-completion-title">Марафон завершён</h1>
+        <p>Сохраните финальный отчёт за последний день.</p>
+      </div>
+      <YesterdayReport
+        dateLabel={formatReportDate(data.current.reportDate)}
+        mode={data.report.status === 'reported' ? 'update' : 'create'}
+        isSaving={isSaving}
+        error={error}
+        onSave={onSave}
+        items={habits.map((habit) => ({
+          id: habit.id,
+          label: habit.label,
+          checked: reportValues?.[habit.id] ?? false,
+        }))}
+      />
+      {data.report.status === 'unknown' && (
+        <p className="marathon-unknown-note">Пока нет отчёта за последний день.</p>
+      )}
+    </section>
   );
 }
 
@@ -476,6 +540,19 @@ function formatDay(date: string, marathon: { startsOn: string; endsOn: string })
     return `Сегодня · ${date}`;
   }
   return `День ${day} из ${duration} · ${date}`;
+}
+
+function isCompletionForFinale(
+  completion: MarathonCompletionScreenData,
+  finale: NonNullable<MarathonLobbyScreenData['lobby']['finale']>,
+) {
+  return (
+    completion.current.marathon.id === finale.marathonId &&
+    completion.current.marathon.endsOn === finale.endsOn &&
+    completion.current.membership.id === finale.membershipId &&
+    completion.current.membership.role === finale.role &&
+    completion.current.reportDate === finale.endsOn
+  );
 }
 function formatReportDate(date: string) { return `Вчера · ${date}`; }
 function formatPercent(value: number) { return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} %`; }

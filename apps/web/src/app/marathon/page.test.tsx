@@ -189,6 +189,147 @@ describe('marathon page', () => {
     ).toBe(false);
   });
 
+  it('shows the final one-day report beside the next enrollment without opening daily controls', async () => {
+    const user = userEvent.setup();
+    let saved = false;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${api}/users/me/onboarding`) return json(onboarding());
+      if (url === `${api}/marathons/lobby`) {
+        return json({
+          ...lobby({
+            marathon: {
+              ...marathon(),
+              id: 'next-marathon',
+              name: 'Следующий набор',
+              status: 'enrollmentOpen',
+              startsOn: null,
+              endsOn: null,
+            },
+            enrollment: { isOpen: true, memberCount: 12 },
+            currentMembership: null,
+          }),
+          finale: {
+            marathonId: 'completed-marathon',
+            endsOn: '2026-10-01',
+            membershipId: 'completed-membership',
+            role: 'participant',
+          },
+        });
+      }
+      if (url === `${api}/marathons/current`) {
+        return json({
+          ...current(),
+          marathon: {
+            ...current().marathon,
+            id: 'completed-marathon',
+            startsOn: '2026-10-01',
+            endsOn: '2026-10-01',
+          },
+          membership: { id: 'completed-membership', role: 'participant', isCurrentUser: true },
+          displayDate: '2026-10-02',
+          reportDate: '2026-10-01',
+        });
+      }
+      if (url === `${api}/marathon-wellness-reports/2026-10-01`) {
+        if (init?.method === 'PUT') {
+          saved = true;
+          return json({
+            status: 'reported',
+            reportDate: '2026-10-01',
+            morningShake: false,
+            physicalActivity: false,
+            waterTarget: true,
+            secondShake: false,
+            healthyDinner: false,
+            goodSleep: false,
+            noJunkFood: false,
+            noSmoking: false,
+            markedCount: 1,
+            updatedAt: '2026-10-02T00:00:00.000Z',
+          });
+        }
+        return json(
+          saved
+            ? {
+                status: 'reported',
+                reportDate: '2026-10-01',
+                report: {
+                  morningShake: false,
+                  physicalActivity: false,
+                  waterTarget: true,
+                  secondShake: false,
+                  healthyDinner: false,
+                  goodSleep: false,
+                  noJunkFood: false,
+                  noSmoking: false,
+                  updatedAt: '2026-10-02T00:00:00.000Z',
+                },
+              }
+            : { status: 'unknown', reportDate: '2026-10-01', report: null },
+        );
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Марафон завершён' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Следующий набор' })).toBeInTheDocument();
+    expect(screen.getByText('Вчера · 2026-10-01')).toBeInTheDocument();
+    expect(screen.queryByText('Команда Антонины')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Отметить выполнение' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Задание на сегодня' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Норма воды' }));
+    await user.click(screen.getByRole('button', { name: 'Отправить отчёт' }));
+
+    expect(await screen.findByRole('button', { name: 'Обновить отчёт' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Норма воды' })).toBeChecked();
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) =>
+          String(url) === `${api}/marathon-wellness-reports/2026-10-01` &&
+          (init as RequestInit | undefined)?.method === 'PUT',
+      ),
+    ).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url) === `${api}/marathon-teams/current/today`),
+    ).toBe(false);
+  });
+
+  it('does not request or render a final report after the server finale window closes', async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === `${api}/users/me/onboarding`) return json(onboarding());
+      if (String(input) === `${api}/marathons/lobby`) {
+        return json(lobby({
+          marathon: {
+            ...marathon(),
+            status: 'completed',
+            startsOn: '2026-10-01',
+            endsOn: '2026-10-01',
+            completedAt: '2026-10-03T00:00:00.000Z',
+          },
+          currentMembership: { id: 'completed-membership', role: 'participant' },
+        }));
+      }
+      throw new Error(`Unexpected fetch: ${String(input)} ${init?.method ?? 'GET'}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<MarathonPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Марафон завершён' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /отчёт/i })).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url).startsWith(`${api}/marathon-wellness-reports/`)),
+    ).toBe(false);
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url) === `${api}/marathons/current`),
+    ).toBe(false);
+  });
+
   it('saves the selected yesterday items through the confirmed report endpoint', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>

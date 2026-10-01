@@ -38,6 +38,12 @@
 
 ## [Unreleased]
 
+- Prepared the final marathon report UI for the server-owned one-day `finale`
+  window: it keeps a next enrollment visible while allowing the previous
+  participant to create or update the final report. The completion branch uses
+  the existing current/report responses and does not load team, captain-task or
+  AI-consent data. Source-level UI work awaits the backend-owned lobby contract
+  and generated client integration; no deployment was performed.
 - Mobile navigation keeps the existing five destinations and accessible link
   names, while placing each icon above its label in its own responsive grid
   cell. Long labels may wrap inside their own cell on 320 px and 393 px
