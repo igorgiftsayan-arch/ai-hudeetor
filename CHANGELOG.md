@@ -11,6 +11,21 @@
 - Real captain email and public non-AI browser approval remain outstanding;
   no main merge or new paid calls, backups excluded.
 
+## 2026-10-01 — marathon finale and baseline fixes (not deployed)
+
+- Added an owner-scoped one-day finale descriptor to the marathon lobby and
+  optional `marathonId` selection for current-marathon and wellness-report
+  endpoints. A newly active marathon remains the default; the previous final
+  report is available only through the explicit server-validated marathon ID.
+- Added migration `0021_marathon_finale_baseline_fix.sql`: public-enrollment
+  baseline weights must be recorded at or after the actual `started_at`, use
+  one post-lock clock instant, use the post-start `NEW` value, and serialize
+  with marathon start. Legacy-code
+  baseline behavior and existing data remain unchanged.
+- Verified the additive migration twice, passed 27 focused PostgreSQL tests
+  and the complete API regression (30 suites, 151 tests) on an isolated
+  PostgreSQL 17 database. No merge or deployment was performed.
+
 ## 2026-10-01 — enrollment release acceptance fixes (historical pre-publication checkpoint)
 
 - The daily marathon screen now shows day N of total using server calendar dates.

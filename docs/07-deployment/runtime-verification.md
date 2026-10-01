@@ -1,5 +1,24 @@
 # BOOT-001 — runtime verification
 
+## Marathon finale/baseline backend verification
+
+- Date: 2026-10-01. Branch
+  `back/marathon-final-window-baseline-fix-20261001`, based exactly on release
+  `576c3ed`; no merge or deployment was performed.
+- An isolated PostgreSQL 17 database received migrations `0000–0021` twice.
+  Drizzle metadata contained 22 entries after both runs.
+- Focused real-PostgreSQL suites passed 27/27, including one-day finale,
+  explicit owner-scoped access while the next marathon is active, end+2
+  rejection, post-`started_at` baseline, immutable second edit,
+  captain/participant timezone difference, both start/write lock orders and additive
+  upgrade preservation.
+- Complete API regression passed 30/30 suites and 151/151 tests against the
+  same isolated database.
+- The existing verified release image was used with read-only source/test
+  mounts; running application containers, stable data and public routes were
+  not changed. This is backend verification, not browser or deployment
+  acceptance.
+
 ## UI-006 — isolated Daily Coach verification
 
 - Date: 2026-09-24. Runtime commit `5eb612941eea43778283a3f9d2050d7de23e001b`
