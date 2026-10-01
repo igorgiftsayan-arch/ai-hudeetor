@@ -65,6 +65,37 @@ describe('AI chat screen', () => {
     expect(screen.getByText('1 токен')).toBeInTheDocument();
   });
 
+  it('keeps an unknown or GenAPI runtime neutral instead of calling it fake', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === `${api}/users/me/onboarding`) return onboarding();
+        if (url === `${api}/ai-action-prices/quick-reply`) return price();
+        if (url === `${api}/ai-conversations/current`) return conversation([]);
+        if (url === `${api}/ai/operations` && init?.method === 'POST')
+          return operation('queued', 'operation-1', 'message-user', undefined, 'genapi');
+        if (url === `${api}/ai-conversations/${conversationId}`)
+          return conversation([]);
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<QuickReplyPage />);
+    await screen.findByRole('log', { name: 'Переписка с AI' });
+
+    expect(screen.getByText('AI может ошибаться')).toBeInTheDocument();
+    expect(screen.queryByText('тестовый AI')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Сообщение'), 'Можно спросить?');
+    await user.click(screen.getByRole('button', { name: 'Отправить' }));
+
+    await screen.findByText('AI готовит ответ…');
+    expect(screen.getByText('AI может ошибаться')).toBeInTheDocument();
+    expect(screen.queryByText('тестовый AI')).not.toBeInTheDocument();
+  });
+
   it('shows sent messages, waiting state and backend assistant history', async () => {
     const user = userEvent.setup();
     const messages: ChatMessage[] = [];
@@ -115,6 +146,7 @@ describe('AI chat screen', () => {
 
     expect(await screen.findByText('Мне нужен план')).toBeInTheDocument();
     expect(screen.getByText('AI готовит ответ…')).toBeInTheDocument();
+    expect(screen.getByText('тестовый AI')).toBeInTheDocument();
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2_100);
@@ -662,6 +694,7 @@ function operation(
   id: string,
   inputMessageId: string,
   outputMessageId?: string,
+  runtimeAdapter: 'fake' | 'genapi' = 'fake',
 ): Response {
   return json(
     {
@@ -673,7 +706,7 @@ function operation(
       reservedTokens: 1,
       priceVersion: 1,
       pollUrl: `${api}/ai/operations/${id}`,
-      runtimeAdapter: 'fake',
+      runtimeAdapter,
     },
     status === 'queued' ? 202 : 200,
   );
