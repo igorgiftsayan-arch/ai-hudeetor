@@ -3,8 +3,10 @@
 - 2026-10-01: root подтвердил shared-IP дефект лимитов Rebody и подготовил
   исправление production trust proxy 1 -> 2. Node 24 / реальный Express:
   RED на текущем конфиге, GREEN на исправленном, включая spoofed-prefix.
-  API без public ports, gateway только 127.0.0.1:3340 проверены. Применение
-  production и повторная live-проверка пока pending; main не изменён.
+  API без public ports, gateway только 127.0.0.1:3340 проверены. Исправление
+  5b28252 применено только к production API без rebuild; API healthy.
+  Live normal + spoofed-XFF запросы увеличили реальный visitor counter до 2;
+  proxy и spoofed counters отсутствуют. Main не изменён.
 
 - 2026-10-01: в отдельной ветке подготовлены fail-closed scripts для
   encrypted PostgreSQL backup в private S3 через digest-pinned restic,

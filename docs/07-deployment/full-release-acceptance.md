@@ -252,3 +252,59 @@ visitors by proxy address. Host-level registration/session limits still use
 visitor addresses, but application limits can be shared across users.
 Fix must include trusted-chain/spoofed-header tests and verification of actual
 deployment topology; simply trusting arbitrary forwarded headers is unsafe.
+
+Proxy blocker resolved in `5b28252`: production checkout updated and only API
+recreated, using unchanged approved image. Runtime hop count is 2, API healthy,
+public readiness PostgreSQL/Redis OK. Real Express on Node 24 regression failed
+with the old config (proxy IP instead of visitor), then passed with the fixed
+config, including distinct visitors and spoofed XFF prefix. Public follow-up:
+two synthetic requests (normal and spoofed XFF) both returned 202; read-only
+exact Redis lookup using the visitor from only matching nginx probe log lines
+found visitor counter 2, proxy counter absent, spoofed counter absent. Visitor
+IP was not printed. Direct API ports remain unpublished and gateway is bound
+only to 127.0.0.1:3340. This verification assumes that fixed ingress topology.
+
+Public deployment asset consistency: all nine JavaScript URLs referenced by a
+fresh `/login` HTML response were fetched over public HTTPS. Their SHA256 values
+matched the corresponding files inside the running web image (9/9). No mixed
+HTML/static deployment was observed. The earlier stale-tab symptom has no
+confirmed application-code root cause and no speculative patch was applied.
+
+Next blocked acceptance steps: action-time permission to accept legal terms for
+the synthetic mailbox account has been requested but not received. Do not use a
+different tool to bypass that confirmation. Real signup/email/consent/AI/reset
+desktop/mobile acceptance therefore remains pending. S3 destination and scoped
+access also remain unavailable; do not claim off-host protection or measured
+RPO/RTO. These are separate dependencies, not reasons to undo completed rollout.
+
+## Owner-approved synthetic account acceptance — 2026-10-01
+
+Owner granted action-time permission to accept terms for `help@rebody38.ru`.
+Browser signup accepted explicit age/terms/privacy checkboxes, then displayed
+the verification screen. App-generated email was found in the controlled inbox
+using read-only IMAP. The link token was consumed via the public verification
+API without printing it; emailVerified=true, HTTP 201. Reuse returned 400.
+This verifies actual delivery and one-use API consumption, not clicking a real
+email fragment through the browser. HTTP 201 differs from documented 200 and
+needs contract reconciliation.
+
+Browser onboarding (Asia/Irkutsk, wellness notice, gentle persona) completed.
+Weight create 80.25 then update 80.20 retained one visible daily row and survived
+reload and logout/login. Found formatting defect: display shows 80,2 rather than
+canonical 80,20; frontend patch requested.
+
+Before provider consent, actual browser AI submission displayed the disclosure.
+Scoped database check: zero AI operations, only starterGrant +100, no charge.
+After explicit disclosure acknowledgement, one real browser AI request succeeded
+with provider_model grok-4-5 and a nonempty Russian response. Ledger: one
+aiReservation -1 and one aiConfirmation 0, no extra reservation/refund. History
+survived reload at 393x852; logout/login returned the saved weight. This is
+responsive desktop-browser evidence, not a physical mobile-device test.
+
+Paid call budget now 2/15 used (one earlier direct smoke plus one application
+request); 13 remaining. No request was retried to obtain this successful answer.
+Pending-response badge briefly showed test AI, then correctly changed after
+success. API has no AI_PROVIDER env while worker has genapi; investigate source
+before any fix. Frontend was informed; root owns backend/config investigation.
+Full reset, idempotent live replay, off-host restore and remaining UI fixes are
+not yet accepted. No full-release claim.

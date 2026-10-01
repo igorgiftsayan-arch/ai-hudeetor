@@ -1,8 +1,11 @@
 // Run with Node 24 and EXPRESS_MODULE pointing at the installed Express package.
 // Synthetic requests only: no HTTP listener, database, or customer data.
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const express = require(process.env.EXPRESS_MODULE || 'express');
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import process from 'node:process';
+import { createRequire } from 'node:module';
+const loadModule = createRequire(import.meta.url);
+const express = loadModule(process.env.EXPRESS_MODULE || 'express');
 const config = fs.readFileSync(process.argv[2] || 'infrastructure/compose.production.yaml', 'utf8');
 const hops = Number(config.match(/API_TRUST_PROXY_HOPS:\s*(\d+)/)?.[1]);
 const app = express();
@@ -18,4 +21,4 @@ assert.equal(resolveIp('198.51.100.10, 172.26.0.1'), '198.51.100.10');
 assert.equal(resolveIp('203.0.113.99, 198.51.100.10, 172.26.0.1'), '198.51.100.10');
 assert.equal(resolveIp('198.51.100.11, 172.26.0.1'), '198.51.100.11');
 assert.match(config, /ports: !override \[\]/);
-console.log('PASS: visitor IP, spoofed prefix ignored, distinct visitors');
+process.stdout.write('PASS: visitor IP, spoofed prefix ignored, distinct visitors\n');
