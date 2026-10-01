@@ -19,6 +19,11 @@
 
 ## [Unreleased]
 
+- Food analysis now renders known missing-data keys as Russian labels and
+  replaces unknown technical identifiers with a neutral readable fallback;
+  provider payloads and the food lifecycle are unchanged. The existing
+  10 MiB image limit is shown as `до 10 МБ` without changing accepted bytes.
+
 - Owner removed S3/backup acceptance from release scope; no backup tooling or
   stored data removed. Password-reset handoff remains separately pending.
 

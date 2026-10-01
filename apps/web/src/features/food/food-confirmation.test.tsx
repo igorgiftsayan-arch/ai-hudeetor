@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { FoodConfirmation } from './food-confirmation';
@@ -23,6 +23,41 @@ describe('FoodConfirmation', () => {
     expect(screen.getByText('гречка, овощи')).toBeVisible();
     expect(screen.getByText(analysis.suitability)).toBeVisible();
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('shows readable labels for technical missing-data keys from a food analysis', () => {
+    render(
+      <FoodConfirmation
+        analysis={{
+          items: ['grilled chicken', 'lettuce', 'tomato', 'cucumber'],
+          suitability: 'Пока недостаточно данных для оценки.',
+          suitabilityStatus: 'insufficientData',
+          missingData: ['targetWeightKg', 'facts', 'unknownProviderField'],
+        }}
+        now="2026-10-01T12:00"
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('grilled chicken, lettuce, tomato, cucumber'),
+    ).toBeVisible();
+
+    const missingData = screen.getByRole('list', {
+      name: 'Недостающие данные для оценки блюда',
+    });
+    expect(
+      within(missingData)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      'Цель по весу',
+      'Предпочтения и ограничения питания',
+      'Дополнительные данные для оценки',
+    ]);
+    expect(missingData).not.toHaveTextContent('targetWeightKg');
+    expect(missingData).not.toHaveTextContent('facts');
+    expect(missingData).not.toHaveTextContent('unknownProviderField');
   });
 
   it('allows correction before explicit confirmation with a chosen local date and time', async () => {

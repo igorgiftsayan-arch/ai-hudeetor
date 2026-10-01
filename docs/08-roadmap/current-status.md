@@ -15,6 +15,13 @@ GenAPI food E2E ждёт подтверждения тестового согл�
 Резервные копии исключены владельцем из цели. Полный scope, доказательства и
 открытые входные данные: [release journal](../07-deployment/rebody-gerbi-release.md).
 
+- 2026-10-01: в отдельной ветке `ui/gerbi-food-labels` подготовлена
+  presentation-only правка результата food analysis: `targetWeightKg` и
+  `facts` показываются пользователю понятными русскими подписями, неизвестные
+  технические ключи получают нейтральную замену. Лимит ровно 10 MiB
+  (`10_485_760` bytes) отображается как «до 10 МБ». API, provider payload,
+  consent и food lifecycle не менялись; deploy и merge не выполнялись.
+
 - Owner scope override: S3, backup, restore and RPO/RTO explicitly removed
   from the release goal and blockers. Existing tooling retained inactive.
   Latest synthetic password-reset link was not used and has expired; remaining

@@ -19,6 +19,9 @@ function formatMimeTypes(mimeTypes: readonly string[]) {
 }
 
 function formatMaxBytes(maxBytes: number) {
+  const mebibytes = maxBytes / (1024 * 1024);
+  if (Number.isInteger(mebibytes)) return `до ${mebibytes} МБ`;
+
   const megabytes = maxBytes / 1_000_000;
   return `до ${Number.isInteger(megabytes) ? megabytes : megabytes.toLocaleString('ru-RU')} МБ`;
 }

@@ -18,6 +18,24 @@ const suitabilityLabels = {
   insufficientData: 'Недостаточно данных',
 } satisfies Record<FoodSuitabilityResultDto['status'], string>;
 
+const missingDataLabels = {
+  targetWeightKg: 'Цель по весу',
+  facts: 'Предпочтения и ограничения питания',
+} as const;
+
+function formatMissingData(item: string) {
+  const label = missingDataLabels[item as keyof typeof missingDataLabels];
+  if (label) return label;
+
+  // Preserve human-readable messages returned by the model, but never expose
+  // an unknown technical identifier as a user-facing requirement.
+  if (/^[A-Za-z][A-Za-z0-9]*$/.test(item)) {
+    return 'Дополнительные данные для оценки';
+  }
+
+  return item;
+}
+
 export type ConfirmedFoodDraft = {
   items: string[];
   consumedAt: string;
@@ -137,7 +155,7 @@ export function FoodConfirmation({
                 <p>Для оценки не хватает данных:</p>
                 <ul aria-label="Недостающие данные для оценки блюда">
                   {analysis.missingData!.map((item, index) => (
-                    <li key={index}>{item}</li>
+                    <li key={index}>{formatMissingData(item)}</li>
                   ))}
                 </ul>
               </div>

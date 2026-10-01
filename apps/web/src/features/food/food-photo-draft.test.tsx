@@ -24,6 +24,26 @@ describe('FoodPhotoDraft', () => {
     expect(screen.getByText('Файл пока не отправлен.')).toBeVisible();
   });
 
+  it('uses simple copy for the exact 10 MiB server limit', () => {
+    render(
+      <FoodPhotoDraft
+        policy={{
+          acceptedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          maxBytes: 10_485_760,
+        }}
+        onReady={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.classList.contains('food-draft-description') === true &&
+          element.textContent?.includes('до 10 МБ') === true,
+      ),
+    ).toBeVisible();
+  });
+
   it('rejects an unsupported file locally without starting the next step', () => {
     const onReady = vi.fn();
     render(<FoodPhotoDraft policy={policy} onReady={onReady} />);
