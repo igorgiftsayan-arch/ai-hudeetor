@@ -95,6 +95,20 @@ Food E2E предыдущего выпуска уже прошёл на syntheti
 
 ### Актуальный checkpoint: f8eade4
 
+Дополнение после ответа владельца: публичная non-AI проверка разрешена и
+выполнена в браузере по HTTPS на существующем synthetic account. Login →
+verify-email → штатное «Продолжить без AI» → Today:84.24 → update84.10 → reload.
+Ровно одна weight row подтверждена SQL; original9 weights fingerprints совпали.
+Пользователи14, ledger18, food analyses1 и consumptions1 также сохранили прежние
+fingerprints. Marathon показывает «Набор ещё не открыт» без captain controls;
+Food показывает выбор фото и private-confirmation workflow, без загрузки/AI.
+Proof: `/tmp/rebody-public-weight-verified.png`,
+`/tmp/rebody-public-marathon-waiting.png`, `/tmp/rebody-public-food-entry-verified.png`.
+Это не публичный enrollment/start E2E: настоящий марафон ещё не создан.
+Владелец предоставил email капитана; два read-only lookup подтверждают, что
+matching account пока отсутствует. Её регистрацию/согласия/password не создаём
+от её имени; allowlist остаётся пустым до появления точного user ID.
+
 - Source `f8eade4c330d9d560eb8f6a52c40d457d39b2938`, полный Node24.18/pnpm11.14
   build PASS. Production API/worker/web используют image
   `sha256:c2a8a74dc2e9f1104d139d5fd2e050ec2636a141690f4c472aaf69c52a0a1d9c`.
@@ -122,8 +136,8 @@ Food E2E предыдущего выпуска уже прошёл на syntheti
 - После final cutover public trusted HTTPS readiness200; DNS A5.42.126.71;
   www301→apex, anonymous lobby401, unsigned private-object GET403.
   Terms/privacyv4 доступны по HTTPS;
-  protected browser путь не считается принятым без продолжения verify-email.
-  Настоящий капитан ещё не назначен: нужен email зарегистрированного аккаунта.
+  protected non-AI browser smoke принят в дополнении выше.
+  Настоящий капитан ещё не назначен: предоставленный email пока не зарегистрирован.
   Набор/первый день запускает он; fixture не переносится в production.
 - Main/stable не изменены; GenAPI4/15, новых платных вызовов0; S3/backups вне scope.
 

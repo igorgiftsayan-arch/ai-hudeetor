@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-01 — public non-AI smoke verified; captain registration pending
+
+- Owner-authorized public browser check passed login, continue-without-AI,
+  daily weight create/update/reload, marathon waiting and food entry.
+- Added one weight row to the existing synthetic public fixture; original
+  user/weight/ledger/food fingerprints remain unchanged. No paid AI calls.
+- Owner provided the captain email, but no matching account exists yet.
+  Captain rights, real enrollment and day-one launch await her registration.
+  Runtime captain allowlist remains empty; no main or deployed-code changes.
+
 ## 2026-10-01 — enrollment and boundary fixes published; captain assignment pending
 
 - Published `f8eade4` with additive migration0021 (22 journal entries), mobile
