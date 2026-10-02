@@ -93,6 +93,28 @@ Food E2E предыдущего выпуска уже прошёл на syntheti
 
 ## Публикация и независимая проверка, 2026-10-01
 
+### Завершение назначения капитана, 2026-10-02
+
+По явному разрешению владельца найден точный registered account: active,
+onboardingcompleted, emailverified. Добавлен ровно один user ID в allowlist и
+включён management flag, без редактирования user/consent/session данных.
+Активный env `/root/rebody38-production-runtime/marathon-captain-20261002.env`;
+audit `/root/rebody38-production-runtime/marathon-captain-20261002.audit.json`
+имеет0600 и stateverified. Старый env сохранён для обратимого отката.
+Сравнение candidate со старым env гарантирует только два изменения flags;
+source/image/SMTP/GenAPI/private-photo настройки сохранены. Compose configquiet
+PASS, пересоздан только API. Live server permission resolver разрешает точному
+captain ID и отклоняет ordinary user; public authenticated ordinary lobby
+canOpenEnrollment=false/canManage=false. Это проверка разрешений runtime,
+не вход в личную сессию капитана: пароль/сессия капитана не использовались.
+Все7сервисов healthy, trusted public ready200; before/after hashes совпали:
+users15, weights11, ledger19, analyses1, consumptions1; migrations22,
+marathons0, active AI/food operations0. Набор и первый день не открывались.
+Captain membership появится при её штатном openEnrollment; длительность,
+закрытие и отдельный day-one остаются её действиями. Browser captain lifecycle
+на том же release был проверен ранее в изолированной QA, public non-AI путь
+проверен01.10. Нет main merge/stable изменений/новых paid calls; GenAPI4/15.
+
 ### Актуальный checkpoint: f8eade4
 
 Дополнение после ответа владельца: публичная non-AI проверка разрешена и
@@ -105,9 +127,9 @@ Food показывает выбор фото и private-confirmation workflow, 
 Proof: `/tmp/rebody-public-weight-verified.png`,
 `/tmp/rebody-public-marathon-waiting.png`, `/tmp/rebody-public-food-entry-verified.png`.
 Это не публичный enrollment/start E2E: настоящий марафон ещё не создан.
-Владелец предоставил email капитана; два read-only lookup подтверждают, что
-matching account пока отсутствует. Её регистрацию/согласия/password не создаём
-от её имени; allowlist остаётся пустым до появления точного user ID.
+На checkpoint01.10 email капитана был предоставлен, matching account ещё
+отсутствовал. После её самостоятельной регистрации назначение выполнено02.10
+как описано выше; регистрацию/согласия/password не создавали от её имени.
 
 - Source `f8eade4c330d9d560eb8f6a52c40d457d39b2938`, полный Node24.18/pnpm11.14
   build PASS. Production API/worker/web используют image

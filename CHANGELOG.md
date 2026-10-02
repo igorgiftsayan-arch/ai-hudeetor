@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-02 — owner-authorized captain permission enabled
+
+- Resolved the owner's exact registered account, confirmed active/completed/
+  email-verified state, and enabled marathon management for that single user.
+- Changed only protected runtime bootstrap/allowlist flags; recreated API only,
+  retaining the existing immutable release, secrets and data volumes.
+- Live permission resolver allows the captain and denies the ordinary user;
+  public authenticated ordinary lobby still exposes no captain controls.
+- All seven services healthy and before/after user/weight/ledger/food fingerprints
+  unchanged. Protected operational audit receipt recorded; no repository PII.
+- Enrollment and first day remain captain-owned actions and were not executed.
+  No main merge, stable changes, backup work or paid AI calls.
+
 ## 2026-10-01 — public non-AI smoke verified; captain registration pending
 
 - Owner-authorized public browser check passed login, continue-without-AI,
